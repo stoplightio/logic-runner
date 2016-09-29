@@ -8,3 +8,5 @@ node_js:
 before_script:
   - npm install -g codecov
 script: npm run cov && codecov
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
