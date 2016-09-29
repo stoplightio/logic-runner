@@ -4327,7 +4327,7 @@ const runAssertion = (resultNode, assertion, options = {}) => {
     return result;
   } catch (err) {
     result.pass = false;
-    result.message = e.message;
+    result.message = err.message;
 
     return result;
   }
@@ -4381,7 +4381,7 @@ const runLogic = (node, logicPath, options) => {
     return {};
   }
 
-  let logic = get_1(node, logicPath);
+  const logic = get_1(node, logicPath);
   if (!logic) {
     return node;
   }
@@ -4392,7 +4392,7 @@ const runLogic = (node, logicPath, options) => {
 
   // run assertions
   const assertions = runAssertions(node, logic.assertions, options);
-  set_1(node, logicPath + '.assertions', assertions);
+  set_1(node, `${ logicPath }.assertions`, assertions);
 
   // TODO: run script
 
