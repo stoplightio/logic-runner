@@ -15,4 +15,4 @@ export const buildPathSelector = (parts) => {
   }
 
   return targetPath;
-}
+};

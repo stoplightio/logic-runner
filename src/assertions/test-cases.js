@@ -1,12 +1,10 @@
-import isEmpty from 'lodash/isEmpty';
-
 const VALIDATE_BAD_SCHEMA = 'Validation error: you must provide a valid JSON schema.';
 
 const validateSpy = (target, schema) => {
   if (!schema) {
     return {
       error: VALIDATE_BAD_SCHEMA,
-    }
+    };
   }
 
   return {};
@@ -35,7 +33,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'eq > handles fail',
@@ -80,7 +78,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'ne > handles fail',
@@ -124,7 +122,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'exists > handles fail',
@@ -168,7 +166,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'contains > handles pass with array',
@@ -189,7 +187,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'contains > handles fail',
@@ -234,7 +232,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'gt > handles fail',
@@ -300,7 +298,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'gte > handles fail',
@@ -366,7 +364,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'lt > handles fail',
@@ -432,7 +430,7 @@ const buildCases = () => {
       },
       expected(result) {
         return result.pass;
-      }
+      },
     },
     {
       name: 'lte > handles fail',

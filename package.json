@@ -9,12 +9,13 @@
   "main": "src/index.js",
   "scripts": {
     "build": "BABEL_ENV=production rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
-    "test": "nyc ava --verbose",
+    "test": "npm run lint && nyc ava --verbose",
     "test:watch": "ava --verbose --watch",
     "report-coverage": "nyc report --reporter=lcov | codecov",
     "check-coverage": "nyc check-coverage --statements 75 --branches 75 --functions 75 --lines 75 ",
     "prepublish": "npm run build",
-    "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
+    "precommit-msg": "echo 'Pre-commit checks...' && exit 0",
+    "lint": "eslint src/**/*.js"
   },
   "author": "marc@stoplight.io",
   "license": "ISC",
@@ -63,6 +64,8 @@
     "babel-register": "6.x.x",
     "babel-runtime": "6.x.x",
     "codecov": "1.x.x",
+    "eslint": "3.x.x",
+    "eslint-config-stoplight": "1.x.x",
     "lodash": "4.x.x",
     "nyc": "8.x.x",
     "pre-commit": "^1.1.3",

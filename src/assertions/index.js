@@ -128,9 +128,9 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
     }
 
     return result;
-  } catch(err) {
+  } catch (err) {
     result.pass = false;
-    result.message = e.message;
+    result.message = err.message;
 
     return result;
   }

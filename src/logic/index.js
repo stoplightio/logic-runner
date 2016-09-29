@@ -15,7 +15,7 @@ export const runLogic = (node, logicPath, options) => {
     return {};
   }
 
-  let logic = get(node, logicPath);
+  const logic = get(node, logicPath);
   if (!logic) {
     return node;
   }
@@ -26,7 +26,7 @@ export const runLogic = (node, logicPath, options) => {
 
   // run assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);
-  set(node, logicPath + '.assertions', assertions);
+  set(node, `${logicPath}.assertions`, assertions);
 
   // TODO: run script
 

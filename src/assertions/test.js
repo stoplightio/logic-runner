@@ -2,17 +2,17 @@ import test from 'ava';
 import * as Assertions from '.';
 import cases from './test-cases';
 
-test('assertions > runAssertions > handles undefined assertions', t => {
+test('assertions > runAssertions > handles undefined assertions', (t) => {
   const result = Assertions.runAssertions();
   t.deepEqual(result, []);
 });
 
-test('assertions > runAssertions > handles null assertions', t => {
+test('assertions > runAssertions > handles null assertions', (t) => {
   const result = Assertions.runAssertions({}, null);
   t.deepEqual(result, []);
 });
 
-test('assertions > runAssertions > runs an assertion', t => {
+test('assertions > runAssertions > runs an assertion', (t) => {
   const resultNode = {
     output: {
       response: {
@@ -44,7 +44,7 @@ test('assertions > runAssertions > runs an assertion', t => {
 });
 
 for (const c of cases) {
-  test(`assertions > ${c.name}`, t => {
+  test(`assertions > ${c.name}`, (t) => {
     const result = Assertions.runAssertion(c.resultNode, c.assertion, c.options);
     t.true(c.expected(result));
   });

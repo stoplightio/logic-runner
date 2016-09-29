@@ -3,13 +3,6 @@ import set from 'lodash/set';
 import forEach from 'lodash/forEach';
 
 import {buildPathSelector} from '../utils/strings';
-import {safeParse, safeStringify} from '../utils/json';
-
-const SOURCE_WHITELIST = [
-  'output',
-  'state',
-  'error',
-];
 
 const SOURCE_REGEX = new RegExp(/^output|state|error/);
 

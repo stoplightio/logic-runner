@@ -1,7 +1,7 @@
 import test from 'ava';
 import * as Transforms from '.';
 
-test('transforms > runTransform > handles a simple transform', t => {
+test('transforms > runTransform > handles a simple transform', (t) => {
   const resultNode = {
     state: {},
     output: {
@@ -24,7 +24,7 @@ test('transforms > runTransform > handles a simple transform', t => {
   t.is(resultNode.state.foo, 5);
 });
 
-test('transforms > runTransform > handles a undefined target', t => {
+test('transforms > runTransform > handles a undefined target', (t) => {
   const resultNode = {
     state: {},
     output: {
@@ -47,7 +47,7 @@ test('transforms > runTransform > handles a undefined target', t => {
   t.is(resultNode.state.foo, undefined);
 });
 
-test('transforms > runTransform > enforces sourceLocation whitelist', t => {
+test('transforms > runTransform > enforces sourceLocation whitelist', (t) => {
   const resultNode = {
     state: {},
     output: {
@@ -81,7 +81,7 @@ test('transforms > runTransform > enforces sourceLocation whitelist', t => {
   t.deepEqual(resultNode, resultNode2);
 });
 
-test('transforms > runTransforms > handles several transforms', t => {
+test('transforms > runTransforms > handles several transforms', (t) => {
   const resultNode = {
     state: {},
     output: {

@@ -1,0 +1,9 @@
+// http://eslint.org/docs/rules
+{
+  "extends": "stoplight",
+
+  "env": {
+    "browser": true,
+    "node": true
+  }
+}

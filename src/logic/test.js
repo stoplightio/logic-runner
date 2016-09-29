@@ -1,22 +1,22 @@
 import test from 'ava';
 import * as Logic from '.';
 
-test('logic > runLogic > handles undefined node', t => {
+test('logic > runLogic > handles undefined node', (t) => {
   const result = Logic.runLogic();
   t.deepEqual(result, {});
 });
 
-test('logic > runLogic > handles null node', t => {
+test('logic > runLogic > handles null node', (t) => {
   const result = Logic.runLogic(null);
   t.deepEqual(result, {});
 });
 
-test('logic > runLogic > handles undefined logic', t => {
+test('logic > runLogic > handles undefined logic', (t) => {
   const result = Logic.runLogic({}, 'after');
   t.deepEqual(result, {});
 });
 
-test('logic > runLogic > runs assertions', t => {
+test('logic > runLogic > runs assertions', (t) => {
   const resultNode = {
     output: {
       response: {
@@ -48,7 +48,7 @@ test('logic > runLogic > runs assertions', t => {
   t.is(result.after.assertions[1].result.pass, false);
 });
 
-test('logic > runLogic > runs transforms', t => {
+test('logic > runLogic > runs transforms', (t) => {
   const resultNode = {
     output: {
       response: {
