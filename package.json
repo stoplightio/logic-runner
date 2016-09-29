@@ -1,0 +1,67 @@
+{
+  "name": "@stoplightio/logic-runner",
+  "version": "1.0.0",
+  "description": "Utilities to run flow logic blocks, such as variable replacement, assertions, transforms, etc.",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
+    "test": "nyc ava --verbose",
+    "watch-tests": "ava --verbose --watch",
+    "cov": "nyc report --reporter=lcov > coverage.lcov ava --verbose",
+    "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
+  },
+  "author": "marc@stoplight.io",
+  "license": "ISC",
+  "pre-commit": [
+    "precommit-msg",
+    "test",
+    "build"
+  ],
+  "ava": {
+    "files": [
+      "**/*test.js"
+    ],
+    "source": [
+      "**/*.{js}",
+      "!dist/**/*"
+    ],
+    "concurrency": 5,
+    "failFast": true,
+    "require": [
+      "babel-register"
+    ]
+  },
+  "babel": {
+    "sourceMaps": "inline",
+    "presets": [
+      "es2015",
+      "stage-2"
+    ],
+    "plugins": [
+      "transform-runtime"
+    ]
+  },
+  "devDependencies": {
+    "ava": "0.16.x",
+    "babel-cli": "6.x.x",
+    "babel-core": "6.x.x",
+    "babel-plugin-transform-runtime": "6.x.x",
+    "babel-preset-es2015": "6.x.x",
+    "babel-preset-es2015-rollup": "1.x.0",
+    "babel-preset-stage-2": "6.x.x",
+    "babel-register": "6.x.x",
+    "codecov": "1.x.x",
+    "lodash": "4.x.x",
+    "nyc": "8.x.x",
+    "pre-commit": "^1.1.3",
+    "rollup": "0.36.x",
+    "rollup-plugin-babel": "2.6.x",
+    "rollup-plugin-commonjs": "5.0.x",
+    "rollup-plugin-node-resolve": "2.0.x",
+    "rollup-plugin-uglify": "1.0.x",
+    "uglify-js": "mishoo/UglifyJS2#harmony"
+  },
+  "peerDependencies": {
+    "lodash": "4.x.x"
+  }
+}
