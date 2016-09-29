@@ -4,10 +4,12 @@
   "description": "Utilities to run flow logic blocks, such as variable replacement, assertions, transforms, etc.",
   "main": "src/index.js",
   "scripts": {
-    "build": "rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
+    "build": "BABEL_ENV=production rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
     "test": "nyc ava --verbose",
-    "watch-tests": "ava --verbose --watch",
-    "cov": "nyc report --reporter=lcov > coverage.lcov ava --verbose",
+    "test:watch": "ava --verbose --watch",
+    "report-coverage": "nyc report --reporter=lcov | codecov",
+    "check-coverage": "nyc check-coverage --statements 75 --branches 75 --functions 75 --lines 75 ",
+    "prepublish": "npm run build",
     "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
   },
   "author": "marc@stoplight.io",
@@ -15,7 +17,7 @@
   "pre-commit": [
     "precommit-msg",
     "test",
-    "build"
+    "check-coverage"
   ],
   "ava": {
     "files": [
@@ -32,14 +34,19 @@
     ]
   },
   "babel": {
-    "sourceMaps": "inline",
     "presets": [
       "es2015",
       "stage-2"
     ],
     "plugins": [
       "transform-runtime"
-    ]
+    ],
+    "ignore": "*test.js",
+    "env": {
+      "development": {
+        "sourceMaps": "inline"
+      }
+    }
   },
   "devDependencies": {
     "ava": "0.16.x",

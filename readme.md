@@ -11,7 +11,7 @@ npm test
 # Test During Development
 
 ```bash
-npm run watch-tests
+npm run test:watch
 ```
 
 # Build
