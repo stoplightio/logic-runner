@@ -57,6 +57,7 @@
     "babel-preset-es2015-rollup": "1.x.0",
     "babel-preset-stage-2": "6.x.x",
     "babel-register": "6.x.x",
+    "babel-runtime": "6.x.x",
     "codecov": "1.x.x",
     "lodash": "4.x.x",
     "nyc": "8.x.x",
