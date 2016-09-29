@@ -1,18 +1,18 @@
 import test from 'ava';
-import runLogic from '.';
+import * as Logic from '.';
 
 test('logic > runLogic > handles undefined node', t => {
-  const result = runLogic();
+  const result = Logic.runLogic();
   t.deepEqual(result, {});
 });
 
 test('logic > runLogic > handles null node', t => {
-  const result = runLogic(null);
+  const result = Logic.runLogic(null);
   t.deepEqual(result, {});
 });
 
 test('logic > runLogic > handles undefined logic', t => {
-  const result = runLogic({}, 'after');
+  const result = Logic.runLogic({}, 'after');
   t.deepEqual(result, {});
 });
 
@@ -43,7 +43,7 @@ test('logic > runLogic > runs assertions', t => {
     },
   };
 
-  const result = runLogic(resultNode, 'after');
+  const result = Logic.runLogic(resultNode, 'after');
   t.is(result.after.assertions[0].result.pass, true);
   t.is(result.after.assertions[1].result.pass, false);
 });
@@ -69,6 +69,6 @@ test('logic > runLogic > runs transforms', t => {
     },
   };
 
-  const result = runLogic(resultNode, 'after');
+  const result = Logic.runLogic(resultNode, 'after');
   t.is(result.state.boo2, 5);
 });

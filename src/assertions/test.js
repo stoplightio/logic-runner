@@ -2,13 +2,6 @@ import test from 'ava';
 import * as Assertions from '.';
 import cases from './test-cases';
 
-for (const c of cases) {
-  test(`assertions > ${c.name}`, t => {
-    const result = Assertions.runAssertion(c.resultNode || t.context.resultNode, c.assertion, c.options);
-    t.true(c.expected(result));
-  });
-}
-
 test('assertions > runAssertions > handles undefined assertions', t => {
   const result = Assertions.runAssertions();
   t.deepEqual(result, []);
@@ -49,3 +42,10 @@ test('assertions > runAssertions > runs an assertion', t => {
   t.is(result[0].result.pass, true);
   t.is(result[1].result.pass, false);
 });
+
+for (const c of cases) {
+  test(`assertions > ${c.name}`, t => {
+    const result = Assertions.runAssertion(c.resultNode, c.assertion, c.options);
+    t.true(c.expected(result));
+  });
+}

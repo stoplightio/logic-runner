@@ -5,7 +5,7 @@ import commonjs from 'rollup-plugin-commonjs';
 export default {
   entry: 'src/index.js',
   format: 'iife',
-  moduleName: 'runLogic',
+  moduleName: 'logicRunner',
   plugins: [
     babel({
       babelrc: false,
