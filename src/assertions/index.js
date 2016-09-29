@@ -10,6 +10,7 @@ import gte from 'lodash/gte';
 import lt from 'lodash/lt';
 import lte from 'lodash/lte';
 
+import {buildPathSelector} from '../utils/strings';
 import {safeParse, safeStringify} from '../utils/json';
 
 const ASSERTION_OPS = [
@@ -25,23 +26,6 @@ const ASSERTION_OPS = [
   'validate.fail',
 ];
 
-export const buildAssertionPath = (assertion = {}) => {
-  let targetPath = '';
-
-  if (!isEmpty(assertion.location)) {
-    targetPath += assertion.location;
-  }
-  if (!isEmpty(assertion.target)) {
-    if (isEmpty(targetPath) || assertion.target.charAt(0) === '[') {
-      targetPath += assertion.target;
-    } else {
-      targetPath += `.${assertion.target}`;
-    }
-  }
-
-  return targetPath;
-}
-
 export const runAssertion = (resultNode, assertion, options = {}) => {
   const result = {
     pass: false,
@@ -54,7 +38,7 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
       validate,
     } = options;
 
-    const targetPath = buildAssertionPath(assertion);
+    const targetPath = buildPathSelector([assertion.location, assertion.target]);
     const value = get(resultNode, targetPath);
 
     try {

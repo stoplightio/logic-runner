@@ -2,26 +2,6 @@ import test from 'ava';
 import * as Assertions from '.';
 import cases from './test-cases';
 
-test('assertions > buildAssertionPath > no location no target', t => {
-  const result = Assertions.buildAssertionPath({});
-  t.is(result, '');
-});
-
-test('assertions > buildAssertionPath > no location yes target', t => {
-  const result = Assertions.buildAssertionPath({target: 'id'});
-  t.is(result, 'id');
-});
-
-test('assertions > buildAssertionPath > location with object target', t => {
-  const result = Assertions.buildAssertionPath({location: 'response', target: 'id'});
-  t.is(result, 'response.id');
-});
-
-test('assertions > buildAssertionPath > location with array target', t => {
-  const result = Assertions.buildAssertionPath({location: 'response', target: '[0].id'});
-  t.is(result, 'response[0].id');
-});
-
 for (const c of cases) {
   test(`assertions > ${c.name}`, t => {
     const result = Assertions.runAssertion(c.resultNode || t.context.resultNode, c.assertion, c.options);

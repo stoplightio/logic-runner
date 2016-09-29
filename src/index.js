@@ -1,6 +1,7 @@
 import get from 'lodash/get';
 import set from 'lodash/set';
 import * as Assertions from './assertions/index';
+import * as Transforms from './transforms/index';
 
 /**
  * Runs a logic block on a given node. For example, the before, after, assertions, and transforms for a function.
@@ -21,7 +22,7 @@ const runLogic = (node, logicPath, options) => {
 
   // TODO: replace variables
 
-  // TODO: run transforms
+  Transforms.runTransforms(node, logic.transforms, options);
 
   // run assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);

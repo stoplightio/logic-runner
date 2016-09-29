@@ -47,3 +47,28 @@ test('logic > runLogic > runs assertions', t => {
   t.is(result.after.assertions[0].result.pass, true);
   t.is(result.after.assertions[1].result.pass, false);
 });
+
+test('logic > runLogic > runs transforms', t => {
+  const resultNode = {
+    output: {
+      response: {
+        body: {
+          foo: 5,
+        },
+      },
+    },
+    after: {
+      transforms: [
+        {
+          sourceLocation: 'output',
+          sourcePath: 'response.body.foo',
+          targetLocation: 'state',
+          targetPath: 'boo2',
+        },
+      ],
+    },
+  };
+
+  const result = runLogic(resultNode, 'after');
+  t.is(result.state.boo2, 5);
+});
