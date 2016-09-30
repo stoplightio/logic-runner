@@ -1,5 +1,10 @@
 import get from 'lodash/get';
 import set from 'lodash/set';
+import omit from 'lodash/omit';
+import merge from 'lodash/merge';
+import isEmpty from 'lodash/isEmpty';
+
+import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
 import * as Transforms from '../transforms/index';
 
@@ -20,15 +25,37 @@ export const runLogic = (node, logicPath, options) => {
     return node;
   }
 
-  // TODO: replace variables
+  // Replace Variables
+  const steps = node.steps;
+  const children = node.children;
+  const functions = node.functions;
+  node = Variables.replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
+  if (steps) {
+    node.steps = steps;
+  }
+  if (children) {
+    node.children = children;
+  }
+  if (functions) {
+    node.functions = functions;
+  }
 
+  // Run Transforms
   Transforms.runTransforms(node, logic.transforms, options);
 
-  // run assertions
+  // TODO: Run Script
+
+  // Run Assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);
   set(node, `${logicPath}.assertions`, assertions);
 
-  // TODO: run script
-
   return node;
 };
+
+// export const runNode = (node, options) => {
+//   node = runLogic(node, 'before', options);
+//   options.invoke(node);
+//   node = runLogic(node, 'after', options);
+
+//   return node;
+// }

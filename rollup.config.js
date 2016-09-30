@@ -7,11 +7,12 @@ export default {
   format: 'iife',
   moduleName: 'logicRunner',
   plugins: [
+    commonjs(),
     babel({
       babelrc: false,
+      presets: ['es2015-rollup', 'stage-2'],
     }),
     nodeResolve({jsnext: true, main: true}),
-    commonjs(),
   ],
   dest: 'dist/logic.js'
 };

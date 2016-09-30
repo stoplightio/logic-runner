@@ -9,7 +9,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "BABEL_ENV=production rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
-    "test": "npm run lint && nyc ava --verbose",
+    "test": "nyc ava --verbose",
     "test:watch": "ava --verbose --watch",
     "report-coverage": "nyc report --reporter=lcov | codecov",
     "check-coverage": "nyc check-coverage --statements 75 --branches 75 --functions 75 --lines 75 ",
@@ -67,6 +67,9 @@
     "eslint": "3.x.x",
     "eslint-config-airbnb": "12.x.x",
     "eslint-config-stoplight": "1.x.x",
+    "eslint-plugin-import": "^2.0.0",
+    "eslint-plugin-jsx-a11y": "^2.2.2",
+    "eslint-plugin-react": "^6.3.0",
     "lodash": "4.x.x",
     "nyc": "8.x.x",
     "pre-commit": "^1.1.3",

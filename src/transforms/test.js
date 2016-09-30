@@ -3,18 +3,20 @@ import * as Transforms from '.';
 
 test('transforms > runTransform > handles a simple transform', (t) => {
   const resultNode = {
-    state: {},
-    output: {
-      response: {
-        body: {
-          foo: 5,
+    result: {
+      state: {},
+      output: {
+        response: {
+          body: {
+            foo: 5,
+          },
         },
       },
     },
   };
 
   const transform = {
-    sourceLocation: 'output',
+    sourceLocation: 'result.output',
     sourcePath: 'response.body.foo',
     targetLocation: 'state',
     targetPath: 'foo',
@@ -26,18 +28,20 @@ test('transforms > runTransform > handles a simple transform', (t) => {
 
 test('transforms > runTransform > handles a undefined target', (t) => {
   const resultNode = {
-    state: {},
-    output: {
-      response: {
-        body: {
-          foo: 5,
+    result: {
+      state: {},
+      output: {
+        response: {
+          body: {
+            foo: 5,
+          },
         },
       },
     },
   };
 
   const transform = {
-    sourceLocation: 'output',
+    sourceLocation: 'result.output',
     sourcePath: 'response.body.foo',
     targetLocation: 'state',
     targetPath: 'boo',
@@ -49,22 +53,26 @@ test('transforms > runTransform > handles a undefined target', (t) => {
 
 test('transforms > runTransform > enforces sourceLocation whitelist', (t) => {
   const resultNode = {
-    state: {},
-    output: {
-      response: {
-        body: {
-          foo: 5,
+    result: {
+      state: {},
+      output: {
+        response: {
+          body: {
+            foo: 5,
+          },
         },
       },
     },
   };
 
   const resultNode2 = {
-    state: {},
-    output: {
-      response: {
-        body: {
-          foo: 5,
+    result: {
+      state: {},
+      output: {
+        response: {
+          body: {
+            foo: 5,
+          },
         },
       },
     },
@@ -83,11 +91,13 @@ test('transforms > runTransform > enforces sourceLocation whitelist', (t) => {
 
 test('transforms > runTransforms > handles several transforms', (t) => {
   const resultNode = {
-    state: {},
-    output: {
-      response: {
-        body: {
-          foo: 5,
+    result: {
+      state: {},
+      output: {
+        response: {
+          body: {
+            foo: 5,
+          },
         },
       },
     },
@@ -95,13 +105,13 @@ test('transforms > runTransforms > handles several transforms', (t) => {
 
   const transforms = [
     {
-      sourceLocation: 'output',
+      sourceLocation: 'result.output',
       sourcePath: 'response.body.foo',
       targetLocation: 'state',
       targetPath: 'boo',
     },
     {
-      sourceLocation: 'output',
+      sourceLocation: 'result.output',
       sourcePath: 'response.body.foo',
       targetLocation: 'state',
       targetPath: 'boo2',

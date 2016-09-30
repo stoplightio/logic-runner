@@ -1,10 +1,11 @@
 import isEmpty from 'lodash/isEmpty';
+import forEach from 'lodash/forEach';
 
 export const buildPathSelector = (parts) => {
   parts = parts || [];
   let targetPath = '';
 
-  for (const part of parts) {
+  forEach(parts, (part) => {
     if (!isEmpty(part)) {
       if (isEmpty(targetPath) || part.charAt(0) === '[') {
         targetPath += part;
@@ -12,7 +13,7 @@ export const buildPathSelector = (parts) => {
         targetPath += `.${part}`;
       }
     }
-  }
+  });
 
   return targetPath;
 };
