@@ -3634,6 +3634,180 @@ function trim(string, chars, guard) {
 
 var trim_1 = trim;
 
+var baseIndexOf$3 = _baseIndexOf;
+
+/**
+ * A specialized version of `_.includes` for arrays without support for
+ * specifying an index to search from.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludes$1(array, value) {
+  var length = array ? array.length : 0;
+  return !!length && baseIndexOf$3(array, value, 0) > -1;
+}
+
+var _arrayIncludes = arrayIncludes$1;
+
+/**
+ * This function is like `arrayIncludes` except that it accepts a comparator.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @param {Function} comparator The comparator invoked per element.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludesWith$1(array, value, comparator) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  while (++index < length) {
+    if (comparator(value, array[index])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+var _arrayIncludesWith = arrayIncludesWith$1;
+
+/**
+ * This method returns `undefined`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.3.0
+ * @category Util
+ * @example
+ *
+ * _.times(2, _.noop);
+ * // => [undefined, undefined]
+ */
+function noop$1() {
+  // No operation performed.
+}
+
+var noop_1 = noop$1;
+
+var Set$2 = _Set;
+var noop = noop_1;
+var setToArray$3 = _setToArray;
+
+/** Used as references for various `Number` constants. */
+var INFINITY$2 = 1 / 0;
+
+/**
+ * Creates a set object of `values`.
+ *
+ * @private
+ * @param {Array} values The values to add to the set.
+ * @returns {Object} Returns the new set.
+ */
+var createSet$1 = !(Set$2 && 1 / setToArray$3(new Set$2([, -0]))[1] == INFINITY$2) ? noop : function (values) {
+  return new Set$2(values);
+};
+
+var _createSet = createSet$1;
+
+var SetCache$2 = _SetCache;
+var arrayIncludes = _arrayIncludes;
+var arrayIncludesWith = _arrayIncludesWith;
+var cacheHas$2 = _cacheHas;
+var createSet = _createSet;
+var setToArray$2 = _setToArray;
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE$1 = 200;
+
+/**
+ * The base implementation of `_.uniqBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee] The iteratee invoked per element.
+ * @param {Function} [comparator] The comparator invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ */
+function baseUniq$1(array, iteratee, comparator) {
+  var index = -1,
+      includes = arrayIncludes,
+      length = array.length,
+      isCommon = true,
+      result = [],
+      seen = result;
+
+  if (comparator) {
+    isCommon = false;
+    includes = arrayIncludesWith;
+  } else if (length >= LARGE_ARRAY_SIZE$1) {
+    var set = iteratee ? null : createSet(array);
+    if (set) {
+      return setToArray$2(set);
+    }
+    isCommon = false;
+    includes = cacheHas$2;
+    seen = new SetCache$2();
+  } else {
+    seen = iteratee ? [] : result;
+  }
+  outer: while (++index < length) {
+    var value = array[index],
+        computed = iteratee ? iteratee(value) : value;
+
+    value = comparator || value !== 0 ? value : 0;
+    if (isCommon && computed === computed) {
+      var seenIndex = seen.length;
+      while (seenIndex--) {
+        if (seen[seenIndex] === computed) {
+          continue outer;
+        }
+      }
+      if (iteratee) {
+        seen.push(computed);
+      }
+      result.push(value);
+    } else if (!includes(seen, computed, comparator)) {
+      if (seen !== result) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+  }
+  return result;
+}
+
+var _baseUniq = baseUniq$1;
+
+var baseUniq = _baseUniq;
+
+/**
+ * Creates a duplicate-free version of an array, using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons, in which only the first occurrence of each element
+ * is kept. The order of result values is determined by the order they occur
+ * in the array.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @returns {Array} Returns the new duplicate free array.
+ * @example
+ *
+ * _.uniq([2, 1, 2]);
+ * // => [2, 1]
+ */
+function uniq(array) {
+  return array && array.length ? baseUniq(array) : [];
+}
+
+var uniq_1 = uniq;
+
 var safeParse = function safeParse(target) {
   if (typeof target === 'string') {
     try {
@@ -3661,13 +3835,15 @@ var replaceVariables = function replaceVariables(target, variables) {
 
   var toProcess = safeStringify(target);
 
-  var matches = toProcess.match(/<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm);
+  var matches = uniq_1(toProcess.match(/<<([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm));
   forEach_1(matches, function (match) {
     var variable = trim_1(match, '<>%3C%3E\\<\\>');
 
     var value = get_1(variables, variable);
-    if (!isEmpty_1(value)) {
+    if (typeof value === 'string') {
       toProcess = toProcess.replace(match, value);
+    } else {
+      toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
     }
   });
 
@@ -3834,56 +4010,15 @@ function arrayMap$1(array, iteratee) {
 
 var _arrayMap = arrayMap$1;
 
-var baseIndexOf$3 = _baseIndexOf;
-
-/**
- * A specialized version of `_.includes` for arrays without support for
- * specifying an index to search from.
- *
- * @private
- * @param {Array} [array] The array to inspect.
- * @param {*} target The value to search for.
- * @returns {boolean} Returns `true` if `target` is found, else `false`.
- */
-function arrayIncludes$1(array, value) {
-  var length = array ? array.length : 0;
-  return !!length && baseIndexOf$3(array, value, 0) > -1;
-}
-
-var _arrayIncludes = arrayIncludes$1;
-
-/**
- * This function is like `arrayIncludes` except that it accepts a comparator.
- *
- * @private
- * @param {Array} [array] The array to inspect.
- * @param {*} target The value to search for.
- * @param {Function} comparator The comparator invoked per element.
- * @returns {boolean} Returns `true` if `target` is found, else `false`.
- */
-function arrayIncludesWith$1(array, value, comparator) {
-  var index = -1,
-      length = array ? array.length : 0;
-
-  while (++index < length) {
-    if (comparator(value, array[index])) {
-      return true;
-    }
-  }
-  return false;
-}
-
-var _arrayIncludesWith = arrayIncludesWith$1;
-
-var SetCache$2 = _SetCache;
-var arrayIncludes = _arrayIncludes;
-var arrayIncludesWith = _arrayIncludesWith;
+var SetCache$3 = _SetCache;
+var arrayIncludes$2 = _arrayIncludes;
+var arrayIncludesWith$2 = _arrayIncludesWith;
 var arrayMap$2 = _arrayMap;
 var baseUnary$2 = _baseUnary;
-var cacheHas$2 = _cacheHas;
+var cacheHas$3 = _cacheHas;
 
 /** Used as the size to enable large array optimizations. */
-var LARGE_ARRAY_SIZE$1 = 200;
+var LARGE_ARRAY_SIZE$2 = 200;
 
 /**
  * The base implementation of methods like `_.difference` without support
@@ -3898,7 +4033,7 @@ var LARGE_ARRAY_SIZE$1 = 200;
  */
 function baseDifference$1(array, values, iteratee, comparator) {
   var index = -1,
-      includes = arrayIncludes,
+      includes = arrayIncludes$2,
       isCommon = true,
       length = array.length,
       result = [],
@@ -3911,12 +4046,12 @@ function baseDifference$1(array, values, iteratee, comparator) {
     values = arrayMap$2(values, baseUnary$2(iteratee));
   }
   if (comparator) {
-    includes = arrayIncludesWith;
+    includes = arrayIncludesWith$2;
     isCommon = false;
-  } else if (values.length >= LARGE_ARRAY_SIZE$1) {
-    includes = cacheHas$2;
+  } else if (values.length >= LARGE_ARRAY_SIZE$2) {
+    includes = cacheHas$3;
     isCommon = false;
-    values = new SetCache$2(values);
+    values = new SetCache$3(values);
   }
   outer: while (++index < length) {
     var value = array[index],
@@ -4850,7 +4985,7 @@ var _addSetEntry = addSetEntry$1;
 
 var addSetEntry = _addSetEntry;
 var arrayReduce$2 = _arrayReduce;
-var setToArray$2 = _setToArray;
+var setToArray$4 = _setToArray;
 
 /**
  * Creates a clone of `set`.
@@ -4862,7 +4997,7 @@ var setToArray$2 = _setToArray;
  * @returns {Object} Returns the cloned set.
  */
 function cloneSet$1(set, isDeep, cloneFunc) {
-  var array = isDeep ? cloneFunc(setToArray$2(set), true) : setToArray$2(set);
+  var array = isDeep ? cloneFunc(setToArray$4(set), true) : setToArray$4(set);
   return arrayReduce$2(array, addSetEntry, new set.constructor());
 }
 
@@ -5609,7 +5744,7 @@ var toNumber_1 = toNumber$1;
 var toNumber = toNumber_1;
 
 /** Used as references for various `Number` constants. */
-var INFINITY$2 = 1 / 0;
+var INFINITY$3 = 1 / 0;
 var MAX_INTEGER = 1.7976931348623157e+308;
 
 /**
@@ -5640,7 +5775,7 @@ function toFinite$1(value) {
     return value === 0 ? value : 0;
   }
   value = toNumber(value);
-  if (value === INFINITY$2 || value === -INFINITY$2) {
+  if (value === INFINITY$3 || value === -INFINITY$3) {
     var sign = value < 0 ? -1 : 1;
     return sign * MAX_INTEGER;
   }
@@ -6256,11 +6391,6 @@ var runLogic = function runLogic(node, logicPath, options) {
     return {};
   }
 
-  var logic = get_1(node, logicPath);
-  if (!logic) {
-    return node;
-  }
-
   // Replace Variables
   var steps = node.steps;
   var children = node.children;
@@ -6274,6 +6404,11 @@ var runLogic = function runLogic(node, logicPath, options) {
   }
   if (functions) {
     node.functions = functions;
+  }
+
+  var logic = get_1(node, logicPath);
+  if (!logic) {
+    return node;
   }
 
   // Run Transforms

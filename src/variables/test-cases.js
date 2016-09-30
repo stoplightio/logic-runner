@@ -66,6 +66,42 @@ const buildCases = () => {
         return result.foo === 'cat';
       },
     },
+    {
+      name: 'replaceVariables > handles solo non-string variables',
+      target: {
+        foo: '<<bar>>',
+      },
+      variables: {
+        bar: 5,
+      },
+      expected(result) {
+        return result.foo === 5;
+      },
+    },
+    {
+      name: 'replaceVariables > handles embedded non-string variables',
+      target: {
+        foo: '{"url": "http://example.com/<<bar>>"}',
+      },
+      variables: {
+        bar: 5,
+      },
+      expected(result) {
+        return result.foo === '{"url": "http://example.com/5"}';
+      },
+    },
+    {
+      name: 'replaceVariables > handles falsey',
+      target: {
+        foo: '<<bar>>',
+      },
+      variables: {
+        bar: false,
+      },
+      expected(result) {
+        return result.foo === false;
+      },
+    },
   ];
 };
 

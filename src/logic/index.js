@@ -20,11 +20,6 @@ export const runLogic = (node, logicPath, options) => {
     return {};
   }
 
-  const logic = get(node, logicPath);
-  if (!logic) {
-    return node;
-  }
-
   // Replace Variables
   const steps = node.steps;
   const children = node.children;
@@ -38,6 +33,11 @@ export const runLogic = (node, logicPath, options) => {
   }
   if (functions) {
     node.functions = functions;
+  }
+
+  const logic = get(node, logicPath);
+  if (!logic) {
+    return node;
   }
 
   // Run Transforms
