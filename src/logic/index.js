@@ -7,6 +7,7 @@ import isEmpty from 'lodash/isEmpty';
 import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
 import * as Transforms from '../transforms/index';
+import * as Authorization from '../authorization/index';
 
 /**
  * Runs a logic block on a given node. For example, the before, after, assertions, and transforms for a function.
@@ -33,6 +34,14 @@ export const runLogic = (node, logicPath, options) => {
   }
   if (functions) {
     node.functions = functions;
+  }
+
+  // Run Authorization & Patch
+  const authPatch = Authorization.generateAuth(get(node, 'input.authorization'));
+  if (!isEmpty(authPatch)) {
+    const request = get(node, 'input.request') || {};
+    merge(request, authPatch);
+    set(node, 'input.request', request);
   }
 
   const logic = get(node, logicPath);

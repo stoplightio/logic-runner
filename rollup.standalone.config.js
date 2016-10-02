@@ -1,8 +1,6 @@
 import babel from 'rollup-plugin-babel';
 import nodeResolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
-import uglify from 'rollup-plugin-uglify';
-import {minify} from 'uglify-js';
 
 export default {
   entry: 'src/index.js',
@@ -15,7 +13,6 @@ export default {
       presets: ['es2015-rollup', 'stage-2'],
     }),
     nodeResolve({jsnext: true, main: true}),
-    uglify({}, minify),
   ],
-  dest: 'dist/logic.min.js'
+  dest: 'dist/logicRunner.js'
 };

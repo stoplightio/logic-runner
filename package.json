@@ -1,14 +1,14 @@
 {
-  "name": "@stoplightio/logic-runner",
+  "name": "@stoplight/logic-runner",
   "version": "1.0.0",
   "description": "Utilities to run flow logic blocks, such as variable replacement, assertions, transforms, etc.",
   "repository": {
     "type": "git",
     "url": "git://github.com/stoplightio/logic-runner.git"
   },
-  "main": "src/index.js",
+  "main": "dist/bundle.js",
   "scripts": {
-    "build": "BABEL_ENV=production rollup -c ./rollup.config.js && rollup -c ./rollup.config.min.js",
+    "build": "rollup -c ./rollup.config.js && rollup -c ./rollup.standalone.config.js && rollup -c ./rollup.standalone.config.min.js",
     "test": "nyc ava --verbose",
     "test:watch": "ava --verbose --watch",
     "report-coverage": "nyc report --reporter=lcov | codecov",
