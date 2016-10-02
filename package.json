@@ -82,5 +82,8 @@
   },
   "peerDependencies": {
     "lodash": "4.x.x"
+  },
+  "dependencies": {
+    "oauth-1.0a": "^2.0.0"
   }
 }
