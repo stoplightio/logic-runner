@@ -617,6 +617,7 @@ var runLogic = function runLogic(node, logicPath, options) {
   // TODO: Run Script
 
   // Patch Authorization
+  // TODO: Only run if headers have not already been set?
   patchAuthorization(node);
 
   // Run Assertions

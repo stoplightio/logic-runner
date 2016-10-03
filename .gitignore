@@ -2,3 +2,4 @@
 /coverage
 /coverage.lcov
 node_modules
+/npm-debug.log
