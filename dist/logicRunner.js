@@ -1,6 +1,4 @@
 var logicRunner = (function () {
-'use strict';
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -8695,6 +8693,10 @@ var patchAuthorization = function patchAuthorization(node) {
   }
 };
 
+var runScript = function runScript(func, state, vars) {
+  eval('with (vars) {' + func + '}');
+};
+
 /**
  * Runs a logic block on a given node. For example, the before, after, assertions, and transforms for a function.
  * @param {string} node - The flow node we are operating on, for example a single "step" or "function" object.
@@ -8732,7 +8734,21 @@ var runLogic = function runLogic(node, logicPath, options) {
   // Run Transforms
   runTransforms(node, logic.transforms, options);
 
-  // TODO: Run Script
+  // Run Script
+  var script = logic.script;
+  if (!isEmpty_1(script)) {
+    if (logicPath === 'before') {
+      var input = get_1(node, 'input') || {};
+      var state = get_1(node, 'state') || {};
+      runScript(script, state, input);
+      set_1(node, 'state', state);
+    } else {
+      var output = get_1(node, 'result.output') || {};
+      var _state = get_1(node, 'result.state') || {};
+      runScript(script, _state, output);
+      set_1(node, 'result.state', _state);
+    }
+  }
 
   // Patch Authorization
   // TODO: Only run if headers have not already been set?

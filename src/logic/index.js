@@ -19,6 +19,10 @@ const patchAuthorization = (node) => {
   }
 };
 
+const runScript = (func, state, vars) => {
+  eval(`with (vars) {${func}}`);
+};
+
 /**
  * Runs a logic block on a given node. For example, the before, after, assertions, and transforms for a function.
  * @param {string} node - The flow node we are operating on, for example a single "step" or "function" object.
@@ -56,7 +60,21 @@ export const runLogic = (node, logicPath, options) => {
   // Run Transforms
   Transforms.runTransforms(node, logic.transforms, options);
 
-  // TODO: Run Script
+  // Run Script
+  const script = logic.script;
+  if (!isEmpty(script)) {
+    if (logicPath === 'before') {
+      const input = get(node, 'input') || {};
+      const state = get(node, 'state') || {};
+      runScript(script, state, input);
+      set(node, 'state', state);
+    } else {
+      const output = get(node, 'result.output') || {};
+      const state = get(node, 'result.state') || {};
+      runScript(script, state, output);
+      set(node, 'result.state', state);
+    }
+  }
 
   // Patch Authorization
   // TODO: Only run if headers have not already been set?
