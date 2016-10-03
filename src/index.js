@@ -1,9 +1,9 @@
-import {generateAuth} from './authorization/index';
+import {generateAuthPatch} from './authorization/index';
 import {replaceVariables} from './variables/index';
 import {runLogic} from './logic/index';
 
 export default {
-  generateAuth,
+  generateAuthPatch,
   replaceVariables,
   runLogic,
 };

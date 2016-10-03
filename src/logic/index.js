@@ -9,6 +9,16 @@ import * as Assertions from '../assertions/index';
 import * as Transforms from '../transforms/index';
 import * as Authorization from '../authorization/index';
 
+const patchAuthorization = (node) => {
+  // Run Authorization & Patch
+  const authPatch = Authorization.generateAuthPatch(get(node, 'input.authorization'), get(node, 'input.request'));
+  if (!isEmpty(authPatch)) {
+    const input = get(node, 'input') || {};
+    merge(input, authPatch);
+    set(node, 'input', input);
+  }
+};
+
 /**
  * Runs a logic block on a given node. For example, the before, after, assertions, and transforms for a function.
  * @param {string} node - The flow node we are operating on, for example a single "step" or "function" object.
@@ -36,16 +46,10 @@ export const runLogic = (node, logicPath, options) => {
     node.functions = functions;
   }
 
-  // Run Authorization & Patch
-  const authPatch = Authorization.generateAuth(get(node, 'input.authorization'));
-  if (!isEmpty(authPatch)) {
-    const request = get(node, 'input.request') || {};
-    merge(request, authPatch);
-    set(node, 'input.request', request);
-  }
-
   const logic = get(node, logicPath);
   if (!logic) {
+    // Patch Authorization
+    patchAuthorization(node);
     return node;
   }
 
@@ -53,6 +57,10 @@ export const runLogic = (node, logicPath, options) => {
   Transforms.runTransforms(node, logic.transforms, options);
 
   // TODO: Run Script
+
+  // Patch Authorization
+  // TODO: Only run if headers have not already been set?
+  patchAuthorization(node);
 
   // Run Assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);

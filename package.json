@@ -19,11 +19,7 @@
   },
   "author": "marc@stoplight.io",
   "license": "ISC",
-  "pre-commit": [
-    "precommit-msg",
-    "test",
-    "check-coverage"
-  ],
+  "pre-commit": [],
   "ava": {
     "files": [
       "**/*test.js"
@@ -67,12 +63,12 @@
     "eslint": "3.x.x",
     "eslint-config-airbnb": "12.x.x",
     "eslint-config-stoplight": "1.x.x",
-    "eslint-plugin-import": "^2.0.0",
-    "eslint-plugin-jsx-a11y": "^2.2.2",
-    "eslint-plugin-react": "^6.3.0",
+    "eslint-plugin-import": "2.0.x",
+    "eslint-plugin-jsx-a11y": "2.2.x",
+    "eslint-plugin-react": "6.3.x",
     "lodash": "4.x.x",
     "nyc": "8.x.x",
-    "pre-commit": "^1.1.3",
+    "pre-commit": "1.1.x",
     "rollup": "0.36.x",
     "rollup-plugin-babel": "2.6.x",
     "rollup-plugin-commonjs": "5.0.x",
@@ -84,6 +80,8 @@
     "lodash": "4.x.x"
   },
   "dependencies": {
-    "oauth-1.0a": "^2.0.0"
+    "crypto-js": "3.x.x",
+    "oauth-1.0a": "2.x.x",
+    "qs": "6.x.x"
   }
 }
