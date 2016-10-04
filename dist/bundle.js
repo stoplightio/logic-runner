@@ -40,11 +40,17 @@ var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
 var generateBasicAuth = function generateBasicAuth(username, password, options) {
   var string = [username, password].join(':');
 
+  if (options.base64) {
+    string = options.base64(string);
+  } else {
+    string = new Buffer(string).toString('base64');
+  }
+
   return {
     request: {
       headers: [{
         name: 'Authorization',
-        value: 'Basic ' + new Buffer(string).toString('base64')
+        value: 'Basic ' + string
       }]
     }
   };
@@ -567,9 +573,9 @@ var runTransforms = function runTransforms(resultNode, transforms) {
   });
 };
 
-var patchAuthorization = function patchAuthorization(node) {
+var patchAuthorization = function patchAuthorization(node, options) {
   // Run Authorization & Patch
-  var authPatch = generateAuthPatch(get(node, 'input.authorization'), get(node, 'input.request'));
+  var authPatch = generateAuthPatch(get(node, 'input.authorization'), get(node, 'input.request'), options);
   if (!isEmpty(authPatch)) {
     var input = get(node, 'input') || {};
     merge(input, authPatch);
@@ -586,7 +592,8 @@ var runScript = function runScript(func, state, vars) {
  * @param {string} node - The flow node we are operating on, for example a single "step" or "function" object.
  * @param {string} logicPath - The path selector (ie [0].before) to the logic object we are running.
  * @param {Object} options
- * @param {function(object, object)} options.validate - The validation function, takes the value as the first argument, and the schema as the second.
+ * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
+ * @param {function(object, object)} options.base64 - An optional base64 encode function, takes a single string argument.
  */
 var runLogic = function runLogic(node, logicPath, options) {
   if (!node) {
@@ -611,7 +618,7 @@ var runLogic = function runLogic(node, logicPath, options) {
   var logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
-    patchAuthorization(node);
+    patchAuthorization(node, options);
     return node;
   }
 
@@ -636,7 +643,7 @@ var runLogic = function runLogic(node, logicPath, options) {
 
   // Patch Authorization
   // TODO: Only run if headers have not already been set?
-  patchAuthorization(node);
+  patchAuthorization(node, options);
 
   // Run Assertions
   var assertions = runAssertions(node, logic.assertions, options);

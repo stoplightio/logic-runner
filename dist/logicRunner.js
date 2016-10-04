@@ -236,7 +236,6 @@ var isObject$1 = isObject_1;
 /** `Object#toString` result references. */
 var funcTag = '[object Function]';
 var genTag = '[object GeneratorFunction]';
-var proxyTag = '[object Proxy]';
 
 /** Used for built-in method references. */
 var objectProto$3 = Object.prototype;
@@ -269,7 +268,7 @@ function isFunction$1(value) {
   // The use of `Object#toString` avoids issues with the `typeof` operator
   // in Safari 8-9 which returns 'object' for typed array and other constructors.
   var tag = isObject$1(value) ? objectToString$1.call(value) : '';
-  return tag == funcTag || tag == genTag || tag == proxyTag;
+  return tag == funcTag || tag == genTag;
 }
 
 var isFunction_1 = isFunction$1;
@@ -3792,19 +3791,8 @@ function arrayEach$1(array, iteratee) {
 
 var _arrayEach = arrayEach$1;
 
-var getNative$7 = _getNative;
-
-var defineProperty$2 = function () {
-  try {
-    var func = getNative$7(Object, 'defineProperty');
-    func({}, '', {});
-    return func;
-  } catch (e) {}
-}();
-
-var _defineProperty = defineProperty$2;
-
-var defineProperty$1 = _defineProperty;
+/** Built-in value references. */
+var defineProperty$1 = Object.defineProperty;
 
 /**
  * The base implementation of `assignValue` and `assignMergeValue` without
@@ -3843,7 +3831,7 @@ var eq$2 = eq_1;
  * @param {*} value The value to assign.
  */
 function assignMergeValue$1(object, key, value) {
-  if (value !== undefined && !eq$2(object[key], value) || value === undefined && !(key in object)) {
+  if (value !== undefined && !eq$2(object[key], value) || typeof key == 'number' && value === undefined && !(key in object)) {
     baseAssignValue(object, key, value);
   }
 }
@@ -3905,6 +3893,442 @@ function baseKeysIn$1(object) {
 
 var _baseKeysIn = baseKeysIn$1;
 
+var baseAssignValue$2 = _baseAssignValue;
+var eq$3 = eq_1;
+
+/** Used for built-in method references. */
+var objectProto$10 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$6 = objectProto$10.hasOwnProperty;
+
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignValue$1(object, key, value) {
+  var objValue = object[key];
+  if (!(hasOwnProperty$6.call(object, key) && eq$3(objValue, value)) || value === undefined && !(key in object)) {
+    baseAssignValue$2(object, key, value);
+  }
+}
+
+var _assignValue = assignValue$1;
+
+var assignValue$2 = _assignValue;
+var baseAssignValue$3 = _baseAssignValue;
+
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
+function copyObject$1(source, props, object, customizer) {
+  var isNew = !object;
+  object || (object = {});
+
+  var index = -1,
+      length = props.length;
+
+  while (++index < length) {
+    var key = props[index];
+
+    var newValue = customizer ? customizer(object[key], source[key], key, object, source) : undefined;
+
+    if (newValue === undefined) {
+      newValue = source[key];
+    }
+    if (isNew) {
+      baseAssignValue$3(object, key, newValue);
+    } else {
+      assignValue$2(object, key, newValue);
+    }
+  }
+  return object;
+}
+
+var _copyObject = copyObject$1;
+
+/**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+function baseTimes$1(n, iteratee) {
+  var index = -1,
+      result = Array(n);
+
+  while (++index < n) {
+    result[index] = iteratee(index);
+  }
+  return result;
+}
+
+var _baseTimes = baseTimes$1;
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER$1 = 9007199254740991;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex$1(value, length) {
+  length = length == null ? MAX_SAFE_INTEGER$1 : length;
+  return !!length && (typeof value == 'number' || reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
+}
+
+var _isIndex = isIndex$1;
+
+var baseTimes = _baseTimes;
+var isArguments$3 = isArguments_1;
+var isArray$5 = isArray_1;
+var isIndex = _isIndex;
+
+/** Used for built-in method references. */
+var objectProto$11 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$7 = objectProto$11.hasOwnProperty;
+
+/**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+function arrayLikeKeys$1(value, inherited) {
+  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+  // Safari 9 makes `arguments.length` enumerable in strict mode.
+  var result = isArray$5(value) || isArguments$3(value) ? baseTimes(value.length, String) : [];
+
+  var length = result.length,
+      skipIndexes = !!length;
+
+  for (var key in value) {
+    if ((inherited || hasOwnProperty$7.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+var _arrayLikeKeys = arrayLikeKeys$1;
+
+var isPrototype$3 = _isPrototype;
+var nativeKeys$2 = _nativeKeys;
+
+/** Used for built-in method references. */
+var objectProto$12 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$8 = objectProto$12.hasOwnProperty;
+
+/**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function baseKeys$1(object) {
+  if (!isPrototype$3(object)) {
+    return nativeKeys$2(object);
+  }
+  var result = [];
+  for (var key in Object(object)) {
+    if (hasOwnProperty$8.call(object, key) && key != 'constructor') {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+var _baseKeys = baseKeys$1;
+
+var arrayLikeKeys = _arrayLikeKeys;
+var baseKeys = _baseKeys;
+var isArrayLike$3 = isArrayLike_1;
+
+/**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+function keys$2(object) {
+  return isArrayLike$3(object) ? arrayLikeKeys(object) : baseKeys(object);
+}
+
+var keys_1 = keys$2;
+
+var copyObject = _copyObject;
+var keys$1 = keys_1;
+
+/**
+ * The base implementation of `_.assign` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
+function baseAssign$1(object, source) {
+  return object && copyObject(source, keys$1(source), object);
+}
+
+var _baseAssign = baseAssign$1;
+
+var _cloneBuffer = createCommonjsModule(function (module, exports) {
+  var root = _root;
+
+  /** Detect free variable `exports`. */
+  var freeExports = (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) == 'object' && exports && !exports.nodeType && exports;
+
+  /** Detect free variable `module`. */
+  var freeModule = freeExports && (typeof module === 'undefined' ? 'undefined' : _typeof(module)) == 'object' && module && !module.nodeType && module;
+
+  /** Detect the popular CommonJS extension `module.exports`. */
+  var moduleExports = freeModule && freeModule.exports === freeExports;
+
+  /** Built-in value references. */
+  var Buffer = moduleExports ? root.Buffer : undefined,
+      allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined;
+
+  /**
+   * Creates a clone of  `buffer`.
+   *
+   * @private
+   * @param {Buffer} buffer The buffer to clone.
+   * @param {boolean} [isDeep] Specify a deep clone.
+   * @returns {Buffer} Returns the cloned buffer.
+   */
+  function cloneBuffer(buffer, isDeep) {
+    if (isDeep) {
+      return buffer.slice();
+    }
+    var length = buffer.length,
+        result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
+
+    buffer.copy(result);
+    return result;
+  }
+
+  module.exports = cloneBuffer;
+});
+
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
+function copyArray$2(source, array) {
+  var index = -1,
+      length = source.length;
+
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
+}
+
+var _copyArray = copyArray$2;
+
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+function stubArray$1() {
+  return [];
+}
+
+var stubArray_1 = stubArray$1;
+
+var overArg$2 = _overArg;
+var stubArray = stubArray_1;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+/**
+ * Creates an array of the own enumerable symbol properties of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbols$1 = nativeGetSymbols ? overArg$2(nativeGetSymbols, Object) : stubArray;
+
+var _getSymbols = getSymbols$1;
+
+var copyObject$2 = _copyObject;
+var getSymbols = _getSymbols;
+
+/**
+ * Copies own symbol properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
+function copySymbols$1(source, object) {
+  return copyObject$2(source, getSymbols(source), object);
+}
+
+var _copySymbols = copySymbols$1;
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush$1(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+var _arrayPush = arrayPush$1;
+
+var arrayPush = _arrayPush;
+var isArray$6 = isArray_1;
+
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function baseGetAllKeys$1(object, keysFunc, symbolsFunc) {
+  var result = keysFunc(object);
+  return isArray$6(object) ? result : arrayPush(result, symbolsFunc(object));
+}
+
+var _baseGetAllKeys = baseGetAllKeys$1;
+
+var baseGetAllKeys = _baseGetAllKeys;
+var getSymbols$2 = _getSymbols;
+var keys$3 = keys_1;
+
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeys$1(object) {
+  return baseGetAllKeys(object, keys$3, getSymbols$2);
+}
+
+var _getAllKeys = getAllKeys$1;
+
+/** Used for built-in method references. */
+var objectProto$13 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$9 = objectProto$13.hasOwnProperty;
+
+/**
+ * Initializes an array clone.
+ *
+ * @private
+ * @param {Array} array The array to clone.
+ * @returns {Array} Returns the initialized clone.
+ */
+function initCloneArray$1(array) {
+  var length = array.length,
+      result = array.constructor(length);
+
+  // Add properties assigned by `RegExp#exec`.
+  if (length && typeof array[0] == 'string' && hasOwnProperty$9.call(array, 'index')) {
+    result.index = array.index;
+    result.input = array.input;
+  }
+  return result;
+}
+
+var _initCloneArray = initCloneArray$1;
+
 var root$7 = _root;
 
 /** Built-in value references. */
@@ -3929,7 +4353,205 @@ function cloneArrayBuffer$1(arrayBuffer) {
 
 var _cloneArrayBuffer = cloneArrayBuffer$1;
 
-var cloneArrayBuffer = _cloneArrayBuffer;
+var cloneArrayBuffer$2 = _cloneArrayBuffer;
+
+/**
+ * Creates a clone of `dataView`.
+ *
+ * @private
+ * @param {Object} dataView The data view to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned data view.
+ */
+function cloneDataView$1(dataView, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer$2(dataView.buffer) : dataView.buffer;
+  return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
+}
+
+var _cloneDataView = cloneDataView$1;
+
+/**
+ * Adds the key-value `pair` to `map`.
+ *
+ * @private
+ * @param {Object} map The map to modify.
+ * @param {Array} pair The key-value pair to add.
+ * @returns {Object} Returns `map`.
+ */
+function addMapEntry$1(map, pair) {
+  // Don't return `map.set` because it's not chainable in IE 11.
+  map.set(pair[0], pair[1]);
+  return map;
+}
+
+var _addMapEntry = addMapEntry$1;
+
+/**
+ * A specialized version of `_.reduce` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {*} [accumulator] The initial value.
+ * @param {boolean} [initAccum] Specify using the first element of `array` as
+ *  the initial value.
+ * @returns {*} Returns the accumulated value.
+ */
+function arrayReduce$1(array, iteratee, accumulator, initAccum) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  if (initAccum && length) {
+    accumulator = array[++index];
+  }
+  while (++index < length) {
+    accumulator = iteratee(accumulator, array[index], index, array);
+  }
+  return accumulator;
+}
+
+var _arrayReduce = arrayReduce$1;
+
+/**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+function mapToArray$1(map) {
+  var index = -1,
+      result = Array(map.size);
+
+  map.forEach(function (value, key) {
+    result[++index] = [key, value];
+  });
+  return result;
+}
+
+var _mapToArray = mapToArray$1;
+
+var addMapEntry = _addMapEntry;
+var arrayReduce = _arrayReduce;
+var mapToArray = _mapToArray;
+
+/**
+ * Creates a clone of `map`.
+ *
+ * @private
+ * @param {Object} map The map to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned map.
+ */
+function cloneMap$1(map, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+  return arrayReduce(array, addMapEntry, new map.constructor());
+}
+
+var _cloneMap = cloneMap$1;
+
+/** Used to match `RegExp` flags from their coerced string values. */
+var reFlags = /\w*$/;
+
+/**
+ * Creates a clone of `regexp`.
+ *
+ * @private
+ * @param {Object} regexp The regexp to clone.
+ * @returns {Object} Returns the cloned regexp.
+ */
+function cloneRegExp$1(regexp) {
+  var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
+  result.lastIndex = regexp.lastIndex;
+  return result;
+}
+
+var _cloneRegExp = cloneRegExp$1;
+
+/**
+ * Adds `value` to `set`.
+ *
+ * @private
+ * @param {Object} set The set to modify.
+ * @param {*} value The value to add.
+ * @returns {Object} Returns `set`.
+ */
+function addSetEntry$1(set, value) {
+  // Don't return `set.add` because it's not chainable in IE 11.
+  set.add(value);
+  return set;
+}
+
+var _addSetEntry = addSetEntry$1;
+
+/**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+function setToArray$1(set) {
+  var index = -1,
+      result = Array(set.size);
+
+  set.forEach(function (value) {
+    result[++index] = value;
+  });
+  return result;
+}
+
+var _setToArray = setToArray$1;
+
+var addSetEntry = _addSetEntry;
+var arrayReduce$2 = _arrayReduce;
+var setToArray = _setToArray;
+
+/**
+ * Creates a clone of `set`.
+ *
+ * @private
+ * @param {Object} set The set to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned set.
+ */
+function cloneSet$1(set, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+  return arrayReduce$2(array, addSetEntry, new set.constructor());
+}
+
+var _cloneSet = cloneSet$1;
+
+var root$8 = _root;
+
+/** Built-in value references. */
+var _Symbol2 = root$8.Symbol;
+
+var _Symbol$1 = _Symbol2;
+
+var _Symbol = _Symbol$1;
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = _Symbol ? _Symbol.prototype : undefined;
+var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
+/**
+ * Creates a clone of the `symbol` object.
+ *
+ * @private
+ * @param {Object} symbol The symbol object to clone.
+ * @returns {Object} Returns the cloned symbol object.
+ */
+function cloneSymbol$1(symbol) {
+  return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
+}
+
+var _cloneSymbol = cloneSymbol$1;
+
+var cloneArrayBuffer$3 = _cloneArrayBuffer;
 
 /**
  * Creates a clone of `typedArray`.
@@ -3940,34 +4562,94 @@ var cloneArrayBuffer = _cloneArrayBuffer;
  * @returns {Object} Returns the cloned typed array.
  */
 function cloneTypedArray$1(typedArray, isDeep) {
-  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+  var buffer = isDeep ? cloneArrayBuffer$3(typedArray.buffer) : typedArray.buffer;
   return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
 }
 
 var _cloneTypedArray = cloneTypedArray$1;
 
+var cloneArrayBuffer = _cloneArrayBuffer;
+var cloneDataView = _cloneDataView;
+var cloneMap = _cloneMap;
+var cloneRegExp = _cloneRegExp;
+var cloneSet = _cloneSet;
+var cloneSymbol = _cloneSymbol;
+var cloneTypedArray = _cloneTypedArray;
+
+/** `Object#toString` result references. */
+var boolTag$1 = '[object Boolean]';
+var dateTag$1 = '[object Date]';
+var mapTag$3 = '[object Map]';
+var numberTag$1 = '[object Number]';
+var regexpTag$1 = '[object RegExp]';
+var setTag$3 = '[object Set]';
+var stringTag$1 = '[object String]';
+var symbolTag$1 = '[object Symbol]';
+
+var arrayBufferTag$1 = '[object ArrayBuffer]';
+var dataViewTag$2 = '[object DataView]';
+var float32Tag$1 = '[object Float32Array]';
+var float64Tag$1 = '[object Float64Array]';
+var int8Tag$1 = '[object Int8Array]';
+var int16Tag$1 = '[object Int16Array]';
+var int32Tag$1 = '[object Int32Array]';
+var uint8Tag$1 = '[object Uint8Array]';
+var uint8ClampedTag$1 = '[object Uint8ClampedArray]';
+var uint16Tag$1 = '[object Uint16Array]';
+var uint32Tag$1 = '[object Uint32Array]';
+
 /**
- * Copies the values of `source` to `array`.
+ * Initializes an object clone based on its `toStringTag`.
+ *
+ * **Note:** This function only supports cloning values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
  *
  * @private
- * @param {Array} source The array to copy values from.
- * @param {Array} [array=[]] The array to copy values to.
- * @returns {Array} Returns `array`.
+ * @param {Object} object The object to clone.
+ * @param {string} tag The `toStringTag` of the object to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the initialized clone.
  */
-function copyArray$1(source, array) {
-  var index = -1,
-      length = source.length;
+function initCloneByTag$1(object, tag, cloneFunc, isDeep) {
+  var Ctor = object.constructor;
+  switch (tag) {
+    case arrayBufferTag$1:
+      return cloneArrayBuffer(object);
 
-  array || (array = Array(length));
-  while (++index < length) {
-    array[index] = source[index];
+    case boolTag$1:
+    case dateTag$1:
+      return new Ctor(+object);
+
+    case dataViewTag$2:
+      return cloneDataView(object, isDeep);
+
+    case float32Tag$1:case float64Tag$1:
+    case int8Tag$1:case int16Tag$1:case int32Tag$1:
+    case uint8Tag$1:case uint8ClampedTag$1:case uint16Tag$1:case uint32Tag$1:
+      return cloneTypedArray(object, isDeep);
+
+    case mapTag$3:
+      return cloneMap(object, isDeep, cloneFunc);
+
+    case numberTag$1:
+    case stringTag$1:
+      return new Ctor(object);
+
+    case regexpTag$1:
+      return cloneRegExp(object);
+
+    case setTag$3:
+      return cloneSet(object, isDeep, cloneFunc);
+
+    case symbolTag$1:
+      return cloneSymbol(object);
   }
-  return array;
 }
 
-var _copyArray = copyArray$1;
+var _initCloneByTag = initCloneByTag$1;
 
-var isObject$6 = isObject_1;
+var isObject$7 = isObject_1;
 
 /** Built-in value references. */
 var objectCreate = Object.create;
@@ -3983,13 +4665,13 @@ var objectCreate = Object.create;
 var baseCreate$1 = function () {
   function object() {}
   return function (proto) {
-    if (!isObject$6(proto)) {
+    if (!isObject$7(proto)) {
       return {};
     }
     if (objectCreate) {
       return objectCreate(proto);
     }
-    object.prototype = proto;
+    object.prototype = prototype;
     var result = new object();
     object.prototype = undefined;
     return result;
@@ -3998,16 +4680,16 @@ var baseCreate$1 = function () {
 
 var _baseCreate = baseCreate$1;
 
-var overArg$2 = _overArg;
+var overArg$3 = _overArg;
 
 /** Built-in value references. */
-var getPrototype$1 = overArg$2(Object.getPrototypeOf, Object);
+var getPrototype$1 = overArg$3(Object.getPrototypeOf, Object);
 
 var _getPrototype = getPrototype$1;
 
 var baseCreate = _baseCreate;
 var getPrototype = _getPrototype;
-var isPrototype$3 = _isPrototype;
+var isPrototype$4 = _isPrototype;
 
 /**
  * Initializes an object clone.
@@ -4017,26 +4699,151 @@ var isPrototype$3 = _isPrototype;
  * @returns {Object} Returns the initialized clone.
  */
 function initCloneObject$1(object) {
-    return typeof object.constructor == 'function' && !isPrototype$3(object) ? baseCreate(getPrototype(object)) : {};
+    return typeof object.constructor == 'function' && !isPrototype$4(object) ? baseCreate(getPrototype(object)) : {};
 }
 
 var _initCloneObject = initCloneObject$1;
+
+var Stack$2 = _Stack;
+var arrayEach$2 = _arrayEach;
+var assignValue = _assignValue;
+var baseAssign = _baseAssign;
+var cloneBuffer = _cloneBuffer;
+var copyArray$1 = _copyArray;
+var copySymbols = _copySymbols;
+var getAllKeys = _getAllKeys;
+var getTag$2 = _getTag;
+var initCloneArray = _initCloneArray;
+var initCloneByTag = _initCloneByTag;
+var initCloneObject = _initCloneObject;
+var isArray$4 = isArray_1;
+var isBuffer$2 = isBuffer_1;
+var isObject$6 = isObject_1;
+var keys = keys_1;
+
+/** `Object#toString` result references. */
+var argsTag$1 = '[object Arguments]';
+var arrayTag = '[object Array]';
+var boolTag = '[object Boolean]';
+var dateTag = '[object Date]';
+var errorTag = '[object Error]';
+var funcTag$1 = '[object Function]';
+var genTag$1 = '[object GeneratorFunction]';
+var mapTag$2 = '[object Map]';
+var numberTag = '[object Number]';
+var objectTag$1 = '[object Object]';
+var regexpTag = '[object RegExp]';
+var setTag$2 = '[object Set]';
+var stringTag = '[object String]';
+var symbolTag = '[object Symbol]';
+var weakMapTag$1 = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]';
+var dataViewTag$1 = '[object DataView]';
+var float32Tag = '[object Float32Array]';
+var float64Tag = '[object Float64Array]';
+var int8Tag = '[object Int8Array]';
+var int16Tag = '[object Int16Array]';
+var int32Tag = '[object Int32Array]';
+var uint8Tag = '[object Uint8Array]';
+var uint8ClampedTag = '[object Uint8ClampedArray]';
+var uint16Tag = '[object Uint16Array]';
+var uint32Tag = '[object Uint32Array]';
+
+/** Used to identify `toStringTag` values supported by `_.clone`. */
+var cloneableTags = {};
+cloneableTags[argsTag$1] = cloneableTags[arrayTag] = cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag$1] = cloneableTags[boolTag] = cloneableTags[dateTag] = cloneableTags[float32Tag] = cloneableTags[float64Tag] = cloneableTags[int8Tag] = cloneableTags[int16Tag] = cloneableTags[int32Tag] = cloneableTags[mapTag$2] = cloneableTags[numberTag] = cloneableTags[objectTag$1] = cloneableTags[regexpTag] = cloneableTags[setTag$2] = cloneableTags[stringTag] = cloneableTags[symbolTag] = cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] = cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+cloneableTags[errorTag] = cloneableTags[funcTag$1] = cloneableTags[weakMapTag$1] = false;
+
+/**
+ * The base implementation of `_.clone` and `_.cloneDeep` which tracks
+ * traversed objects.
+ *
+ * @private
+ * @param {*} value The value to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @param {boolean} [isFull] Specify a clone including symbols.
+ * @param {Function} [customizer] The function to customize cloning.
+ * @param {string} [key] The key of `value`.
+ * @param {Object} [object] The parent object of `value`.
+ * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
+ * @returns {*} Returns the cloned value.
+ */
+function baseClone$1(value, isDeep, isFull, customizer, key, object, stack) {
+  var result;
+  if (customizer) {
+    result = object ? customizer(value, key, object, stack) : customizer(value);
+  }
+  if (result !== undefined) {
+    return result;
+  }
+  if (!isObject$6(value)) {
+    return value;
+  }
+  var isArr = isArray$4(value);
+  if (isArr) {
+    result = initCloneArray(value);
+    if (!isDeep) {
+      return copyArray$1(value, result);
+    }
+  } else {
+    var tag = getTag$2(value),
+        isFunc = tag == funcTag$1 || tag == genTag$1;
+
+    if (isBuffer$2(value)) {
+      return cloneBuffer(value, isDeep);
+    }
+    if (tag == objectTag$1 || tag == argsTag$1 || isFunc && !object) {
+      result = initCloneObject(isFunc ? {} : value);
+      if (!isDeep) {
+        return copySymbols(value, baseAssign(result, value));
+      }
+    } else {
+      if (!cloneableTags[tag]) {
+        return object ? value : {};
+      }
+      result = initCloneByTag(value, tag, baseClone$1, isDeep);
+    }
+  }
+  // Check for circular references and return its corresponding clone.
+  stack || (stack = new Stack$2());
+  var stacked = stack.get(value);
+  if (stacked) {
+    return stacked;
+  }
+  stack.set(value, result);
+
+  if (!isArr) {
+    var props = isFull ? getAllKeys(value) : keys(value);
+  }
+  arrayEach$2(props || value, function (subValue, key) {
+    if (props) {
+      key = subValue;
+      subValue = value[key];
+    }
+    // Recursively populate clone (susceptible to call stack limits).
+    assignValue(result, key, baseClone$1(subValue, isDeep, isFull, customizer, key, value, stack));
+  });
+  return result;
+}
+
+var _baseClone = baseClone$1;
 
 var getPrototype$2 = _getPrototype;
 var isObjectLike$2 = isObjectLike_1;
 
 /** `Object#toString` result references. */
-var objectTag$1 = '[object Object]';
+var objectTag$2 = '[object Object]';
 
 /** Used for built-in method references. */
 var funcProto$2 = Function.prototype;
-var objectProto$10 = Object.prototype;
+var objectProto$14 = Object.prototype;
 
 /** Used to resolve the decompiled source of functions. */
 var funcToString$2 = funcProto$2.toString;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$6 = objectProto$10.hasOwnProperty;
+var hasOwnProperty$10 = objectProto$14.hasOwnProperty;
 
 /** Used to infer the `Object` constructor. */
 var objectCtorString = funcToString$2.call(Object);
@@ -4046,7 +4853,7 @@ var objectCtorString = funcToString$2.call(Object);
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$4 = objectProto$10.toString;
+var objectToString$4 = objectProto$14.toString;
 
 /**
  * Checks if `value` is a plain object, that is, an object created by the
@@ -4077,14 +4884,14 @@ var objectToString$4 = objectProto$10.toString;
  * // => true
  */
 function isPlainObject$1(value) {
-  if (!isObjectLike$2(value) || objectToString$4.call(value) != objectTag$1) {
+  if (!isObjectLike$2(value) || objectToString$4.call(value) != objectTag$2) {
     return false;
   }
   var proto = getPrototype$2(value);
   if (proto === null) {
     return true;
   }
-  var Ctor = hasOwnProperty$6.call(proto, 'constructor') && proto.constructor;
+  var Ctor = hasOwnProperty$10.call(proto, 'constructor') && proto.constructor;
   return typeof Ctor == 'function' && Ctor instanceof Ctor && funcToString$2.call(Ctor) == objectCtorString;
 }
 
@@ -4094,46 +4901,46 @@ var isLength$2 = isLength_1;
 var isObjectLike$3 = isObjectLike_1;
 
 /** `Object#toString` result references. */
-var argsTag$1 = '[object Arguments]';
-var arrayTag = '[object Array]';
-var boolTag = '[object Boolean]';
-var dateTag = '[object Date]';
-var errorTag = '[object Error]';
-var funcTag$1 = '[object Function]';
-var mapTag$2 = '[object Map]';
-var numberTag = '[object Number]';
-var objectTag$2 = '[object Object]';
-var regexpTag = '[object RegExp]';
-var setTag$2 = '[object Set]';
-var stringTag = '[object String]';
-var weakMapTag$1 = '[object WeakMap]';
+var argsTag$2 = '[object Arguments]';
+var arrayTag$1 = '[object Array]';
+var boolTag$2 = '[object Boolean]';
+var dateTag$2 = '[object Date]';
+var errorTag$1 = '[object Error]';
+var funcTag$2 = '[object Function]';
+var mapTag$4 = '[object Map]';
+var numberTag$2 = '[object Number]';
+var objectTag$3 = '[object Object]';
+var regexpTag$2 = '[object RegExp]';
+var setTag$4 = '[object Set]';
+var stringTag$2 = '[object String]';
+var weakMapTag$2 = '[object WeakMap]';
 
-var arrayBufferTag = '[object ArrayBuffer]';
-var dataViewTag$1 = '[object DataView]';
-var float32Tag = '[object Float32Array]';
-var float64Tag = '[object Float64Array]';
-var int8Tag = '[object Int8Array]';
-var int16Tag = '[object Int16Array]';
-var int32Tag = '[object Int32Array]';
-var uint8Tag = '[object Uint8Array]';
-var uint8ClampedTag = '[object Uint8ClampedArray]';
-var uint16Tag = '[object Uint16Array]';
-var uint32Tag = '[object Uint32Array]';
+var arrayBufferTag$2 = '[object ArrayBuffer]';
+var dataViewTag$3 = '[object DataView]';
+var float32Tag$2 = '[object Float32Array]';
+var float64Tag$2 = '[object Float64Array]';
+var int8Tag$2 = '[object Int8Array]';
+var int16Tag$2 = '[object Int16Array]';
+var int32Tag$2 = '[object Int32Array]';
+var uint8Tag$2 = '[object Uint8Array]';
+var uint8ClampedTag$2 = '[object Uint8ClampedArray]';
+var uint16Tag$2 = '[object Uint16Array]';
+var uint32Tag$2 = '[object Uint32Array]';
 
 /** Used to identify `toStringTag` values of typed arrays. */
 var typedArrayTags = {};
-typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
-typedArrayTags[argsTag$1] = typedArrayTags[arrayTag] = typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] = typedArrayTags[dataViewTag$1] = typedArrayTags[dateTag] = typedArrayTags[errorTag] = typedArrayTags[funcTag$1] = typedArrayTags[mapTag$2] = typedArrayTags[numberTag] = typedArrayTags[objectTag$2] = typedArrayTags[regexpTag] = typedArrayTags[setTag$2] = typedArrayTags[stringTag] = typedArrayTags[weakMapTag$1] = false;
+typedArrayTags[float32Tag$2] = typedArrayTags[float64Tag$2] = typedArrayTags[int8Tag$2] = typedArrayTags[int16Tag$2] = typedArrayTags[int32Tag$2] = typedArrayTags[uint8Tag$2] = typedArrayTags[uint8ClampedTag$2] = typedArrayTags[uint16Tag$2] = typedArrayTags[uint32Tag$2] = true;
+typedArrayTags[argsTag$2] = typedArrayTags[arrayTag$1] = typedArrayTags[arrayBufferTag$2] = typedArrayTags[boolTag$2] = typedArrayTags[dataViewTag$3] = typedArrayTags[dateTag$2] = typedArrayTags[errorTag$1] = typedArrayTags[funcTag$2] = typedArrayTags[mapTag$4] = typedArrayTags[numberTag$2] = typedArrayTags[objectTag$3] = typedArrayTags[regexpTag$2] = typedArrayTags[setTag$4] = typedArrayTags[stringTag$2] = typedArrayTags[weakMapTag$2] = false;
 
 /** Used for built-in method references. */
-var objectProto$11 = Object.prototype;
+var objectProto$15 = Object.prototype;
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$5 = objectProto$11.toString;
+var objectToString$5 = objectProto$15.toString;
 
 /**
  * The base implementation of `_.isTypedArray` without Node.js optimizations.
@@ -4216,155 +5023,9 @@ var isTypedArray$2 = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsType
 
 var isTypedArray_1 = isTypedArray$2;
 
-var baseAssignValue$3 = _baseAssignValue;
-var eq$3 = eq_1;
-
-/** Used for built-in method references. */
-var objectProto$12 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$7 = objectProto$12.hasOwnProperty;
-
-/**
- * Assigns `value` to `key` of `object` if the existing value is not equivalent
- * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * for equality comparisons.
- *
- * @private
- * @param {Object} object The object to modify.
- * @param {string} key The key of the property to assign.
- * @param {*} value The value to assign.
- */
-function assignValue$1(object, key, value) {
-  var objValue = object[key];
-  if (!(hasOwnProperty$7.call(object, key) && eq$3(objValue, value)) || value === undefined && !(key in object)) {
-    baseAssignValue$3(object, key, value);
-  }
-}
-
-var _assignValue = assignValue$1;
-
-var assignValue = _assignValue;
-var baseAssignValue$2 = _baseAssignValue;
-
-/**
- * Copies properties of `source` to `object`.
- *
- * @private
- * @param {Object} source The object to copy properties from.
- * @param {Array} props The property identifiers to copy.
- * @param {Object} [object={}] The object to copy properties to.
- * @param {Function} [customizer] The function to customize copied values.
- * @returns {Object} Returns `object`.
- */
-function copyObject$1(source, props, object, customizer) {
-  var isNew = !object;
-  object || (object = {});
-
-  var index = -1,
-      length = props.length;
-
-  while (++index < length) {
-    var key = props[index];
-
-    var newValue = customizer ? customizer(object[key], source[key], key, object, source) : undefined;
-
-    if (newValue === undefined) {
-      newValue = source[key];
-    }
-    if (isNew) {
-      baseAssignValue$2(object, key, newValue);
-    } else {
-      assignValue(object, key, newValue);
-    }
-  }
-  return object;
-}
-
-var _copyObject = copyObject$1;
-
-/**
- * The base implementation of `_.times` without support for iteratee shorthands
- * or max array length checks.
- *
- * @private
- * @param {number} n The number of times to invoke `iteratee`.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns the array of results.
- */
-function baseTimes$1(n, iteratee) {
-  var index = -1,
-      result = Array(n);
-
-  while (++index < n) {
-    result[index] = iteratee(index);
-  }
-  return result;
-}
-
-var _baseTimes = baseTimes$1;
-
-/** Used as references for various `Number` constants. */
-var MAX_SAFE_INTEGER$1 = 9007199254740991;
-
-/** Used to detect unsigned integer values. */
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-/**
- * Checks if `value` is a valid array-like index.
- *
- * @private
- * @param {*} value The value to check.
- * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
- * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
- */
-function isIndex$1(value, length) {
-  length = length == null ? MAX_SAFE_INTEGER$1 : length;
-  return !!length && (typeof value == 'number' || reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
-}
-
-var _isIndex = isIndex$1;
-
-var baseTimes = _baseTimes;
-var isArguments$3 = isArguments_1;
-var isArray$4 = isArray_1;
-var isIndex = _isIndex;
-
-/** Used for built-in method references. */
-var objectProto$13 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$8 = objectProto$13.hasOwnProperty;
-
-/**
- * Creates an array of the enumerable property names of the array-like `value`.
- *
- * @private
- * @param {*} value The value to query.
- * @param {boolean} inherited Specify returning inherited property names.
- * @returns {Array} Returns the array of property names.
- */
-function arrayLikeKeys$1(value, inherited) {
-  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-  // Safari 9 makes `arguments.length` enumerable in strict mode.
-  var result = isArray$4(value) || isArguments$3(value) ? baseTimes(value.length, String) : [];
-
-  var length = result.length,
-      skipIndexes = !!length;
-
-  for (var key in value) {
-    if ((inherited || hasOwnProperty$8.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
-      result.push(key);
-    }
-  }
-  return result;
-}
-
-var _arrayLikeKeys = arrayLikeKeys$1;
-
-var arrayLikeKeys = _arrayLikeKeys;
+var arrayLikeKeys$2 = _arrayLikeKeys;
 var baseKeysIn$2 = _baseKeysIn;
-var isArrayLike$3 = isArrayLike_1;
+var isArrayLike$4 = isArrayLike_1;
 
 /**
  * Creates an array of the own and inherited enumerable property names of `object`.
@@ -4390,12 +5051,12 @@ var isArrayLike$3 = isArrayLike_1;
  * // => ['a', 'b', 'c'] (iteration order is not guaranteed)
  */
 function keysIn$1(object) {
-  return isArrayLike$3(object) ? arrayLikeKeys(object, true) : baseKeysIn$2(object);
+  return isArrayLike$4(object) ? arrayLikeKeys$2(object, true) : baseKeysIn$2(object);
 }
 
 var keysIn_1 = keysIn$1;
 
-var copyObject = _copyObject;
+var copyObject$3 = _copyObject;
 var keysIn = keysIn_1;
 
 /**
@@ -4423,15 +5084,14 @@ var keysIn = keysIn_1;
  * // => { 'a': 1, 'b': 2, 'c': 3 }
  */
 function toPlainObject$1(value) {
-  return copyObject(value, keysIn(value));
+  return copyObject$3(value, keysIn(value));
 }
 
 var toPlainObject_1 = toPlainObject$1;
 
 var assignMergeValue$2 = _assignMergeValue;
-var cloneTypedArray = _cloneTypedArray;
+var baseClone = _baseClone;
 var copyArray = _copyArray;
-var initCloneObject = _initCloneObject;
 var isArguments$2 = isArguments_1;
 var isArray$3 = isArray_1;
 var isArrayLikeObject$2 = isArrayLikeObject_1;
@@ -4470,27 +5130,24 @@ function baseMergeDeep$1(object, source, key, srcIndex, mergeFunc, customizer, s
   var isCommon = newValue === undefined;
 
   if (isCommon) {
-    var isArr = isArray$3(srcValue),
-        isTyped = !isArr && isTypedArray$1(srcValue);
-
     newValue = srcValue;
-    if (isArr || isTyped) {
+    if (isArray$3(srcValue) || isTypedArray$1(srcValue)) {
       if (isArray$3(objValue)) {
         newValue = objValue;
       } else if (isArrayLikeObject$2(objValue)) {
         newValue = copyArray(objValue);
-      } else if (isTyped) {
-        isCommon = false;
-        newValue = cloneTypedArray(srcValue, true);
       } else {
-        newValue = [];
+        isCommon = false;
+        newValue = baseClone(srcValue, true);
       }
     } else if (isPlainObject(srcValue) || isArguments$2(srcValue)) {
-      newValue = objValue;
       if (isArguments$2(objValue)) {
         newValue = toPlainObject(objValue);
       } else if (!isObject$5(objValue) || srcIndex && isFunction$3(objValue)) {
-        newValue = initCloneObject(srcValue);
+        isCommon = false;
+        newValue = baseClone(srcValue, true);
+      } else {
+        newValue = objValue;
       }
     } else {
       isCommon = false;
@@ -4667,9 +5324,16 @@ function constant$1(value) {
 
 var constant_1 = constant$1;
 
+var getNative$7 = _getNative;
+
+/* Built-in method references that are verified to be native. */
+var nativeDefineProperty$1 = getNative$7(Object, 'defineProperty');
+
+var _nativeDefineProperty = nativeDefineProperty$1;
+
 var constant = constant_1;
-var defineProperty$3 = _defineProperty;
 var identity$2 = identity_1;
+var nativeDefineProperty = _nativeDefineProperty;
 
 /**
  * The base implementation of `setToString` without support for hot loop shorting.
@@ -4679,8 +5343,8 @@ var identity$2 = identity_1;
  * @param {Function} string The `toString` result.
  * @returns {Function} Returns `func`.
  */
-var baseSetToString$1 = !defineProperty$3 ? identity$2 : function (func, string) {
-  return defineProperty$3(func, 'toString', {
+var baseSetToString$1 = !nativeDefineProperty ? identity$2 : function (func, string) {
+  return nativeDefineProperty(func, 'toString', {
     'configurable': true,
     'enumerable': false,
     'value': constant(string),
@@ -4762,9 +5426,9 @@ function baseRest$1(func, start) {
 var _baseRest = baseRest$1;
 
 var eq$4 = eq_1;
-var isArrayLike$4 = isArrayLike_1;
+var isArrayLike$5 = isArrayLike_1;
 var isIndex$2 = _isIndex;
-var isObject$7 = isObject_1;
+var isObject$8 = isObject_1;
 
 /**
  * Checks if the given arguments are from an iteratee call.
@@ -4777,11 +5441,11 @@ var isObject$7 = isObject_1;
  *  else `false`.
  */
 function isIterateeCall$1(value, index, object) {
-  if (!isObject$7(object)) {
+  if (!isObject$8(object)) {
     return false;
   }
   var type = typeof index === 'undefined' ? 'undefined' : _typeof(index);
-  if (type == 'number' ? isArrayLike$4(object) && isIndex$2(index, object.length) : type == 'string' && index in object) {
+  if (type == 'number' ? isArrayLike$5(object) && isIndex$2(index, object.length) : type == 'string' && index in object) {
     return eq$4(object[index], value);
   }
   return false;
@@ -4883,11 +5547,17 @@ var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
 var generateBasicAuth = function generateBasicAuth(username, password, options) {
   var string = [username, password].join(':');
 
+  if (options.base64) {
+    string = options.base64(string);
+  } else {
+    string = new Buffer(string).toString('base64');
+  }
+
   return {
     request: {
       headers: [{
         name: 'Authorization',
-        value: 'Basic ' + new Buffer(string).toString('base64')
+        value: 'Basic ' + string
       }]
     }
   };
@@ -5039,77 +5709,8 @@ var baseFor$1 = createBaseFor();
 
 var _baseFor = baseFor$1;
 
-var isPrototype$4 = _isPrototype;
-var nativeKeys$2 = _nativeKeys;
-
-/** Used for built-in method references. */
-var objectProto$14 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$9 = objectProto$14.hasOwnProperty;
-
-/**
- * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
- *
- * @private
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property names.
- */
-function baseKeys$1(object) {
-  if (!isPrototype$4(object)) {
-    return nativeKeys$2(object);
-  }
-  var result = [];
-  for (var key in Object(object)) {
-    if (hasOwnProperty$9.call(object, key) && key != 'constructor') {
-      result.push(key);
-    }
-  }
-  return result;
-}
-
-var _baseKeys = baseKeys$1;
-
-var arrayLikeKeys$2 = _arrayLikeKeys;
-var baseKeys = _baseKeys;
-var isArrayLike$5 = isArrayLike_1;
-
-/**
- * Creates an array of the own enumerable property names of `object`.
- *
- * **Note:** Non-object values are coerced to objects. See the
- * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
- * for more details.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Object
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property names.
- * @example
- *
- * function Foo() {
- *   this.a = 1;
- *   this.b = 2;
- * }
- *
- * Foo.prototype.c = 3;
- *
- * _.keys(new Foo);
- * // => ['a', 'b'] (iteration order is not guaranteed)
- *
- * _.keys('hi');
- * // => ['0', '1']
- */
-function keys$1(object) {
-  return isArrayLike$5(object) ? arrayLikeKeys$2(object) : baseKeys(object);
-}
-
-var keys_1 = keys$1;
-
 var baseFor = _baseFor;
-var keys = keys_1;
+var keys$4 = keys_1;
 
 /**
  * The base implementation of `_.forOwn` without support for iteratee shorthands.
@@ -5120,7 +5721,7 @@ var keys = keys_1;
  * @returns {Object} Returns `object`.
  */
 function baseForOwn$1(object, iteratee) {
-  return object && baseFor(object, iteratee, keys);
+  return object && baseFor(object, iteratee, keys$4);
 }
 
 var _baseForOwn = baseForOwn$1;
@@ -5353,79 +5954,34 @@ function equalArrays$1(array, other, equalFunc, customizer, bitmask, stack) {
 
 var _equalArrays = equalArrays$1;
 
-var root$8 = _root;
-
-/** Built-in value references. */
-var _Symbol2 = root$8.Symbol;
-
-var _Symbol$1 = _Symbol2;
-
-/**
- * Converts `map` to its key-value pairs.
- *
- * @private
- * @param {Object} map The map to convert.
- * @returns {Array} Returns the key-value pairs.
- */
-function mapToArray$1(map) {
-  var index = -1,
-      result = Array(map.size);
-
-  map.forEach(function (value, key) {
-    result[++index] = [key, value];
-  });
-  return result;
-}
-
-var _mapToArray = mapToArray$1;
-
-/**
- * Converts `set` to an array of its values.
- *
- * @private
- * @param {Object} set The set to convert.
- * @returns {Array} Returns the values.
- */
-function setToArray$1(set) {
-  var index = -1,
-      result = Array(set.size);
-
-  set.forEach(function (value) {
-    result[++index] = value;
-  });
-  return result;
-}
-
-var _setToArray = setToArray$1;
-
-var _Symbol = _Symbol$1;
+var _Symbol$3 = _Symbol$1;
 var Uint8Array$2 = _Uint8Array;
 var eq$5 = eq_1;
 var equalArrays$2 = _equalArrays;
-var mapToArray = _mapToArray;
-var setToArray = _setToArray;
+var mapToArray$2 = _mapToArray;
+var setToArray$2 = _setToArray;
 
 /** Used to compose bitmasks for comparison styles. */
 var UNORDERED_COMPARE_FLAG$2 = 1;
 var PARTIAL_COMPARE_FLAG$3 = 2;
 
 /** `Object#toString` result references. */
-var boolTag$1 = '[object Boolean]';
-var dateTag$1 = '[object Date]';
-var errorTag$1 = '[object Error]';
-var mapTag$3 = '[object Map]';
-var numberTag$1 = '[object Number]';
-var regexpTag$1 = '[object RegExp]';
-var setTag$3 = '[object Set]';
-var stringTag$1 = '[object String]';
-var symbolTag = '[object Symbol]';
+var boolTag$3 = '[object Boolean]';
+var dateTag$3 = '[object Date]';
+var errorTag$2 = '[object Error]';
+var mapTag$5 = '[object Map]';
+var numberTag$3 = '[object Number]';
+var regexpTag$3 = '[object RegExp]';
+var setTag$5 = '[object Set]';
+var stringTag$3 = '[object String]';
+var symbolTag$2 = '[object Symbol]';
 
-var arrayBufferTag$1 = '[object ArrayBuffer]';
-var dataViewTag$2 = '[object DataView]';
+var arrayBufferTag$3 = '[object ArrayBuffer]';
+var dataViewTag$4 = '[object DataView]';
 
 /** Used to convert symbols to primitives and strings. */
-var symbolProto = _Symbol ? _Symbol.prototype : undefined;
-var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+var symbolProto$1 = _Symbol$3 ? _Symbol$3.prototype : undefined;
+var symbolValueOf$1 = symbolProto$1 ? symbolProto$1.valueOf : undefined;
 
 /**
  * A specialized version of `baseIsEqualDeep` for comparing objects of
@@ -5447,42 +6003,42 @@ var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
  */
 function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack) {
   switch (tag) {
-    case dataViewTag$2:
+    case dataViewTag$4:
       if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
         return false;
       }
       object = object.buffer;
       other = other.buffer;
 
-    case arrayBufferTag$1:
+    case arrayBufferTag$3:
       if (object.byteLength != other.byteLength || !equalFunc(new Uint8Array$2(object), new Uint8Array$2(other))) {
         return false;
       }
       return true;
 
-    case boolTag$1:
-    case dateTag$1:
-    case numberTag$1:
+    case boolTag$3:
+    case dateTag$3:
+    case numberTag$3:
       // Coerce booleans to `1` or `0` and dates to milliseconds.
       // Invalid dates are coerced to `NaN`.
       return eq$5(+object, +other);
 
-    case errorTag$1:
+    case errorTag$2:
       return object.name == other.name && object.message == other.message;
 
-    case regexpTag$1:
-    case stringTag$1:
+    case regexpTag$3:
+    case stringTag$3:
       // Coerce regexes to strings and treat strings, primitives and objects,
       // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
       // for more details.
       return object == other + '';
 
-    case mapTag$3:
-      var convert = mapToArray;
+    case mapTag$5:
+      var convert = mapToArray$2;
 
-    case setTag$3:
+    case setTag$5:
       var isPartial = bitmask & PARTIAL_COMPARE_FLAG$3;
-      convert || (convert = setToArray);
+      convert || (convert = setToArray$2);
 
       if (object.size != other.size && !isPartial) {
         return false;
@@ -5500,9 +6056,9 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
       stack['delete'](object);
       return result;
 
-    case symbolTag:
-      if (symbolValueOf) {
-        return symbolValueOf.call(object) == symbolValueOf.call(other);
+    case symbolTag$2:
+      if (symbolValueOf$1) {
+        return symbolValueOf$1.call(object) == symbolValueOf$1.call(other);
       }
   }
   return false;
@@ -5510,16 +6066,16 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
 
 var _equalByTag = equalByTag$1;
 
-var keys$2 = keys_1;
+var keys$5 = keys_1;
 
 /** Used to compose bitmasks for comparison styles. */
 var PARTIAL_COMPARE_FLAG$4 = 2;
 
 /** Used for built-in method references. */
-var objectProto$16 = Object.prototype;
+var objectProto$17 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$11 = objectProto$16.hasOwnProperty;
+var hasOwnProperty$12 = objectProto$17.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqualDeep` for objects with support for
@@ -5537,9 +6093,9 @@ var hasOwnProperty$11 = objectProto$16.hasOwnProperty;
  */
 function equalObjects$1(object, other, equalFunc, customizer, bitmask, stack) {
   var isPartial = bitmask & PARTIAL_COMPARE_FLAG$4,
-      objProps = keys$2(object),
+      objProps = keys$5(object),
       objLength = objProps.length,
-      othProps = keys$2(other),
+      othProps = keys$5(other),
       othLength = othProps.length;
 
   if (objLength != othLength && !isPartial) {
@@ -5548,7 +6104,7 @@ function equalObjects$1(object, other, equalFunc, customizer, bitmask, stack) {
   var index = objLength;
   while (index--) {
     var key = objProps[index];
-    if (!(isPartial ? key in other : hasOwnProperty$11.call(other, key))) {
+    if (!(isPartial ? key in other : hasOwnProperty$12.call(other, key))) {
       return false;
     }
   }
@@ -5593,28 +6149,27 @@ function equalObjects$1(object, other, equalFunc, customizer, bitmask, stack) {
 
 var _equalObjects = equalObjects$1;
 
-var Stack$3 = _Stack;
+var Stack$4 = _Stack;
 var equalArrays = _equalArrays;
 var equalByTag = _equalByTag;
 var equalObjects = _equalObjects;
-var getTag$2 = _getTag;
-var isArray$7 = isArray_1;
-var isBuffer$2 = isBuffer_1;
+var getTag$3 = _getTag;
+var isArray$9 = isArray_1;
 var isTypedArray$3 = isTypedArray_1;
 
 /** Used to compose bitmasks for comparison styles. */
 var PARTIAL_COMPARE_FLAG$1 = 2;
 
 /** `Object#toString` result references. */
-var argsTag$2 = '[object Arguments]';
-var arrayTag$1 = '[object Array]';
-var objectTag$3 = '[object Object]';
+var argsTag$3 = '[object Arguments]';
+var arrayTag$2 = '[object Array]';
+var objectTag$4 = '[object Object]';
 
 /** Used for built-in method references. */
-var objectProto$15 = Object.prototype;
+var objectProto$16 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$10 = objectProto$15.hasOwnProperty;
+var hasOwnProperty$11 = objectProto$16.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -5632,57 +6187,50 @@ var hasOwnProperty$10 = objectProto$15.hasOwnProperty;
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
 function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack) {
-  var objIsArr = isArray$7(object),
-      othIsArr = isArray$7(other),
-      objTag = arrayTag$1,
-      othTag = arrayTag$1;
+  var objIsArr = isArray$9(object),
+      othIsArr = isArray$9(other),
+      objTag = arrayTag$2,
+      othTag = arrayTag$2;
 
   if (!objIsArr) {
-    objTag = getTag$2(object);
-    objTag = objTag == argsTag$2 ? objectTag$3 : objTag;
+    objTag = getTag$3(object);
+    objTag = objTag == argsTag$3 ? objectTag$4 : objTag;
   }
   if (!othIsArr) {
-    othTag = getTag$2(other);
-    othTag = othTag == argsTag$2 ? objectTag$3 : othTag;
+    othTag = getTag$3(other);
+    othTag = othTag == argsTag$3 ? objectTag$4 : othTag;
   }
-  var objIsObj = objTag == objectTag$3,
-      othIsObj = othTag == objectTag$3,
+  var objIsObj = objTag == objectTag$4,
+      othIsObj = othTag == objectTag$4,
       isSameTag = objTag == othTag;
 
-  if (isSameTag && isBuffer$2(object)) {
-    if (!isBuffer$2(other)) {
-      return false;
-    }
-    objIsArr = true;
-    objIsObj = false;
-  }
   if (isSameTag && !objIsObj) {
-    stack || (stack = new Stack$3());
+    stack || (stack = new Stack$4());
     return objIsArr || isTypedArray$3(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
   }
   if (!(bitmask & PARTIAL_COMPARE_FLAG$1)) {
-    var objIsWrapped = objIsObj && hasOwnProperty$10.call(object, '__wrapped__'),
-        othIsWrapped = othIsObj && hasOwnProperty$10.call(other, '__wrapped__');
+    var objIsWrapped = objIsObj && hasOwnProperty$11.call(object, '__wrapped__'),
+        othIsWrapped = othIsObj && hasOwnProperty$11.call(other, '__wrapped__');
 
     if (objIsWrapped || othIsWrapped) {
       var objUnwrapped = objIsWrapped ? object.value() : object,
           othUnwrapped = othIsWrapped ? other.value() : other;
 
-      stack || (stack = new Stack$3());
+      stack || (stack = new Stack$4());
       return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
     }
   }
   if (!isSameTag) {
     return false;
   }
-  stack || (stack = new Stack$3());
+  stack || (stack = new Stack$4());
   return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
 }
 
 var _baseIsEqualDeep = baseIsEqualDeep$1;
 
 var baseIsEqualDeep = _baseIsEqualDeep;
-var isObject$8 = isObject_1;
+var isObject$9 = isObject_1;
 var isObjectLike$4 = isObjectLike_1;
 
 /**
@@ -5704,7 +6252,7 @@ function baseIsEqual$1(value, other, customizer, bitmask, stack) {
   if (value === other) {
     return true;
   }
-  if (value == null || other == null || !isObject$8(value) && !isObjectLike$4(other)) {
+  if (value == null || other == null || !isObject$9(value) && !isObjectLike$4(other)) {
     return value !== value && other !== other;
   }
   return baseIsEqualDeep(value, other, baseIsEqual$1, customizer, bitmask, stack);
@@ -5712,7 +6260,7 @@ function baseIsEqual$1(value, other, customizer, bitmask, stack) {
 
 var _baseIsEqual = baseIsEqual$1;
 
-var Stack$2 = _Stack;
+var Stack$3 = _Stack;
 var baseIsEqual = _baseIsEqual;
 
 /** Used to compose bitmasks for comparison styles. */
@@ -5755,7 +6303,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
         return false;
       }
     } else {
-      var stack = new Stack$2();
+      var stack = new Stack$3();
       if (customizer) {
         var result = customizer(objValue, srcValue, key, object, source, stack);
       }
@@ -5769,7 +6317,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
 
 var _baseIsMatch = baseIsMatch$1;
 
-var isObject$9 = isObject_1;
+var isObject$10 = isObject_1;
 
 /**
  * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
@@ -5780,13 +6328,13 @@ var isObject$9 = isObject_1;
  *  equality comparisons, else `false`.
  */
 function isStrictComparable$1(value) {
-  return value === value && !isObject$9(value);
+  return value === value && !isObject$10(value);
 }
 
 var _isStrictComparable = isStrictComparable$1;
 
 var isStrictComparable = _isStrictComparable;
-var keys$3 = keys_1;
+var keys$6 = keys_1;
 
 /**
  * Gets the property names, values, and compare flags of `object`.
@@ -5796,7 +6344,7 @@ var keys$3 = keys_1;
  * @returns {Array} Returns the match data of `object`.
  */
 function getMatchData$1(object) {
-    var result = keys$3(object),
+    var result = keys$6(object),
         length = result.length;
 
     while (length--) {
@@ -5957,17 +6505,17 @@ var _memoizeCapped = memoizeCapped$1;
 var isObjectLike$5 = isObjectLike_1;
 
 /** `Object#toString` result references. */
-var symbolTag$1 = '[object Symbol]';
+var symbolTag$3 = '[object Symbol]';
 
 /** Used for built-in method references. */
-var objectProto$17 = Object.prototype;
+var objectProto$18 = Object.prototype;
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$6 = objectProto$17.toString;
+var objectToString$6 = objectProto$18.toString;
 
 /**
  * Checks if `value` is classified as a `Symbol` primitive or object.
@@ -5987,20 +6535,20 @@ var objectToString$6 = objectProto$17.toString;
  * // => false
  */
 function isSymbol$1(value) {
-  return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'symbol' || isObjectLike$5(value) && objectToString$6.call(value) == symbolTag$1;
+  return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'symbol' || isObjectLike$5(value) && objectToString$6.call(value) == symbolTag$3;
 }
 
 var isSymbol_1 = isSymbol$1;
 
-var _Symbol$3 = _Symbol$1;
+var _Symbol$4 = _Symbol$1;
 var isSymbol = isSymbol_1;
 
 /** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
 
 /** Used to convert symbols to primitives and strings. */
-var symbolProto$1 = _Symbol$3 ? _Symbol$3.prototype : undefined;
-var symbolToString = symbolProto$1 ? symbolProto$1.toString : undefined;
+var symbolProto$2 = _Symbol$4 ? _Symbol$4.prototype : undefined;
+var symbolToString = symbolProto$2 ? symbolProto$2.toString : undefined;
 
 /**
  * The base implementation of `_.toString` which doesn't convert nullish
@@ -6085,7 +6633,7 @@ var stringToPath$1 = memoizeCapped(function (string) {
 
 var _stringToPath = stringToPath$1;
 
-var isArray$8 = isArray_1;
+var isArray$10 = isArray_1;
 var stringToPath = _stringToPath;
 
 /**
@@ -6096,12 +6644,12 @@ var stringToPath = _stringToPath;
  * @returns {Array} Returns the cast property path array.
  */
 function castPath$1(value) {
-  return isArray$8(value) ? value : stringToPath(value);
+  return isArray$10(value) ? value : stringToPath(value);
 }
 
 var _castPath = castPath$1;
 
-var isArray$9 = isArray_1;
+var isArray$11 = isArray_1;
 var isSymbol$2 = isSymbol_1;
 
 /** Used to match property names within property paths. */
@@ -6117,7 +6665,7 @@ var reIsPlainProp = /^\w*$/;
  * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
  */
 function isKey$2(value, object) {
-  if (isArray$9(value)) {
+  if (isArray$11(value)) {
     return false;
   }
   var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
@@ -6227,7 +6775,7 @@ var _baseHasIn = baseHasIn$1;
 
 var castPath$2 = _castPath;
 var isArguments$4 = isArguments_1;
-var isArray$10 = isArray_1;
+var isArray$12 = isArray_1;
 var isIndex$3 = _isIndex;
 var isKey$3 = _isKey;
 var isLength$3 = isLength_1;
@@ -6260,7 +6808,7 @@ function hasPath$1(object, path, hasFunc) {
     return result;
   }
   length = object ? object.length : 0;
-  return !!length && isLength$3(length) && isIndex$3(key, length) && (isArray$10(object) || isArguments$4(object));
+  return !!length && isLength$3(length) && isIndex$3(key, length) && (isArray$12(object) || isArguments$4(object));
 }
 
 var _hasPath = hasPath$1;
@@ -6400,7 +6948,7 @@ var property_1 = property$1;
 var baseMatches = _baseMatches;
 var baseMatchesProperty = _baseMatchesProperty;
 var identity$3 = identity_1;
-var isArray$6 = isArray_1;
+var isArray$8 = isArray_1;
 var property = property_1;
 
 /**
@@ -6420,17 +6968,17 @@ function baseIteratee$1(value) {
     return identity$3;
   }
   if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object') {
-    return isArray$6(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
+    return isArray$8(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
   }
   return property(value);
 }
 
 var _baseIteratee = baseIteratee$1;
 
-var arrayEach$2 = _arrayEach;
+var arrayEach$3 = _arrayEach;
 var baseEach = _baseEach;
 var baseIteratee = _baseIteratee;
-var isArray$5 = isArray_1;
+var isArray$7 = isArray_1;
 
 /**
  * Iterates over elements of `collection` and invokes `iteratee` for each element.
@@ -6463,7 +7011,7 @@ var isArray$5 = isArray_1;
  * // => Logs 'a' then 'b' (iteration order is not guaranteed).
  */
 function forEach(collection, iteratee) {
-  var func = isArray$5(collection) ? arrayEach$2 : baseEach;
+  var func = isArray$7(collection) ? arrayEach$3 : baseEach;
   return func(collection, baseIteratee(iteratee, 3));
 }
 
@@ -6847,7 +7395,7 @@ var noop_1 = noop$1;
 
 var Set$2 = _Set;
 var noop = noop_1;
-var setToArray$3 = _setToArray;
+var setToArray$4 = _setToArray;
 
 /** Used as references for various `Number` constants. */
 var INFINITY$2 = 1 / 0;
@@ -6859,7 +7407,7 @@ var INFINITY$2 = 1 / 0;
  * @param {Array} values The values to add to the set.
  * @returns {Object} Returns the new set.
  */
-var createSet$1 = !(Set$2 && 1 / setToArray$3(new Set$2([, -0]))[1] == INFINITY$2) ? noop : function (values) {
+var createSet$1 = !(Set$2 && 1 / setToArray$4(new Set$2([, -0]))[1] == INFINITY$2) ? noop : function (values) {
   return new Set$2(values);
 };
 
@@ -6870,7 +7418,7 @@ var arrayIncludes = _arrayIncludes;
 var arrayIncludesWith = _arrayIncludesWith;
 var cacheHas$2 = _cacheHas;
 var createSet = _createSet;
-var setToArray$2 = _setToArray;
+var setToArray$3 = _setToArray;
 
 /** Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE$1 = 200;
@@ -6898,7 +7446,7 @@ function baseUniq$1(array, iteratee, comparator) {
   } else if (length >= LARGE_ARRAY_SIZE$1) {
     var set = iteratee ? null : createSet(array);
     if (set) {
-      return setToArray$2(set);
+      return setToArray$3(set);
     }
     isCommon = false;
     includes = cacheHas$2;
@@ -7002,11 +7550,11 @@ var replaceVariables = function replaceVariables(target, variables) {
   return safeParse(toProcess);
 };
 
-var assignValue$2 = _assignValue;
+var assignValue$3 = _assignValue;
 var castPath$3 = _castPath;
 var isIndex$4 = _isIndex;
 var isKey$5 = _isKey;
-var isObject$10 = isObject_1;
+var isObject$11 = isObject_1;
 var toKey$5 = _toKey;
 
 /**
@@ -7020,7 +7568,7 @@ var toKey$5 = _toKey;
  * @returns {Object} Returns `object`.
  */
 function baseSet$1(object, path, value, customizer) {
-  if (!isObject$10(object)) {
+  if (!isObject$11(object)) {
     return object;
   }
   path = isKey$5(path, object) ? [path] : castPath$3(path);
@@ -7038,10 +7586,10 @@ function baseSet$1(object, path, value, customizer) {
       var objValue = nested[key];
       newValue = customizer ? customizer(objValue, key, nested) : undefined;
       if (newValue === undefined) {
-        newValue = isObject$10(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
+        newValue = isObject$11(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
       }
     }
-    assignValue$2(nested, key, newValue);
+    assignValue$3(nested, key, newValue);
     nested = nested[key];
   }
   return object;
@@ -7221,33 +7769,12 @@ function basePick$1(object, props) {
 
 var _basePick = basePick$1;
 
-/**
- * Appends the elements of `values` to `array`.
- *
- * @private
- * @param {Array} array The array to modify.
- * @param {Array} values The values to append.
- * @returns {Array} Returns `array`.
- */
-function arrayPush$1(array, values) {
-  var index = -1,
-      length = values.length,
-      offset = array.length;
-
-  while (++index < length) {
-    array[offset + index] = values[index];
-  }
-  return array;
-}
-
-var _arrayPush = arrayPush$1;
-
-var _Symbol$4 = _Symbol$1;
+var _Symbol$5 = _Symbol$1;
 var isArguments$5 = isArguments_1;
-var isArray$11 = isArray_1;
+var isArray$13 = isArray_1;
 
 /** Built-in value references. */
-var spreadableSymbol = _Symbol$4 ? _Symbol$4.isConcatSpreadable : undefined;
+var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
 
 /**
  * Checks if `value` is a flattenable `arguments` object or array.
@@ -7257,12 +7784,12 @@ var spreadableSymbol = _Symbol$4 ? _Symbol$4.isConcatSpreadable : undefined;
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
 function isFlattenable$1(value) {
-    return isArray$11(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
+    return isArray$13(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
 }
 
 var _isFlattenable = isFlattenable$1;
 
-var arrayPush = _arrayPush;
+var arrayPush$2 = _arrayPush;
 var isFlattenable = _isFlattenable;
 
 /**
@@ -7290,7 +7817,7 @@ function baseFlatten$1(array, depth, predicate, isStrict, result) {
         // Recursively flatten arrays (susceptible to call stack limits).
         baseFlatten$1(value, depth - 1, predicate, isStrict, result);
       } else {
-        arrayPush(result, value);
+        arrayPush$2(result, value);
       }
     } else if (!isStrict) {
       result[result.length] = value;
@@ -7341,75 +7868,13 @@ function flatRest$1(func) {
 
 var _flatRest = flatRest$1;
 
-var arrayPush$2 = _arrayPush;
-var isArray$12 = isArray_1;
-
-/**
- * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
- * `keysFunc` and `symbolsFunc` to get the enumerable property names and
- * symbols of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Function} keysFunc The function to get the keys of `object`.
- * @param {Function} symbolsFunc The function to get the symbols of `object`.
- * @returns {Array} Returns the array of property names and symbols.
- */
-function baseGetAllKeys$1(object, keysFunc, symbolsFunc) {
-  var result = keysFunc(object);
-  return isArray$12(object) ? result : arrayPush$2(result, symbolsFunc(object));
-}
-
-var _baseGetAllKeys = baseGetAllKeys$1;
-
-/**
- * This method returns a new empty array.
- *
- * @static
- * @memberOf _
- * @since 4.13.0
- * @category Util
- * @returns {Array} Returns the new empty array.
- * @example
- *
- * var arrays = _.times(2, _.stubArray);
- *
- * console.log(arrays);
- * // => [[], []]
- *
- * console.log(arrays[0] === arrays[1]);
- * // => false
- */
-function stubArray$2() {
-  return [];
-}
-
-var stubArray_1 = stubArray$2;
-
-var overArg$3 = _overArg;
-var stubArray$1 = stubArray_1;
+var arrayPush$3 = _arrayPush;
+var getPrototype$3 = _getPrototype;
+var getSymbols$3 = _getSymbols;
+var stubArray$2 = stubArray_1;
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeGetSymbols$1 = Object.getOwnPropertySymbols;
-
-/**
- * Creates an array of the own enumerable symbol properties of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of symbols.
- */
-var getSymbols$1 = nativeGetSymbols$1 ? overArg$3(nativeGetSymbols$1, Object) : stubArray$1;
-
-var _getSymbols = getSymbols$1;
-
-var arrayPush$3 = _arrayPush;
-var getPrototype$3 = _getPrototype;
-var getSymbols = _getSymbols;
-var stubArray = stubArray_1;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeGetSymbols = Object.getOwnPropertySymbols;
 
 /**
  * Creates an array of the own and inherited enumerable symbol properties
@@ -7419,10 +7884,10 @@ var nativeGetSymbols = Object.getOwnPropertySymbols;
  * @param {Object} object The object to query.
  * @returns {Array} Returns the array of symbols.
  */
-var getSymbolsIn$1 = !nativeGetSymbols ? stubArray : function (object) {
+var getSymbolsIn$1 = !nativeGetSymbols$1 ? stubArray$2 : function (object) {
   var result = [];
   while (object) {
-    arrayPush$3(result, getSymbols(object));
+    arrayPush$3(result, getSymbols$3(object));
     object = getPrototype$3(object);
   }
   return result;
@@ -7430,7 +7895,7 @@ var getSymbolsIn$1 = !nativeGetSymbols ? stubArray : function (object) {
 
 var _getSymbolsIn = getSymbolsIn$1;
 
-var baseGetAllKeys = _baseGetAllKeys;
+var baseGetAllKeys$2 = _baseGetAllKeys;
 var getSymbolsIn = _getSymbolsIn;
 var keysIn$2 = keysIn_1;
 
@@ -7443,7 +7908,7 @@ var keysIn$2 = keysIn_1;
  * @returns {Array} Returns the array of property names and symbols.
  */
 function getAllKeysIn$1(object) {
-  return baseGetAllKeys(object, keysIn$2, getSymbolsIn);
+  return baseGetAllKeys$2(object, keysIn$2, getSymbolsIn);
 }
 
 var _getAllKeysIn = getAllKeysIn$1;
@@ -7484,21 +7949,21 @@ var omit = flatRest(function (object, props) {
 
 var omit_1 = omit;
 
-var isArray$13 = isArray_1;
+var isArray$14 = isArray_1;
 var isObjectLike$6 = isObjectLike_1;
 
 /** `Object#toString` result references. */
-var stringTag$2 = '[object String]';
+var stringTag$4 = '[object String]';
 
 /** Used for built-in method references. */
-var objectProto$18 = Object.prototype;
+var objectProto$19 = Object.prototype;
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$7 = objectProto$18.toString;
+var objectToString$7 = objectProto$19.toString;
 
 /**
  * Checks if `value` is classified as a `String` primitive or object.
@@ -7518,12 +7983,12 @@ var objectToString$7 = objectProto$18.toString;
  * // => false
  */
 function isString$1(value) {
-  return typeof value == 'string' || !isArray$13(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$2;
+  return typeof value == 'string' || !isArray$14(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$4;
 }
 
 var isString_1 = isString$1;
 
-var isObject$11 = isObject_1;
+var isObject$12 = isObject_1;
 var isSymbol$4 = isSymbol_1;
 
 /** Used as references for various `Number` constants. */
@@ -7574,9 +8039,9 @@ function toNumber$1(value) {
   if (isSymbol$4(value)) {
     return NAN;
   }
-  if (isObject$11(value)) {
+  if (isObject$12(value)) {
     var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-    value = isObject$11(other) ? other + '' : other;
+    value = isObject$12(other) ? other + '' : other;
   }
   if (typeof value != 'string') {
     return value === 0 ? value : +value;
@@ -7689,7 +8154,7 @@ function baseValues$1(object, props) {
 var _baseValues = baseValues$1;
 
 var baseValues = _baseValues;
-var keys$4 = keys_1;
+var keys$7 = keys_1;
 
 /**
  * Creates an array of the own enumerable string keyed property values of `object`.
@@ -7718,7 +8183,7 @@ var keys$4 = keys_1;
  * // => ['h', 'i']
  */
 function values$1(object) {
-  return object ? baseValues(object, keys$4(object)) : [];
+  return object ? baseValues(object, keys$7(object)) : [];
 }
 
 var values_1 = values$1;
@@ -7814,17 +8279,17 @@ var isEqual_1 = isEqual;
 var isObjectLike$7 = isObjectLike_1;
 
 /** `Object#toString` result references. */
-var numberTag$2 = '[object Number]';
+var numberTag$4 = '[object Number]';
 
 /** Used for built-in method references. */
-var objectProto$19 = Object.prototype;
+var objectProto$20 = Object.prototype;
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$8 = objectProto$19.toString;
+var objectToString$8 = objectProto$20.toString;
 
 /**
  * Checks if `value` is classified as a `Number` primitive or object.
@@ -7853,7 +8318,7 @@ var objectToString$8 = objectProto$19.toString;
  * // => false
  */
 function isNumber(value) {
-  return typeof value == 'number' || isObjectLike$7(value) && objectToString$8.call(value) == numberTag$2;
+  return typeof value == 'number' || isObjectLike$7(value) && objectToString$8.call(value) == numberTag$4;
 }
 
 var isNumber_1 = isNumber;
@@ -8226,9 +8691,9 @@ var runTransforms = function runTransforms(resultNode, transforms) {
   });
 };
 
-var patchAuthorization = function patchAuthorization(node) {
+var patchAuthorization = function patchAuthorization(node, options) {
   // Run Authorization & Patch
-  var authPatch = generateAuthPatch(get_1(node, 'input.authorization'), get_1(node, 'input.request'));
+  var authPatch = generateAuthPatch(get_1(node, 'input.authorization'), get_1(node, 'input.request'), options);
   if (!isEmpty_1(authPatch)) {
     var input = get_1(node, 'input') || {};
     merge_1(input, authPatch);
@@ -8245,7 +8710,8 @@ var runScript = function runScript(func, state, vars) {
  * @param {string} node - The flow node we are operating on, for example a single "step" or "function" object.
  * @param {string} logicPath - The path selector (ie [0].before) to the logic object we are running.
  * @param {Object} options
- * @param {function(object, object)} options.validate - The validation function, takes the value as the first argument, and the schema as the second.
+ * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
+ * @param {function(object, object)} options.base64 - An optional base64 encode function, takes a single string argument.
  */
 var runLogic = function runLogic(node, logicPath, options) {
   if (!node) {
@@ -8270,7 +8736,7 @@ var runLogic = function runLogic(node, logicPath, options) {
   var logic = get_1(node, logicPath);
   if (!logic) {
     // Patch Authorization
-    patchAuthorization(node);
+    patchAuthorization(node, options);
     return node;
   }
 
@@ -8295,7 +8761,7 @@ var runLogic = function runLogic(node, logicPath, options) {
 
   // Patch Authorization
   // TODO: Only run if headers have not already been set?
-  patchAuthorization(node);
+  patchAuthorization(node, options);
 
   // Run Assertions
   var assertions = runAssertions(node, logic.assertions, options);

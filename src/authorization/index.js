@@ -9,15 +9,21 @@ import {setQuery} from '../utils/query';
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
 
 export const generateBasicAuth = (username, password, options) => {
-  const string = [username, password].join(':');
+  let string = [username, password].join(':');
+
+  if (options.base64) {
+    string = options.base64(string);
+  } else {
+    string = new Buffer(string).toString('base64');
+  }
 
   return {
-   request: {
+    request: {
       headers: [{
         name: 'Authorization',
-        value: `Basic ${new Buffer(string).toString('base64')}`,
+        value: `Basic ${string}`,
       }],
-    }
+    },
   };
 };
 
