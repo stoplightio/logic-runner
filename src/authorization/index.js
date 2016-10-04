@@ -27,7 +27,7 @@ export const generateBasicAuth = (username, password, options) => {
   };
 };
 
-const hashFunction = (method, encode) => {
+const hashFunction = (method, encode, options) => {
   return (base_string, key) => {
     let hash;
 
@@ -43,6 +43,10 @@ const hashFunction = (method, encode) => {
     }
 
     if (encode) {
+      if (options.base64) {
+        return options.base64(hash);
+      }
+
       return hash.toString(Enc_BASE64);
     }
 
@@ -59,7 +63,7 @@ export const generateOAuth1 = (data, request, options) => {
       secret: data.consumerSecret,
     },
     signature_method: signatureMethod,
-    hash_function: hashFunction(signatureMethod, encode),
+    hash_function: hashFunction(signatureMethod, encode, options),
   });
 
   let token = null;
