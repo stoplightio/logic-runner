@@ -5563,7 +5563,7 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
   };
 };
 
-var hashFunction = function hashFunction(method, encode) {
+var hashFunction = function hashFunction(method, encode, options) {
   return function (base_string, key) {
     var hash = void 0;
 
@@ -5579,6 +5579,10 @@ var hashFunction = function hashFunction(method, encode) {
     }
 
     if (encode) {
+      if (options.base64) {
+        return options.base64(hash);
+      }
+
       return hash.toString(encBase64);
     }
 
@@ -5595,7 +5599,7 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
       secret: data.consumerSecret
     },
     signature_method: signatureMethod,
-    hash_function: hashFunction(signatureMethod, encode)
+    hash_function: hashFunction(signatureMethod, encode, options)
   });
 
   var token = null;
