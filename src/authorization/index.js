@@ -12,10 +12,12 @@ export const generateBasicAuth = (username, password, options) => {
   const string = [username, password].join(':');
 
   return {
-    headers: [{
-      name: 'Authorization',
-      value: `Basic ${new Buffer(string).toString('base64')}`,
-    }],
+   request: {
+      headers: [{
+        name: 'Authorization',
+        value: `Basic ${new Buffer(string).toString('base64')}`,
+      }],
+    }
   };
 };
 
