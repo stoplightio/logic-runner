@@ -1,4 +1,5 @@
 import isEmpty from 'lodash/isEmpty';
+import has from 'lodash/has';
 import OAuth from 'oauth-1.0a';
 import HmacSHA1 from 'crypto-js/hmac-sha1';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
@@ -9,6 +10,8 @@ import {setQuery} from '../utils/query';
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
 
 export const generateBasicAuth = (username, password, options) => {
+  options = options || {};
+
   let string = [username, password].join(':');
 
   if (options.base64) {
@@ -28,6 +31,8 @@ export const generateBasicAuth = (username, password, options) => {
 };
 
 const hashFunction = (method, encode, options) => {
+  options = options || {};
+
   return (base_string, key) => {
     let hash;
 
@@ -54,6 +59,13 @@ const hashFunction = (method, encode, options) => {
   };
 };
 export const generateOAuth1 = (data, request, options) => {
+  options = options || {};
+
+  const patch = {};
+  if (data.useHeader && has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
   const signatureMethod = data.signatureMethod || 'HMAC-SHA1';
 
   const encode = data && data.hasOwnProperty('encode') ? data.encode : true;
@@ -64,6 +76,9 @@ export const generateOAuth1 = (data, request, options) => {
     },
     signature_method: signatureMethod,
     hash_function: hashFunction(signatureMethod, encode, options),
+    version: data.version || '1.0',
+    nonce_length: data.nonceLength || 32,
+    parameter_seperator: data.parameterSeperator || ', ',
   });
 
   let token = null;
@@ -79,13 +94,10 @@ export const generateOAuth1 = (data, request, options) => {
     method: request.method.toUpperCase(),
     data: request.body,
   };
-  const authPatch = oauth.authorize(request, token);
-
-  const patch = {
-    authorization: {
-      oauth1: {
-        nonce: authPatch.oauth_nonce,
-      },
+  const authPatch = oauth.authorize(requestToAuthorize, token);
+  patch.authorization = {
+    oauth1: {
+      nonce: authPatch.oauth_nonce,
     },
   };
 
@@ -101,7 +113,7 @@ export const generateOAuth1 = (data, request, options) => {
   } else {
     // add to the query string
     patch.request = {
-      url: setQuery(request.url, authPatch),
+      url: setQuery(request.url, authPatch, {preserve: false}),
     };
   }
 
@@ -109,6 +121,7 @@ export const generateOAuth1 = (data, request, options) => {
 };
 
 export const generateAuthPatch = (authNode, request, options) => {
+  options = options || {};
   let patch = {};
 
   if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
@@ -122,7 +135,10 @@ export const generateAuthPatch = (authNode, request, options) => {
 
   switch (authNode.type) {
     case 'basic':
-      patch = generateBasicAuth(details.username, details.password, options);
+      if (!has(request, 'headers.Authorization')) {
+        patch = generateBasicAuth(details.username, details.password, options);
+      }
+
       break;
     case 'oauth1':
       patch = generateOAuth1(details, request, options);

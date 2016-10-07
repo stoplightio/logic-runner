@@ -1,6 +1,5 @@
 import get from 'lodash/get';
 import set from 'lodash/set';
-import omit from 'lodash/omit';
 import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
 
@@ -36,20 +35,8 @@ export const runLogic = (node, logicPath, options) => {
     return {};
   }
 
-  // Replace Variables
-  const steps = node.steps;
-  const children = node.children;
-  const functions = node.functions;
-  node = Variables.replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    node.steps = steps;
-  }
-  if (children) {
-    node.children = children;
-  }
-  if (functions) {
-    node.functions = functions;
-  }
+  // Replace variables before script
+  node = Variables.replaceNodeVariables(node);
 
   const logic = get(node, logicPath);
   if (!logic) {
@@ -78,8 +65,10 @@ export const runLogic = (node, logicPath, options) => {
   }
 
   // Patch Authorization
-  // TODO: Only run if headers have not already been set?
   patchAuthorization(node, options);
+
+  // Replace variables after script
+  node = Variables.replaceNodeVariables(node);
 
   // Run Assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);

@@ -4,7 +4,7 @@ import forEach from 'lodash/forEach';
 
 import {buildPathSelector} from '../utils/strings';
 
-const SOURCE_REGEX = new RegExp(/^status|result|input/);
+const SOURCE_REGEX = new RegExp(/^state|status|result|input/);
 
 export const runTransform = (resultNode, transform, options = {}) => {
   try {

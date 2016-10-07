@@ -33,3 +33,10 @@ test('utils > query > setQuery > merges into existing query string', (t) => {
   const expected = 'http://example.com?foo=bar&cat=cat';
   t.is(result, expected);
 });
+
+test('utils > query > setQuery > preserve option works', (t) => {
+  const url = 'http://example.com?foo=bar&cat=dog';
+  const result = queryUtils.setQuery(url, {cat: 'cat'}, {preserve: true});
+  const expected = 'http://example.com?foo=bar&cat=dog';
+  t.is(result, expected);
+});

@@ -3,6 +3,7 @@ import forEach from 'lodash/forEach';
 import trim from 'lodash/trim';
 import get from 'lodash/get';
 import uniq from 'lodash/uniq';
+import omit from 'lodash/omit';
 
 import {safeParse, safeStringify} from '../utils/json';
 
@@ -26,4 +27,23 @@ export const replaceVariables = (target, variables) => {
   });
 
   return safeParse(toProcess);
+};
+
+export const replaceNodeVariables = (node) => {
+  const steps = node.steps;
+  const children = node.children;
+  const functions = node.functions;
+
+  const newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
+  if (steps) {
+    newNode.steps = steps;
+  }
+  if (children) {
+    newNode.children = children;
+  }
+  if (functions) {
+    newNode.functions = functions;
+  }
+
+  return newNode;
 };

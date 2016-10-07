@@ -1,6 +1,7 @@
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isEmpty = _interopDefault(require('lodash/isEmpty'));
+var has = _interopDefault(require('lodash/has'));
 var OAuth = _interopDefault(require('oauth-1.0a'));
 var HmacSHA1 = _interopDefault(require('crypto-js/hmac-sha1'));
 var HmacSHA256 = _interopDefault(require('crypto-js/hmac-sha256'));
@@ -11,8 +12,8 @@ var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var get = _interopDefault(require('lodash/get'));
 var uniq = _interopDefault(require('lodash/uniq'));
-var set = _interopDefault(require('lodash/set'));
 var omit = _interopDefault(require('lodash/omit'));
+var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -22,7 +23,9 @@ var gte = _interopDefault(require('lodash/gte'));
 var lt = _interopDefault(require('lodash/lt'));
 var lte = _interopDefault(require('lodash/lte'));
 
-var setQuery = function setQuery(url, queryObj) {
+var setQuery = function setQuery(url, queryObj, options) {
+  options = options || {};
+
   if (isEmpty(queryObj)) {
     return url;
   }
@@ -30,6 +33,11 @@ var setQuery = function setQuery(url, queryObj) {
   var urlParts = url.split('?');
   var query = urlParts[1];
   var existingQueryObj = qs.parse(query);
+
+  if (options.preserve) {
+    merge(queryObj, existingQueryObj);
+  }
+
   merge(existingQueryObj, queryObj);
 
   return urlParts[0] + '?' + qs.stringify(existingQueryObj);
@@ -38,6 +46,8 @@ var setQuery = function setQuery(url, queryObj) {
 var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
 
 var generateBasicAuth = function generateBasicAuth(username, password, options) {
+  options = options || {};
+
   var string = [username, password].join(':');
 
   if (options.base64) {
@@ -57,6 +67,8 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
 };
 
 var hashFunction = function hashFunction(method, encode, options) {
+  options = options || {};
+
   return function (base_string, key) {
     var hash = void 0;
 
@@ -83,6 +95,13 @@ var hashFunction = function hashFunction(method, encode, options) {
   };
 };
 var generateOAuth1 = function generateOAuth1(data, request, options) {
+  options = options || {};
+
+  var patch = {};
+  if (data.useHeader && has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
   var signatureMethod = data.signatureMethod || 'HMAC-SHA1';
 
   var encode = data && data.hasOwnProperty('encode') ? data.encode : true;
@@ -92,7 +111,10 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
       secret: data.consumerSecret
     },
     signature_method: signatureMethod,
-    hash_function: hashFunction(signatureMethod, encode, options)
+    hash_function: hashFunction(signatureMethod, encode, options),
+    version: data.version || '1.0',
+    nonce_length: data.nonceLength || 32,
+    parameter_seperator: data.parameterSeperator || ', '
   });
 
   var token = null;
@@ -108,13 +130,10 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
     method: request.method.toUpperCase(),
     data: request.body
   };
-  var authPatch = oauth.authorize(request, token);
-
-  var patch = {
-    authorization: {
-      oauth1: {
-        nonce: authPatch.oauth_nonce
-      }
+  var authPatch = oauth.authorize(requestToAuthorize, token);
+  patch.authorization = {
+    oauth1: {
+      nonce: authPatch.oauth_nonce
     }
   };
 
@@ -130,7 +149,7 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
   } else {
     // add to the query string
     patch.request = {
-      url: setQuery(request.url, authPatch)
+      url: setQuery(request.url, authPatch, { preserve: false })
     };
   }
 
@@ -138,6 +157,7 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
 };
 
 var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
+  options = options || {};
   var patch = {};
 
   if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
@@ -151,7 +171,10 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 
   switch (authNode.type) {
     case 'basic':
-      patch = generateBasicAuth(details.username, details.password, options);
+      if (!has(request, 'headers.Authorization')) {
+        patch = generateBasicAuth(details.username, details.password, options);
+      }
+
       break;
     case 'oauth1':
       patch = generateOAuth1(details, request, options);
@@ -203,6 +226,25 @@ var replaceVariables = function replaceVariables(target, variables) {
   });
 
   return safeParse(toProcess);
+};
+
+var replaceNodeVariables = function replaceNodeVariables(node) {
+  var steps = node.steps;
+  var children = node.children;
+  var functions = node.functions;
+
+  var newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
+  if (steps) {
+    newNode.steps = steps;
+  }
+  if (children) {
+    newNode.children = children;
+  }
+  if (functions) {
+    newNode.functions = functions;
+  }
+
+  return newNode;
 };
 
 var buildPathSelector = function buildPathSelector(parts) {
@@ -453,8 +495,13 @@ var runAssertion = function runAssertion(resultNode, assertion) {
           }
           break;
         case 'exists':
+          var shouldExist = assertion.hasOwnProperty('expected') ? assertion.expected : true;
           if (isUndefined(value)) {
-            throw new Error('Expected ' + targetPath + ' to exist - actual is \'' + value + '\'');
+            if (shouldExist) {
+              throw new Error('Expected ' + targetPath + ' to exist');
+            }
+          } else if (!shouldExist) {
+            throw new Error('Expected ' + targetPath + ' NOT to exist - actual is \'' + value + '\'');
           }
           break;
         case 'contains':
@@ -547,7 +594,7 @@ var runAssertions = function runAssertions(resultNode, assertions) {
   return assertions;
 };
 
-var SOURCE_REGEX = new RegExp(/^status|result|input/);
+var SOURCE_REGEX = new RegExp(/^state|status|result|input/);
 
 var runTransform = function runTransform(resultNode, transform) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -604,20 +651,8 @@ var runLogic = function runLogic(node, logicPath, options) {
     return {};
   }
 
-  // Replace Variables
-  var steps = node.steps;
-  var children = node.children;
-  var functions = node.functions;
-  node = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    node.steps = steps;
-  }
-  if (children) {
-    node.children = children;
-  }
-  if (functions) {
-    node.functions = functions;
-  }
+  // Replace variables before script
+  node = replaceNodeVariables(node);
 
   var logic = get(node, logicPath);
   if (!logic) {
@@ -646,8 +681,10 @@ var runLogic = function runLogic(node, logicPath, options) {
   }
 
   // Patch Authorization
-  // TODO: Only run if headers have not already been set?
   patchAuthorization(node, options);
+
+  // Replace variables after script
+  node = replaceNodeVariables(node);
 
   // Run Assertions
   var assertions = runAssertions(node, logic.assertions, options);
