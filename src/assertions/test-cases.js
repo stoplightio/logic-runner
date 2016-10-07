@@ -144,8 +144,29 @@ const buildCases = () => {
         return !result.pass;
       },
     },
+    {
+      name: 'exists > handles checking non-existence',
+      resultNode: {
+        output: {
+          response: {
+            body: {
+              foo: 'bar',
+            },
+          },
+        },
+      },
+      assertion: {
+        location: 'output.response',
+        target: 'body.foo',
+        op: 'exists',
+        expected: false,
+      },
+      expected(result) {
+        return !result.pass;
+      },
+    },
 
-    // exists
+    // contains
 
     {
       name: 'contains > handles pass with string',

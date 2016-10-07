@@ -54,8 +54,13 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
           }
           break;
         case 'exists':
+          const shouldExist = assertion.hasOwnProperty('expected') ? assertion.expected : true;
           if (isUndefined(value)) {
-            throw new Error(`Expected ${targetPath} to exist - actual is '${value}'`);
+            if (shouldExist) {
+              throw new Error(`Expected ${targetPath} to exist`);
+            }
+          } else if (!shouldExist) {
+            throw new Error(`Expected ${targetPath} NOT to exist - actual is '${value}'`);
           }
           break;
         case 'contains':
