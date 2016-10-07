@@ -13,22 +13,6 @@ test('authorization > generateBasicAuth > set correct authorization header', (t)
   };
   t.deepEqual(result, expected);
 });
-test('authorization > generateBasicAuth > supports base64 option', (t) => {
-  const result = Authorization.generateBasicAuth('foo', 'bar', {
-    base64: (input) => {
-      return 'myEncoded';
-    },
-  });
-  const expected = {
-    request: {
-      headers: [{
-        name: 'Authorization',
-        value: 'Basic myEncoded',
-      }],
-    },
-  };
-  t.deepEqual(result, expected);
-});
 
 const oauthData = () => {
   return {
@@ -83,19 +67,6 @@ test('authorization > generateOAuth1 > support useHeader option, do not overwrit
   });
   const result = Authorization.generateOAuth1(odata, orequest);
   t.true(!result.request);
-});
-test('authorization > generateOAuth1 > support encode option, and base64 option', (t) => {
-  const data = oauthData();
-  const odata = Object.assign({}, data.oauth, {encode: true});
-
-  let encodeUsed = false;
-  const result = Authorization.generateOAuth1(odata, data.request, {
-    base64: (input) => {
-      encodeUsed = true;
-      return input;
-    },
-  });
-  t.true(encodeUsed);
 });
 test('authorization > generateOAuth1 > do not overwrite existing query string params', (t) => {
   const data = oauthData();

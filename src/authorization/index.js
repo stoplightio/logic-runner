@@ -3,8 +3,9 @@ import has from 'lodash/has';
 import OAuth from 'oauth-1.0a';
 import HmacSHA1 from 'crypto-js/hmac-sha1';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
-import Enc_BASE64 from 'crypto-js/enc-base64';
+import EncBASE64 from 'crypto-js/enc-base64';
 
+import Base64 from '../utils/base64';
 import {setQuery} from '../utils/query';
 
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
@@ -13,12 +14,7 @@ export const generateBasicAuth = (username, password, options) => {
   options = options || {};
 
   let string = [username, password].join(':');
-
-  if (options.base64) {
-    string = options.base64(string);
-  } else {
-    string = new Buffer(string).toString('base64');
-  }
+  string = Base64.encode(string); // Need to use custom base64 for golang vm.
 
   return {
     request: {
@@ -48,11 +44,7 @@ const hashFunction = (method, encode, options) => {
     }
 
     if (encode) {
-      if (options.base64) {
-        return options.base64(hash);
-      }
-
-      return hash.toString(Enc_BASE64);
+      return hash.toString(EncBASE64);
     }
 
     return hash.toString();
@@ -68,7 +60,7 @@ export const generateOAuth1 = (data, request, options) => {
 
   const signatureMethod = data.signatureMethod || 'HMAC-SHA1';
 
-  const encode = data && data.hasOwnProperty('encode') ? data.encode : true;
+  const encode = data.encode;
   const oauth = OAuth({
     consumer: {
       key: data.consumerKey,

@@ -28,7 +28,6 @@ const runScript = (func, state, vars) => {
  * @param {string} logicPath - The path selector (ie [0].before) to the logic object we are running.
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
- * @param {function(object, object)} options.base64 - An optional base64 encode function, takes a single string argument.
  */
 export const runLogic = (node, logicPath, options) => {
   if (!node) {
