@@ -727,8 +727,13 @@ var patchAuthorization = function patchAuthorization(node, options) {
   }
 };
 
-var runScript = function runScript(func, state, vars) {
-  eval('with (vars) {' + func + '}');
+var runScript = function runScript(func) {
+  var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+  var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+
+  eval('\n    with (input) {\n      with (output) {\n        ' + func + '\n      }\n    }');
 };
 
 /**
@@ -757,17 +762,19 @@ var runLogic = function runLogic(node, logicPath, options) {
   runTransforms(node, logic.transforms, options);
 
   // Run Script
+  var tests = {};
   var script = logic.script;
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
       var state = get(node, 'state') || {};
-      runScript(script, state, input);
+      runScript(script, state, tests, input);
       set(node, 'state', state);
     } else {
+      var _input = get(node, 'result.input') || {};
       var output = get(node, 'result.output') || {};
       var _state = get(node, 'result.state') || {};
-      runScript(script, _state, output);
+      runScript(script, _state, tests, _input, output);
       set(node, 'result.state', _state);
     }
   }
@@ -780,6 +787,25 @@ var runLogic = function runLogic(node, logicPath, options) {
 
   // Run Assertions
   var assertions = runAssertions(node, logic.assertions, options);
+
+  // Add Test Assertions
+  if (!isEmpty(tests)) {
+    for (var key in tests) {
+      var pass = tests[key];
+      assertions.push({
+        location: logicPath + ' script',
+        target: '',
+        op: 'tests',
+        expected: '',
+        result: {
+          pass: pass,
+          message: key
+        }
+      });
+    }
+  }
+
+  // Set Assertions
   set(node, logicPath + '.assertions', assertions);
 
   return node;
@@ -796,7 +822,8 @@ var runLogic = function runLogic(node, logicPath, options) {
 var index = {
   generateAuthPatch: generateAuthPatch,
   replaceVariables: replaceVariables,
-  runLogic: runLogic
+  runLogic: runLogic,
+  buildPathSelector: buildPathSelector
 };
 
 module.exports = index;

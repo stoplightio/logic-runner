@@ -18,8 +18,14 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-const runScript = (func, state, vars) => {
-  eval(`with (vars) {${func}}`);
+const runScript = (func, state = {}, tests = [], input = {}, output = {}) => {
+  eval(`
+    with (input) {
+      with (output) {
+        ${func}
+      }
+    }`
+  );
 };
 
 /**
@@ -48,17 +54,19 @@ export const runLogic = (node, logicPath, options) => {
   Transforms.runTransforms(node, logic.transforms, options);
 
   // Run Script
+  const tests = {};
   const script = logic.script;
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       const state = get(node, 'state') || {};
-      runScript(script, state, input);
+      runScript(script, state, tests, input);
       set(node, 'state', state);
     } else {
+      const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
       const state = get(node, 'result.state') || {};
-      runScript(script, state, output);
+      runScript(script, state, tests, input, output);
       set(node, 'result.state', state);
     }
   }
@@ -71,6 +79,25 @@ export const runLogic = (node, logicPath, options) => {
 
   // Run Assertions
   const assertions = Assertions.runAssertions(node, logic.assertions, options);
+
+  // Add Test Assertions
+  if (!isEmpty(tests)) {
+    for (const key in tests) {
+      const pass = tests[key];
+      assertions.push({
+        location: `${logicPath} script`,
+        target: '',
+        op: 'tests',
+        expected: '',
+        result: {
+          pass,
+          message: key,
+        },
+      });
+    }
+  }
+
+  // Set Assertions
   set(node, `${logicPath}.assertions`, assertions);
 
   return node;
