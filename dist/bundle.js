@@ -751,8 +751,26 @@ var runScript = function runScript(func) {
   var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
   var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+  var logger = arguments[5];
 
-  eval('\n    with (input) {\n      with (output) {\n        ' + func + '\n      }\n    }');
+  // make these available
+  var safeStringify$$1 = safeStringify;
+  var safeParse$$1 = safeParse;
+
+
+  var reportError = function reportError(e) {
+    if (logger) {
+      logger.log('error', 'script', ['script syntax error', String(e)]);
+    } else {
+      console.error('unknown script error', e);
+    }
+  };
+
+  try {
+    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + func + '\n        }\n      }\n    ');
+  } catch (e) {
+    reportError(e);
+  }
 };
 
 /**
@@ -766,6 +784,29 @@ var runLogic = function runLogic(node, logicPath, options) {
   if (!node) {
     return {};
   }
+
+  // Init Logs
+  var logs = get(node, 'result.logs') || [];
+
+  // Init Options
+  options = options || {};
+  options.logger = {
+    log: function log(type, context, messages) {
+      if (isEmpty(messages)) {
+        console.warn('You cannot log with no messages.');
+      }
+
+      var cleanMessages = messages.map(function (m) {
+        return safeStringify(m);
+      });
+
+      logs.push({
+        type: type,
+        context: [logicPath].concat(context || []).join('.'),
+        messages: cleanMessages
+      });
+    }
+  };
 
   // Replace variables before script
   node = replaceNodeVariables(node);
@@ -787,13 +828,13 @@ var runLogic = function runLogic(node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
       var state = get(node, 'state') || {};
-      runScript(script, state, tests, input);
+      runScript(script, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       var _input = get(node, 'result.input') || {};
       var output = get(node, 'result.output') || {};
       var _state = get(node, 'result.state') || {};
-      runScript(script, _state, tests, _input, output);
+      runScript(script, _state, tests, _input, output, options.logger);
       set(node, 'result.state', _state);
     }
   }
@@ -826,6 +867,9 @@ var runLogic = function runLogic(node, logicPath, options) {
 
   // Set Assertions
   set(node, logicPath + '.assertions', assertions);
+
+  // Set Logs
+  set(node, 'result.logs', logs);
 
   return node;
 };

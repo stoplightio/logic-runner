@@ -7,6 +7,7 @@ import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
 import * as Transforms from '../transforms/index';
 import * as Authorization from '../authorization/index';
+import * as JSONHelpers from '../utils/json';
 
 const patchAuthorization = (node, options) => {
   // Run Authorization & Patch
@@ -18,14 +19,44 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-const runScript = (func, state = {}, tests = [], input = {}, output = {}) => {
-  eval(`
-    with (input) {
-      with (output) {
-        ${func}
+const runScript = (func, state = {}, tests = [], input = {}, output = {}, logger) => {
+  // make these available
+  const {safeStringify, safeParse} = JSONHelpers;
+
+  const reportError = (e) => {
+    if (logger) {
+      logger.log('error', 'script', ['script syntax error', String(e)]);
+    } else {
+      console.error('unknown script error', e);
+    }
+  };
+
+  try {
+    eval(`
+      if (logger) {
+        console.debug = function() {
+          logger.log('debug', 'script', _.values(arguments));
+        }
+        console.log = console.info = function() {
+          logger.log('info', 'script', _.values(arguments));
+        }
+        console.warn = function() {
+          logger.log('warn', 'script', _.values(arguments));
+        }
+        console.error = function() {
+          logger.log('error', 'script', _.values(arguments));
+        }
       }
-    }`
-  );
+
+      with (input) {
+        with (output) {
+          ${func}
+        }
+      }
+    `);
+  } catch (e) {
+    reportError(e);
+  }
 };
 
 /**
@@ -39,6 +70,27 @@ export const runLogic = (node, logicPath, options) => {
   if (!node) {
     return {};
   }
+
+  // Init Logs
+  const logs = get(node, 'result.logs') || [];
+
+  // Init Options
+  options = options || {};
+  options.logger = {
+    log(type, context, messages) {
+      if (isEmpty(messages)) {
+        console.warn('You cannot log with no messages.');
+      }
+
+      const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m));
+
+      logs.push({
+        type,
+        context: [logicPath].concat(context || []).join('.'),
+        messages: cleanMessages,
+      });
+    },
+  };
 
   // Replace variables before script
   node = Variables.replaceNodeVariables(node);
@@ -60,13 +112,13 @@ export const runLogic = (node, logicPath, options) => {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       const state = get(node, 'state') || {};
-      runScript(script, state, tests, input);
+      runScript(script, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
       const state = get(node, 'result.state') || {};
-      runScript(script, state, tests, input, output);
+      runScript(script, state, tests, input, output, options.logger);
       set(node, 'result.state', state);
     }
   }
@@ -99,6 +151,9 @@ export const runLogic = (node, logicPath, options) => {
 
   // Set Assertions
   set(node, `${logicPath}.assertions`, assertions);
+
+  // Set Logs
+  set(node, 'result.logs', logs);
 
   return node;
 };
