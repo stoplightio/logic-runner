@@ -279,12 +279,12 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
   return patch;
 };
 
-var safeParse = function safeParse(target) {
+var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
       return JSON.parse(target);
     } catch (e) {
-      return {};
+      return defaultValue || {};
     }
   }
 
@@ -298,6 +298,11 @@ var safeStringify = function safeStringify(target, offset) {
 
   return target;
 };
+
+var JSONHelpers = Object.freeze({
+	safeParse: safeParse,
+	safeStringify: safeStringify
+});
 
 var replaceVariables = function replaceVariables(target, variables) {
   if (isEmpty(target) || isEmpty(variables)) {
@@ -493,6 +498,20 @@ var asyncGenerator = function () {
 
 
 
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
 
 var get$1 = function get$1(object, property, receiver) {
   if (object === null) object = Function.prototype;
@@ -819,11 +838,11 @@ var runLogic = function runLogic(node, logicPath, options) {
 //   return node;
 // }
 
-var index = {
+var index = _extends({
   generateAuthPatch: generateAuthPatch,
   replaceVariables: replaceVariables,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-};
+}, JSONHelpers);
 
 module.exports = index;

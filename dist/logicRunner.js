@@ -136,6 +136,20 @@ var asyncGenerator = function () {
 
 
 
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
+
 var get = function get(object, property, receiver) {
   if (object === null) object = Function.prototype;
   var desc = Object.getOwnPropertyDescriptor(object, property);
@@ -7999,12 +8013,12 @@ var omit = flatRest(function (object, props) {
 
 var omit_1 = omit;
 
-var safeParse = function safeParse(target) {
+var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
       return JSON.parse(target);
     } catch (e) {
-      return {};
+      return defaultValue || {};
     }
   }
 
@@ -8018,6 +8032,11 @@ var safeStringify = function safeStringify(target, offset) {
 
   return target;
 };
+
+var JSONHelpers = Object.freeze({
+	safeParse: safeParse,
+	safeStringify: safeStringify
+});
 
 var replaceVariables = function replaceVariables(target, variables) {
   if (isEmpty_1(target) || isEmpty_1(variables)) {
@@ -8992,12 +9011,12 @@ var runLogic = function runLogic(node, logicPath, options) {
 //   return node;
 // }
 
-var index = {
+var index = _extends({
   generateAuthPatch: generateAuthPatch,
   replaceVariables: replaceVariables,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-};
+}, JSONHelpers);
 
 return index;
 

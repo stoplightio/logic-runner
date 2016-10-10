@@ -1,9 +1,9 @@
-export const safeParse = (target) => {
+export const safeParse = (target, defaultValue) => {
   if (typeof target === 'string') {
     try {
       return JSON.parse(target);
     } catch (e) {
-      return {};
+      return defaultValue || {};
     }
   }
 
