@@ -18,10 +18,9 @@ export const generateBasicAuth = (username, password, options) => {
 
   return {
     request: {
-      headers: [{
-        name: 'Authorization',
-        value: `Basic ${string}`,
-      }],
+      headers: {
+        Authorization: `Basic ${string}`,
+      },
     },
   };
 };
@@ -97,10 +96,9 @@ export const generateOAuth1 = (data, request, options) => {
     // add to the header
     const headerPatch = oauth.toHeader(authPatch);
     patch.request = {
-      headers: [{
-        name: 'Authorization',
-        value: headerPatch.Authorization,
-      }],
+      headers: {
+        Authorization: headerPatch.Authorization,
+      },
     };
   } else {
     // add to the query string

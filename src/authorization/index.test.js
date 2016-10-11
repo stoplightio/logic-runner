@@ -5,10 +5,9 @@ test('authorization > generateBasicAuth > set correct authorization header', (t)
   const result = Authorization.generateBasicAuth('foo', 'bar');
   const expected = {
     request: {
-      headers: [{
-        name: 'Authorization',
-        value: 'Basic Zm9vOmJhcg==',
-      }],
+      headers: {
+        Authorization: 'Basic Zm9vOmJhcg==',
+      },
     },
   };
   t.deepEqual(result, expected);
@@ -47,15 +46,14 @@ test('authorization > generateOAuth1 > support useHeader option, set correct hea
   const data = oauthData();
   const odata = Object.assign({}, data.oauth, {useHeader: true});
   const result = Authorization.generateOAuth1(odata, data.request);
-  const header = result.request.headers[0];
-  t.is(header.name, 'Authorization');
-  t.regex(header.value, /oauth_consumer_key="ck123"/);
-  t.regex(header.value, /oauth_nonce=/);
-  t.regex(header.value, /oauth_signature_method="HMAC-SHA1"/);
-  t.regex(header.value, /oauth_timestamp=/);
-  t.regex(header.value, /oauth_version="1.0"/);
-  t.regex(header.value, /oauth_token="t123"/);
-  t.regex(header.value, /oauth_signature=/);
+  const header = result.request.headers.Authorization;
+  t.regex(header, /oauth_consumer_key="ck123"/);
+  t.regex(header, /oauth_nonce=/);
+  t.regex(header, /oauth_signature_method="HMAC-SHA1"/);
+  t.regex(header, /oauth_timestamp=/);
+  t.regex(header, /oauth_version="1.0"/);
+  t.regex(header, /oauth_token="t123"/);
+  t.regex(header, /oauth_signature=/);
 });
 test('authorization > generateOAuth1 > support useHeader option, do not overwrite existing header', (t) => {
   const data = oauthData();
@@ -96,7 +94,7 @@ test('authorization > generateAuthPatch:basicAuth > set authorization header', (
     headers: {},
   };
   const result = Authorization.generateAuthPatch(authNode, request);
-  t.pass(result.request.headers[0].name === 'Authorization');
+  t.pass(result.request.headers.hasOwnProperty('Authorization'));
 });
 
 test('authorization > generateAuthPatch:basicAuth > do not overwrite existing authorization header', (t) => {

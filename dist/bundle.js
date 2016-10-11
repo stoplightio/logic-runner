@@ -155,10 +155,9 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
 
   return {
     request: {
-      headers: [{
-        name: 'Authorization',
-        value: 'Basic ' + string
-      }]
+      headers: {
+        Authorization: 'Basic ' + string
+      }
     }
   };
 };
@@ -234,10 +233,9 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
     // add to the header
     var headerPatch = oauth.toHeader(authPatch);
     patch.request = {
-      headers: [{
-        name: 'Authorization',
-        value: headerPatch.Authorization
-      }]
+      headers: {
+        Authorization: headerPatch.Authorization
+      }
     };
   } else {
     // add to the query string
