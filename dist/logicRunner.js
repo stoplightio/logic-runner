@@ -6193,6 +6193,149 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
   return patch;
 };
 
+var castPath$2 = _castPath;
+var isKey$2 = _isKey;
+var toKey$2 = _toKey;
+
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
+function baseGet$1(object, path) {
+  path = isKey$2(path, object) ? [path] : castPath$2(path);
+
+  var index = 0,
+      length = path.length;
+
+  while (object != null && index < length) {
+    object = object[toKey$2(path[index++])];
+  }
+  return index && index == length ? object : undefined;
+}
+
+var _baseGet = baseGet$1;
+
+var baseGet = _baseGet;
+
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
+function get$1(object, path, defaultValue) {
+  var result = object == null ? undefined : baseGet(object, path);
+  return result === undefined ? defaultValue : result;
+}
+
+var get_1 = get$1;
+
+var assignValue$3 = _assignValue;
+var castPath$3 = _castPath;
+var isIndex$4 = _isIndex;
+var isKey$3 = _isKey;
+var isObject$9 = isObject_1;
+var toKey$3 = _toKey;
+
+/**
+ * The base implementation of `_.set`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @param {Function} [customizer] The function to customize path creation.
+ * @returns {Object} Returns `object`.
+ */
+function baseSet$1(object, path, value, customizer) {
+  if (!isObject$9(object)) {
+    return object;
+  }
+  path = isKey$3(path, object) ? [path] : castPath$3(path);
+
+  var index = -1,
+      length = path.length,
+      lastIndex = length - 1,
+      nested = object;
+
+  while (nested != null && ++index < length) {
+    var key = toKey$3(path[index]),
+        newValue = value;
+
+    if (index != lastIndex) {
+      var objValue = nested[key];
+      newValue = customizer ? customizer(objValue, key, nested) : undefined;
+      if (newValue === undefined) {
+        newValue = isObject$9(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
+      }
+    }
+    assignValue$3(nested, key, newValue);
+    nested = nested[key];
+  }
+  return object;
+}
+
+var _baseSet = baseSet$1;
+
+var baseSet = _baseSet;
+
+/**
+ * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
+ * it's created. Arrays are created for missing index properties while objects
+ * are created for all other missing properties. Use `_.setWith` to customize
+ * `path` creation.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.set(object, 'a[0].b.c', 4);
+ * console.log(object.a[0].b.c);
+ * // => 4
+ *
+ * _.set(object, ['x', '0', 'y', 'z'], 5);
+ * console.log(object.x[0].y.z);
+ * // => 5
+ */
+function set$1(object, path, value) {
+  return object == null ? object : baseSet(object, path, value);
+}
+
+var set_1 = set$1;
+
 /**
  * Creates a base function for methods like `_.forIn` and `_.forOwn`.
  *
@@ -6757,7 +6900,7 @@ function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack)
 var _baseIsEqualDeep = baseIsEqualDeep$1;
 
 var baseIsEqualDeep = _baseIsEqualDeep;
-var isObject$9 = isObject_1;
+var isObject$10 = isObject_1;
 var isObjectLike$5 = isObjectLike_1;
 
 /**
@@ -6779,7 +6922,7 @@ function baseIsEqual$1(value, other, customizer, bitmask, stack) {
   if (value === other) {
     return true;
   }
-  if (value == null || other == null || !isObject$9(value) && !isObjectLike$5(other)) {
+  if (value == null || other == null || !isObject$10(value) && !isObjectLike$5(other)) {
     return value !== value && other !== other;
   }
   return baseIsEqualDeep(value, other, baseIsEqual$1, customizer, bitmask, stack);
@@ -6844,7 +6987,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
 
 var _baseIsMatch = baseIsMatch$1;
 
-var isObject$10 = isObject_1;
+var isObject$11 = isObject_1;
 
 /**
  * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
@@ -6855,7 +6998,7 @@ var isObject$10 = isObject_1;
  *  equality comparisons, else `false`.
  */
 function isStrictComparable$1(value) {
-  return value === value && !isObject$10(value);
+  return value === value && !isObject$11(value);
 }
 
 var _isStrictComparable = isStrictComparable$1;
@@ -6928,66 +7071,6 @@ function baseMatches$1(source) {
 
 var _baseMatches = baseMatches$1;
 
-var castPath$2 = _castPath;
-var isKey$3 = _isKey;
-var toKey$3 = _toKey;
-
-/**
- * The base implementation of `_.get` without support for default values.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @returns {*} Returns the resolved value.
- */
-function baseGet$1(object, path) {
-  path = isKey$3(path, object) ? [path] : castPath$2(path);
-
-  var index = 0,
-      length = path.length;
-
-  while (object != null && index < length) {
-    object = object[toKey$3(path[index++])];
-  }
-  return index && index == length ? object : undefined;
-}
-
-var _baseGet = baseGet$1;
-
-var baseGet = _baseGet;
-
-/**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
- * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
- */
-function get$2(object, path, defaultValue) {
-  var result = object == null ? undefined : baseGet(object, path);
-  return result === undefined ? defaultValue : result;
-}
-
-var get_1 = get$2;
-
 /**
  * The base implementation of `_.hasIn` without support for deep paths.
  *
@@ -7038,12 +7121,12 @@ function hasIn$1(object, path) {
 var hasIn_1 = hasIn$1;
 
 var baseIsEqual$2 = _baseIsEqual;
-var get$1 = get_1;
+var get$3 = get_1;
 var hasIn = hasIn_1;
-var isKey$2 = _isKey;
+var isKey$4 = _isKey;
 var isStrictComparable$2 = _isStrictComparable;
 var matchesStrictComparable$2 = _matchesStrictComparable;
-var toKey$2 = _toKey;
+var toKey$4 = _toKey;
 
 /** Used to compose bitmasks for comparison styles. */
 var UNORDERED_COMPARE_FLAG$3 = 1;
@@ -7058,11 +7141,11 @@ var PARTIAL_COMPARE_FLAG$5 = 2;
  * @returns {Function} Returns the new spec function.
  */
 function baseMatchesProperty$1(path, srcValue) {
-  if (isKey$2(path) && isStrictComparable$2(srcValue)) {
-    return matchesStrictComparable$2(toKey$2(path), srcValue);
+  if (isKey$4(path) && isStrictComparable$2(srcValue)) {
+    return matchesStrictComparable$2(toKey$4(path), srcValue);
   }
   return function (object) {
-    var objValue = get$1(object, path);
+    var objValue = get$3(object, path);
     return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual$2(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG$3 | PARTIAL_COMPARE_FLAG$5);
   };
 }
@@ -7103,8 +7186,8 @@ var _basePropertyDeep = basePropertyDeep$1;
 
 var baseProperty = _baseProperty;
 var basePropertyDeep = _basePropertyDeep;
-var isKey$4 = _isKey;
-var toKey$4 = _toKey;
+var isKey$5 = _isKey;
+var toKey$5 = _toKey;
 
 /**
  * Creates a function that returns the value at `path` of a given object.
@@ -7129,7 +7212,7 @@ var toKey$4 = _toKey;
  * // => [1, 2]
  */
 function property$1(path) {
-  return isKey$4(path) ? baseProperty(toKey$4(path)) : basePropertyDeep(path);
+  return isKey$5(path) ? baseProperty(toKey$5(path)) : basePropertyDeep(path);
 }
 
 var property_1 = property$1;
@@ -7982,7 +8065,7 @@ var baseDifference = _baseDifference;
 var basePick = _basePick;
 var flatRest = _flatRest;
 var getAllKeysIn = _getAllKeysIn;
-var toKey$5 = _toKey;
+var toKey$6 = _toKey;
 
 /**
  * The opposite of `_.pick`; this method creates an object composed of the
@@ -8007,7 +8090,7 @@ var omit = flatRest(function (object, props) {
   if (object == null) {
     return {};
   }
-  props = arrayMap(props, toKey$5);
+  props = arrayMap(props, toKey$6);
   return basePick(object, baseDifference(getAllKeysIn(object), props));
 });
 
@@ -8038,16 +8121,40 @@ var JSONHelpers = Object.freeze({
 	safeStringify: safeStringify
 });
 
+var extractVariables = function extractVariables(target) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  var _ref$strip = _ref.strip;
+  var strip = _ref$strip === undefined ? false : _ref$strip;
+  var _ref$required = _ref.required;
+  var required = _ref$required === undefined ? false : _ref$required;
+
+  var toProcess = safeStringify(target);
+  var matches = void 0;
+  if (required) {
+    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
+  } else {
+    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+  }
+
+  if (strip) {
+    for (var i in matches) {
+      matches[i] = trim_1(matches[i], '<!>%3C%3E\\<\\>');
+    }
+  }
+
+  return matches;
+};
+
 var replaceVariables = function replaceVariables(target, variables) {
   if (isEmpty_1(target) || isEmpty_1(variables)) {
     return target || {};
   }
 
   var toProcess = safeStringify(target);
-
-  var matches = uniq_1(toProcess.match(/<<([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm));
+  var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trim_1(match, '<>%3C%3E\\<\\>');
+    var variable = trim_1(match, '<!>%3C%3E\\<\\>');
 
     var value = get_1(variables, variable);
     if (typeof value === 'string') {
@@ -8079,88 +8186,11 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
   return newNode;
 };
 
-var assignValue$3 = _assignValue;
-var castPath$3 = _castPath;
-var isIndex$4 = _isIndex;
-var isKey$5 = _isKey;
-var isObject$11 = isObject_1;
-var toKey$6 = _toKey;
-
-/**
- * The base implementation of `_.set`.
- *
- * @private
- * @param {Object} object The object to modify.
- * @param {Array|string} path The path of the property to set.
- * @param {*} value The value to set.
- * @param {Function} [customizer] The function to customize path creation.
- * @returns {Object} Returns `object`.
- */
-function baseSet$1(object, path, value, customizer) {
-  if (!isObject$11(object)) {
-    return object;
-  }
-  path = isKey$5(path, object) ? [path] : castPath$3(path);
-
-  var index = -1,
-      length = path.length,
-      lastIndex = length - 1,
-      nested = object;
-
-  while (nested != null && ++index < length) {
-    var key = toKey$6(path[index]),
-        newValue = value;
-
-    if (index != lastIndex) {
-      var objValue = nested[key];
-      newValue = customizer ? customizer(objValue, key, nested) : undefined;
-      if (newValue === undefined) {
-        newValue = isObject$11(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
-      }
-    }
-    assignValue$3(nested, key, newValue);
-    nested = nested[key];
-  }
-  return object;
-}
-
-var _baseSet = baseSet$1;
-
-var baseSet = _baseSet;
-
-/**
- * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
- * it's created. Arrays are created for missing index properties while objects
- * are created for all other missing properties. Use `_.setWith` to customize
- * `path` creation.
- *
- * **Note:** This method mutates `object`.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to modify.
- * @param {Array|string} path The path of the property to set.
- * @param {*} value The value to set.
- * @returns {Object} Returns `object`.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.set(object, 'a[0].b.c', 4);
- * console.log(object.a[0].b.c);
- * // => 4
- *
- * _.set(object, ['x', '0', 'y', 'z'], 5);
- * console.log(object.x[0].y.z);
- * // => 5
- */
-function set$1(object, path, value) {
-  return object == null ? object : baseSet(object, path, value);
-}
-
-var set_1 = set$1;
+var VariableHelpers = Object.freeze({
+	extractVariables: extractVariables,
+	replaceVariables: replaceVariables,
+	replaceNodeVariables: replaceNodeVariables
+});
 
 var isArray$14 = isArray_1;
 var isObjectLike$6 = isObjectLike_1;
@@ -9057,10 +9087,9 @@ var runLogic = function runLogic(node, logicPath, options) {
 
 var index = _extends({
   generateAuthPatch: generateAuthPatch,
-  replaceVariables: replaceVariables,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-}, JSONHelpers);
+}, VariableHelpers, JSONHelpers);
 
 return index;
 

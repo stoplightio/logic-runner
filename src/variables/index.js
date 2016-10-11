@@ -7,16 +7,33 @@ import omit from 'lodash/omit';
 
 import {safeParse, safeStringify} from '../utils/json';
 
+export const extractVariables = (target, {strip = false, required = false} = {}) => {
+  const toProcess = safeStringify(target);
+  let matches;
+  if (required) {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
+  } else {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+  }
+
+  if (strip) {
+    for (const i in matches) {
+      matches[i] = trim(matches[i], '<!>%3C%3E\\<\\>');
+    }
+  }
+
+  return matches;
+};
+
 export const replaceVariables = (target, variables) => {
   if (isEmpty(target) || isEmpty(variables)) {
     return target || {};
   }
 
   let toProcess = safeStringify(target);
-
-  const matches = uniq(toProcess.match(/<<([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm));
+  const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trim(match, '<>%3C%3E\\<\\>');
+    const variable = trim(match, '<!>%3C%3E\\<\\>');
 
     const value = get(variables, variable);
     if (typeof value === 'string') {

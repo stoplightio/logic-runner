@@ -51,6 +51,20 @@ const buildCases = () => {
       },
     },
     {
+      name: 'replaceVariables > handles path selectors when required',
+      target: {
+        foo: '<<!bar.name>>',
+      },
+      variables: {
+        bar: {
+          name: 'cat',
+        },
+      },
+      expected(result) {
+        return result.foo === 'cat';
+      },
+    },
+    {
       name: 'replaceVariables > handles path selectors with arrays',
       target: {
         foo: '<<bar[0].name>>',
@@ -94,6 +108,18 @@ const buildCases = () => {
       name: 'replaceVariables > handles falsey',
       target: {
         foo: '<<bar>>',
+      },
+      variables: {
+        bar: false,
+      },
+      expected(result) {
+        return result.foo === false;
+      },
+    },
+    {
+      name: 'replaceVariables > handles required',
+      target: {
+        foo: '<<!bar>>',
       },
       variables: {
         bar: false,

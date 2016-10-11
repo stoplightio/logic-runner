@@ -8,12 +8,12 @@ var HmacSHA256 = _interopDefault(require('crypto-js/hmac-sha256'));
 var EncBASE64 = _interopDefault(require('crypto-js/enc-base64'));
 var qs = _interopDefault(require('qs'));
 var merge = _interopDefault(require('lodash/merge'));
+var get = _interopDefault(require('lodash/get'));
+var set = _interopDefault(require('lodash/set'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
-var get = _interopDefault(require('lodash/get'));
 var uniq = _interopDefault(require('lodash/uniq'));
 var omit = _interopDefault(require('lodash/omit'));
-var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -304,16 +304,40 @@ var JSONHelpers = Object.freeze({
 	safeStringify: safeStringify
 });
 
+var extractVariables = function extractVariables(target) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  var _ref$strip = _ref.strip;
+  var strip = _ref$strip === undefined ? false : _ref$strip;
+  var _ref$required = _ref.required;
+  var required = _ref$required === undefined ? false : _ref$required;
+
+  var toProcess = safeStringify(target);
+  var matches = void 0;
+  if (required) {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
+  } else {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+  }
+
+  if (strip) {
+    for (var i in matches) {
+      matches[i] = trim(matches[i], '<!>%3C%3E\\<\\>');
+    }
+  }
+
+  return matches;
+};
+
 var replaceVariables = function replaceVariables(target, variables) {
   if (isEmpty(target) || isEmpty(variables)) {
     return target || {};
   }
 
   var toProcess = safeStringify(target);
-
-  var matches = uniq(toProcess.match(/<<([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm));
+  var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trim(match, '<>%3C%3E\\<\\>');
+    var variable = trim(match, '<!>%3C%3E\\<\\>');
 
     var value = get(variables, variable);
     if (typeof value === 'string') {
@@ -344,6 +368,12 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
 
   return newNode;
 };
+
+var VariableHelpers = Object.freeze({
+	extractVariables: extractVariables,
+	replaceVariables: replaceVariables,
+	replaceNodeVariables: replaceNodeVariables
+});
 
 var buildPathSelector = function buildPathSelector(parts) {
   parts = parts || [];
@@ -884,9 +914,8 @@ var runLogic = function runLogic(node, logicPath, options) {
 
 var index = _extends({
   generateAuthPatch: generateAuthPatch,
-  replaceVariables: replaceVariables,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-}, JSONHelpers);
+}, VariableHelpers, JSONHelpers);
 
 module.exports = index;
