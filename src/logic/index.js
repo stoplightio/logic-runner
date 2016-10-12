@@ -10,12 +10,16 @@ import * as Authorization from '../authorization/index';
 import * as JSONHelpers from '../utils/json';
 
 const patchAuthorization = (node, options) => {
+  const authNode = get(node, 'input.authorization');
+
   // Run Authorization & Patch
-  const authPatch = Authorization.generateAuthPatch(get(node, 'input.authorization'), get(node, 'input.request'), options);
-  if (!isEmpty(authPatch)) {
-    const input = get(node, 'input') || {};
-    merge(input, authPatch);
-    set(node, 'input', input);
+  if (!isEmpty(authNode)) {
+    const authPatch = Authorization.generateAuthPatch(authNode, get(node, 'input.request'), options);
+    if (!isEmpty(authPatch)) {
+      const input = get(node, 'input') || {};
+      merge(input, authPatch);
+      set(node, 'input', input);
+    }
   }
 };
 

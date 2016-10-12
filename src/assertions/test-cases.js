@@ -562,6 +562,48 @@ const buildCases = () => {
       },
     },
 
+    // validate.contract (alias for validate.pass)
+
+    {
+      name: 'validate.contract > handles pass',
+      resultNode: {},
+      assertion: {
+        location: 'output.response',
+        target: 'body',
+        op: 'validate.contract',
+        expected: {},
+      },
+      options: {
+        validate: () => {
+          return {};
+        },
+      },
+      expected(result) {
+        return result.pass;
+      },
+    },
+
+    // validate (alias for validate.pass)
+
+    {
+      name: 'validate > handles pass',
+      resultNode: {},
+      assertion: {
+        location: 'output.response',
+        target: 'body',
+        op: 'validate',
+        expected: {},
+      },
+      options: {
+        validate: () => {
+          return {};
+        },
+      },
+      expected(result) {
+        return result.pass;
+      },
+    },
+
     // validate.fail
 
     {

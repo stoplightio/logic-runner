@@ -240,7 +240,7 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
   } else {
     // add to the query string
     patch.request = {
-      url: setQuery(request.url, authPatch, { preserve: false })
+      url: setQuery(request.url, authPatch, { preserve: true })
     };
   }
 
@@ -604,7 +604,7 @@ var set$1 = function set$1(object, property, value, receiver) {
   return value;
 };
 
-var ASSERTION_OPS = ['eq', 'ne', 'exists', 'contains', 'gt', 'gte', 'lt', 'lte', 'validate.pass', 'validate.fail'];
+var ASSERTION_OPS = ['eq', 'ne', 'exists', 'contains', 'gt', 'gte', 'lt', 'lte', 'validate', 'validate.pass', 'validate.contract', 'validate.fail'];
 
 var runAssertion = function runAssertion(resultNode, assertion) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -677,6 +677,8 @@ var runAssertion = function runAssertion(resultNode, assertion) {
             throw new Error('Expected ' + targetPath + ' to be a number - actual is ' + (typeof value === 'undefined' ? 'undefined' : _typeof(value)));
           }
           break;
+        case 'validate':
+        case 'validate.contract':
         case 'validate.pass':
         case 'validate.fail':
           if (!validate) {
@@ -693,7 +695,7 @@ var runAssertion = function runAssertion(resultNode, assertion) {
             result.details = safeStringify(validationResult.details);
           }
 
-          if (validationResult.error && assertion.op === 'validate.pass') {
+          if (validationResult.error && ['validate.pass', 'validate', 'validate.contract'].indexOf(assertion.op) > -1) {
             throw new Error(validationResult.error);
           }
 
@@ -765,12 +767,16 @@ var runTransforms = function runTransforms(resultNode, transforms) {
 };
 
 var patchAuthorization = function patchAuthorization(node, options) {
+  var authNode = get(node, 'input.authorization');
+
   // Run Authorization & Patch
-  var authPatch = generateAuthPatch(get(node, 'input.authorization'), get(node, 'input.request'), options);
-  if (!isEmpty(authPatch)) {
-    var input = get(node, 'input') || {};
-    merge(input, authPatch);
-    set(node, 'input', input);
+  if (!isEmpty(authNode)) {
+    var authPatch = generateAuthPatch(authNode, get(node, 'input.request'), options);
+    if (!isEmpty(authPatch)) {
+      var input = get(node, 'input') || {};
+      merge(input, authPatch);
+      set(node, 'input', input);
+    }
   }
 };
 

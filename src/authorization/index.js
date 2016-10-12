@@ -103,7 +103,7 @@ export const generateOAuth1 = (data, request, options) => {
   } else {
     // add to the query string
     patch.request = {
-      url: setQuery(request.url, authPatch, {preserve: false}),
+      url: setQuery(request.url, authPatch, {preserve: true}),
     };
   }
 

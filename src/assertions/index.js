@@ -22,7 +22,9 @@ const ASSERTION_OPS = [
   'gte',
   'lt',
   'lte',
+  'validate',
   'validate.pass',
+  'validate.contract',
   'validate.fail',
 ];
 
@@ -96,6 +98,8 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
             throw new Error(`Expected ${targetPath} to be a number - actual is ${typeof value}`);
           }
           break;
+        case 'validate':
+        case 'validate.contract':
         case 'validate.pass':
         case 'validate.fail':
           if (!validate) {
@@ -112,7 +116,7 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
             result.details = safeStringify(validationResult.details);
           }
 
-          if (validationResult.error && assertion.op === 'validate.pass') {
+          if (validationResult.error && ['validate.pass', 'validate', 'validate.contract'].indexOf(assertion.op) > -1) {
             throw new Error(validationResult.error);
           }
 
