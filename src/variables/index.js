@@ -13,7 +13,7 @@ export const extractVariables = (target, {strip = false, required = false} = {})
   if (required) {
     matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
   } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|{([\[\]\.\w- ]+)}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
   }
 
   if (strip) {

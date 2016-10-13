@@ -106,7 +106,13 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
             throw new Error(`Cannot run ${assertion.op} assertion - no validate function provided in options`);
           }
 
-          const validationResult = validate(value, safeParse(assertion.expected));
+          const expected = safeParse(assertion.expected);
+          if (!expected || isEmpty(expected)) {
+            throw new Error(`Cannot run ${assertion.op} assertion - JSON schema is null or empty. If using the 'Link to API design' feature,
+              please make sure there is an endpoint that matches this request, with the appropriate status code, defined in your design.`);
+          }
+
+          const validationResult = validate(value, expected);
 
           if (!validationResult) {
             throw new Error('Unknown validation error');

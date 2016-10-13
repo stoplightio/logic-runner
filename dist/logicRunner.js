@@ -8132,7 +8132,7 @@ var extractVariables = function extractVariables(target) {
   if (required) {
     matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
   } else {
-    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|{([\[\]\.\w- ]+)}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
   }
 
   if (strip) {
@@ -8858,7 +8858,12 @@ var runAssertion = function runAssertion(resultNode, assertion) {
             throw new Error('Cannot run ' + assertion.op + ' assertion - no validate function provided in options');
           }
 
-          var validationResult = validate(value, safeParse(assertion.expected));
+          var expected = safeParse(assertion.expected);
+          if (!expected || isEmpty_1(expected)) {
+            throw new Error('Cannot run ' + assertion.op + ' assertion - JSON schema is null or empty. If using the \'Link to API design\' feature,\n              please make sure there is an endpoint that matches this request, with the appropriate status code, defined in your design.');
+          }
+
+          var validationResult = validate(value, expected);
 
           if (!validationResult) {
             throw new Error('Unknown validation error');

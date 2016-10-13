@@ -520,7 +520,7 @@ const buildCases = () => {
         validate: validateSpy,
       },
       expected(result) {
-        return !result.pass && result.message === VALIDATE_BAD_SCHEMA;
+        return !result.pass;
       },
     },
     {
@@ -530,7 +530,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate.pass',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
@@ -548,7 +548,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate.pass',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
@@ -571,7 +571,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate.contract',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
@@ -592,7 +592,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
@@ -623,7 +623,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate.fail',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
@@ -643,7 +643,7 @@ const buildCases = () => {
         location: 'output.response',
         target: 'body',
         op: 'validate.fail',
-        expected: {},
+        expected: {type: 'object'},
       },
       options: {
         validate: () => {
