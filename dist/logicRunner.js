@@ -8132,12 +8132,12 @@ var extractVariables = function extractVariables(target) {
   if (required) {
     matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
   } else {
-    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|{([\[\]\.\w- ]+)}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
   }
 
   if (strip) {
     for (var i in matches) {
-      matches[i] = trim_1(matches[i], '<!>%3C%3E\\<\\>');
+      matches[i] = trim_1(matches[i], '<!>{}%3C%3E\\<\\>');
     }
   }
 
@@ -8152,7 +8152,7 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trim_1(match, '<!>%3C%3E\\<\\>');
+    var variable = trim_1(match, '<!>{}%3C%3E\\<\\>');
 
     var value = get_1(variables, variable);
     if (typeof value === 'string') {

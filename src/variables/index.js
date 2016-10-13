@@ -13,12 +13,12 @@ export const extractVariables = (target, {strip = false, required = false} = {})
   if (required) {
     matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
   } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|{([\[\]\.\w- ]+)}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
   }
 
   if (strip) {
     for (const i in matches) {
-      matches[i] = trim(matches[i], '<!>%3C%3E\\<\\>');
+      matches[i] = trim(matches[i], '<!>{}%3C%3E\\<\\>');
     }
   }
 
@@ -33,7 +33,7 @@ export const replaceVariables = (target, variables) => {
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trim(match, '<!>%3C%3E\\<\\>');
+    const variable = trim(match, '<!>{}%3C%3E\\<\\>');
 
     const value = get(variables, variable);
     if (typeof value === 'string') {

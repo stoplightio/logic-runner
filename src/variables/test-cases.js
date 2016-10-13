@@ -13,6 +13,68 @@ const buildCases = () => {
       },
     },
     {
+      name: 'replaceVariables > handles curly brackets',
+      target: {
+        foo: '{bar}',
+      },
+      variables: {
+        bar: 'cat',
+      },
+      expected(result) {
+        return result.foo === 'cat';
+      },
+    },
+    {
+      name: 'replaceVariables > handles nested curly brackets',
+      target: {
+        foo: '{bar.name}',
+      },
+      variables: {
+        bar: {
+          name: 'cat',
+        },
+      },
+      expected(result) {
+        return result.foo === 'cat';
+      },
+    },
+    {
+      name: 'replaceVariables > does not replace curly json',
+      target: {
+        foo: '{"foo": "bar"}',
+      },
+      variables: {
+        bar: 'cat',
+      },
+      expected(result) {
+        return result.foo === '{"foo": "bar"}';
+      },
+    },
+    {
+      name: 'replaceVariables > does not replace curly javascript',
+      target: {
+        foo: '{foo: 123}',
+      },
+      variables: {
+        bar: 'cat',
+      },
+      expected(result) {
+        return result.foo === '{foo: 123}';
+      },
+    },
+    {
+      name: 'replaceVariables > does not replace curly deep javascript',
+      target: {
+        foo: '{foo: {"bar": 123, "cat": {test}}}',
+      },
+      variables: {
+        test: 123,
+      },
+      expected(result) {
+        return result.foo === '{foo: {"bar": 123, "cat": 123}}';
+      },
+    },
+    {
       name: 'replaceVariables > handles nested stringified json',
       target: {
         foo: '{"foo": "<<bar>>"}',

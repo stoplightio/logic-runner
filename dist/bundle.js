@@ -315,12 +315,12 @@ var extractVariables = function extractVariables(target) {
   if (required) {
     matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
   } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|{([\[\]\.\w- ]+)}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
   }
 
   if (strip) {
     for (var i in matches) {
-      matches[i] = trim(matches[i], '<!>%3C%3E\\<\\>');
+      matches[i] = trim(matches[i], '<!>{}%3C%3E\\<\\>');
     }
   }
 
@@ -335,7 +335,7 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trim(match, '<!>%3C%3E\\<\\>');
+    var variable = trim(match, '<!>{}%3C%3E\\<\\>');
 
     var value = get(variables, variable);
     if (typeof value === 'string') {
