@@ -1738,7 +1738,7 @@ var stringToPath$1 = memoizeCapped(function (string) {
 
 var _stringToPath = stringToPath$1;
 
-var isArray$3 = isArray_1;
+var isArray$4 = isArray_1;
 var stringToPath = _stringToPath;
 
 /**
@@ -1749,7 +1749,7 @@ var stringToPath = _stringToPath;
  * @returns {Array} Returns the cast property path array.
  */
 function castPath$1(value) {
-  return isArray$3(value) ? value : stringToPath(value);
+  return isArray$4(value) ? value : stringToPath(value);
 }
 
 var _castPath = castPath$1;
@@ -1775,7 +1775,7 @@ function isIndex$1(value, length) {
 
 var _isIndex = isIndex$1;
 
-var isArray$4 = isArray_1;
+var isArray$5 = isArray_1;
 var isSymbol$2 = isSymbol_1;
 
 /** Used to match property names within property paths. */
@@ -1791,7 +1791,7 @@ var reIsPlainProp = /^\w*$/;
  * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
  */
 function isKey$1(value, object) {
-  if (isArray$4(value)) {
+  if (isArray$5(value)) {
     return false;
   }
   var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
@@ -1827,7 +1827,7 @@ var _toKey = toKey$1;
 
 var castPath = _castPath;
 var isArguments$2 = isArguments_1;
-var isArray$2 = isArray_1;
+var isArray$3 = isArray_1;
 var isIndex = _isIndex;
 var isKey = _isKey;
 var isLength$2 = isLength_1;
@@ -1860,7 +1860,7 @@ function hasPath$1(object, path, hasFunc) {
     return result;
   }
   length = object ? object.length : 0;
-  return !!length && isLength$2(length) && isIndex(key, length) && (isArray$2(object) || isArguments$2(object));
+  return !!length && isLength$2(length) && isIndex(key, length) && (isArray$3(object) || isArguments$2(object));
 }
 
 var _hasPath = hasPath$1;
@@ -4521,7 +4521,7 @@ var _baseTimes = baseTimes$1;
 
 var baseTimes = _baseTimes;
 var isArguments$4 = isArguments_1;
-var isArray$8 = isArray_1;
+var isArray$9 = isArray_1;
 var isIndex$2 = _isIndex;
 
 /** Used for built-in method references. */
@@ -4541,7 +4541,7 @@ var hasOwnProperty$8 = objectProto$13.hasOwnProperty;
 function arrayLikeKeys$1(value, inherited) {
   // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
   // Safari 9 makes `arguments.length` enumerable in strict mode.
-  var result = isArray$8(value) || isArguments$4(value) ? baseTimes(value.length, String) : [];
+  var result = isArray$9(value) || isArguments$4(value) ? baseTimes(value.length, String) : [];
 
   var length = result.length,
       skipIndexes = !!length;
@@ -4782,7 +4782,7 @@ function arrayPush$1(array, values) {
 var _arrayPush = arrayPush$1;
 
 var arrayPush = _arrayPush;
-var isArray$9 = isArray_1;
+var isArray$10 = isArray_1;
 
 /**
  * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
@@ -4797,7 +4797,7 @@ var isArray$9 = isArray_1;
  */
 function baseGetAllKeys$1(object, keysFunc, symbolsFunc) {
   var result = keysFunc(object);
-  return isArray$9(object) ? result : arrayPush(result, symbolsFunc(object));
+  return isArray$10(object) ? result : arrayPush(result, symbolsFunc(object));
 }
 
 var _baseGetAllKeys = baseGetAllKeys$1;
@@ -5226,7 +5226,7 @@ var getTag$2 = _getTag;
 var initCloneArray = _initCloneArray;
 var initCloneByTag = _initCloneByTag;
 var initCloneObject = _initCloneObject;
-var isArray$7 = isArray_1;
+var isArray$8 = isArray_1;
 var isBuffer$2 = isBuffer_1;
 var isObject$6 = isObject_1;
 var keys = keys_1;
@@ -5290,7 +5290,7 @@ function baseClone$1(value, isDeep, isFull, customizer, key, object, stack) {
   if (!isObject$6(value)) {
     return value;
   }
-  var isArr = isArray$7(value);
+  var isArr = isArray$8(value);
   if (isArr) {
     result = initCloneArray(value);
     if (!isDeep) {
@@ -5603,7 +5603,7 @@ var assignMergeValue$2 = _assignMergeValue;
 var baseClone = _baseClone;
 var copyArray = _copyArray;
 var isArguments$3 = isArguments_1;
-var isArray$6 = isArray_1;
+var isArray$7 = isArray_1;
 var isArrayLikeObject$2 = isArrayLikeObject_1;
 var isFunction$3 = isFunction_1;
 var isObject$5 = isObject_1;
@@ -5641,8 +5641,8 @@ function baseMergeDeep$1(object, source, key, srcIndex, mergeFunc, customizer, s
 
   if (isCommon) {
     newValue = srcValue;
-    if (isArray$6(srcValue) || isTypedArray$1(srcValue)) {
-      if (isArray$6(objValue)) {
+    if (isArray$7(srcValue) || isTypedArray$1(srcValue)) {
+      if (isArray$7(objValue)) {
         newValue = objValue;
       } else if (isArrayLikeObject$2(objValue)) {
         newValue = copyArray(objValue);
@@ -5679,7 +5679,7 @@ var arrayEach = _arrayEach;
 var assignMergeValue = _assignMergeValue;
 var baseKeysIn = _baseKeysIn;
 var baseMergeDeep = _baseMergeDeep;
-var isArray$5 = isArray_1;
+var isArray$6 = isArray_1;
 var isObject$3 = isObject_1;
 var isTypedArray = isTypedArray_1;
 
@@ -5698,7 +5698,7 @@ function baseMerge$1(object, source, srcIndex, customizer, stack) {
   if (object === source) {
     return;
   }
-  if (!(isArray$5(source) || isTypedArray(source))) {
+  if (!(isArray$6(source) || isTypedArray(source))) {
     var props = baseKeysIn(source);
   }
   arrayEach(props || source, function (srcValue, key) {
@@ -6822,7 +6822,7 @@ var equalArrays = _equalArrays;
 var equalByTag = _equalByTag;
 var equalObjects = _equalObjects;
 var getTag$3 = _getTag;
-var isArray$12 = isArray_1;
+var isArray$13 = isArray_1;
 var isTypedArray$3 = isTypedArray_1;
 
 /** Used to compose bitmasks for comparison styles. */
@@ -6855,8 +6855,8 @@ var hasOwnProperty$12 = objectProto$18.hasOwnProperty;
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
 function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack) {
-  var objIsArr = isArray$12(object),
-      othIsArr = isArray$12(other),
+  var objIsArr = isArray$13(object),
+      othIsArr = isArray$13(other),
       objTag = arrayTag$2,
       othTag = arrayTag$2;
 
@@ -7218,7 +7218,7 @@ var property_1 = property$1;
 var baseMatches = _baseMatches;
 var baseMatchesProperty = _baseMatchesProperty;
 var identity$3 = identity_1;
-var isArray$11 = isArray_1;
+var isArray$12 = isArray_1;
 var property = property_1;
 
 /**
@@ -7238,7 +7238,7 @@ function baseIteratee$1(value) {
     return identity$3;
   }
   if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object') {
-    return isArray$11(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
+    return isArray$12(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
   }
   return property(value);
 }
@@ -7248,7 +7248,7 @@ var _baseIteratee = baseIteratee$1;
 var arrayEach$3 = _arrayEach;
 var baseEach = _baseEach;
 var baseIteratee = _baseIteratee;
-var isArray$10 = isArray_1;
+var isArray$11 = isArray_1;
 
 /**
  * Iterates over elements of `collection` and invokes `iteratee` for each element.
@@ -7281,7 +7281,7 @@ var isArray$10 = isArray_1;
  * // => Logs 'a' then 'b' (iteration order is not guaranteed).
  */
 function forEach(collection, iteratee) {
-  var func = isArray$10(collection) ? arrayEach$3 : baseEach;
+  var func = isArray$11(collection) ? arrayEach$3 : baseEach;
   return func(collection, baseIteratee(iteratee, 3));
 }
 
@@ -7916,7 +7916,7 @@ var _basePick = basePick$1;
 
 var _Symbol$5 = _Symbol$1;
 var isArguments$5 = isArguments_1;
-var isArray$13 = isArray_1;
+var isArray$14 = isArray_1;
 
 /** Built-in value references. */
 var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
@@ -7929,7 +7929,7 @@ var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
 function isFlattenable$1(value) {
-    return isArray$13(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
+    return isArray$14(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
 }
 
 var _isFlattenable = isFlattenable$1;
@@ -8094,6 +8094,83 @@ var omit = flatRest(function (object, props) {
 
 var omit_1 = omit;
 
+var baseEach$2 = _baseEach;
+var isArrayLike$7 = isArrayLike_1;
+
+/**
+ * The base implementation of `_.map` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
+function baseMap$1(collection, iteratee) {
+  var index = -1,
+      result = isArrayLike$7(collection) ? Array(collection.length) : [];
+
+  baseEach$2(collection, function (value, key, collection) {
+    result[++index] = iteratee(value, key, collection);
+  });
+  return result;
+}
+
+var _baseMap = baseMap$1;
+
+var arrayMap$3 = _arrayMap;
+var baseIteratee$2 = _baseIteratee;
+var baseMap = _baseMap;
+var isArray$15 = isArray_1;
+
+/**
+ * Creates an array of values by running each element in `collection` thru
+ * `iteratee`. The iteratee is invoked with three arguments:
+ * (value, index|key, collection).
+ *
+ * Many lodash methods are guarded to work as iteratees for methods like
+ * `_.every`, `_.filter`, `_.map`, `_.mapValues`, `_.reject`, and `_.some`.
+ *
+ * The guarded methods are:
+ * `ary`, `chunk`, `curry`, `curryRight`, `drop`, `dropRight`, `every`,
+ * `fill`, `invert`, `parseInt`, `random`, `range`, `rangeRight`, `repeat`,
+ * `sampleSize`, `slice`, `some`, `sortBy`, `split`, `take`, `takeRight`,
+ * `template`, `trim`, `trimEnd`, `trimStart`, and `words`
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ * @example
+ *
+ * function square(n) {
+ *   return n * n;
+ * }
+ *
+ * _.map([4, 8], square);
+ * // => [16, 64]
+ *
+ * _.map({ 'a': 4, 'b': 8 }, square);
+ * // => [16, 64] (iteration order is not guaranteed)
+ *
+ * var users = [
+ *   { 'user': 'barney' },
+ *   { 'user': 'fred' }
+ * ];
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.map(users, 'user');
+ * // => ['barney', 'fred']
+ */
+function map(collection, iteratee) {
+  var func = isArray$15(collection) ? arrayMap$3 : baseMap;
+  return func(collection, baseIteratee$2(iteratee, 3));
+}
+
+var map_1 = map;
+
 var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
@@ -8114,9 +8191,57 @@ var safeStringify = function safeStringify(target, offset) {
   return target;
 };
 
+var mapToNameValue = function mapToNameValue(obj) {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map_1(obj || {}, function (value, name) {
+    return { name: name, value: value };
+  });
+};
+
+var nameValueToMap = function nameValueToMap(nameValueArray) {
+  if (!isArray_1(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  var result = {};
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _step.value;
+      var name = _step$value.name;
+      var value = _step$value.value;
+
+      result[name] = value;
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+};
+
 var JSONHelpers = Object.freeze({
 	safeParse: safeParse,
-	safeStringify: safeStringify
+	safeStringify: safeStringify,
+	mapToNameValue: mapToNameValue,
+	nameValueToMap: nameValueToMap
 });
 
 var extractVariables = function extractVariables(target) {
@@ -8190,7 +8315,7 @@ var VariableHelpers = Object.freeze({
 	replaceNodeVariables: replaceNodeVariables
 });
 
-var isArray$14 = isArray_1;
+var isArray$16 = isArray_1;
 var isObjectLike$6 = isObjectLike_1;
 
 /** `Object#toString` result references. */
@@ -8224,7 +8349,7 @@ var objectToString$7 = objectProto$20.toString;
  * // => false
  */
 function isString$1(value) {
-  return typeof value == 'string' || !isArray$14(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$4;
+  return typeof value == 'string' || !isArray$16(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$4;
 }
 
 var isString_1 = isString$1;
@@ -8374,7 +8499,7 @@ function toInteger$1(value) {
 
 var toInteger_1 = toInteger$1;
 
-var arrayMap$3 = _arrayMap;
+var arrayMap$4 = _arrayMap;
 
 /**
  * The base implementation of `_.values` and `_.valuesIn` which creates an
@@ -8387,7 +8512,7 @@ var arrayMap$3 = _arrayMap;
  * @returns {Object} Returns the array of property values.
  */
 function baseValues$1(object, props) {
-  return arrayMap$3(props, function (key) {
+  return arrayMap$4(props, function (key) {
     return object[key];
   });
 }
@@ -8430,7 +8555,7 @@ function values$1(object) {
 var values_1 = values$1;
 
 var baseIndexOf$4 = _baseIndexOf;
-var isArrayLike$7 = isArrayLike_1;
+var isArrayLike$8 = isArrayLike_1;
 var isString = isString_1;
 var toInteger = toInteger_1;
 var values = values_1;
@@ -8469,7 +8594,7 @@ var nativeMax$1 = Math.max;
  * // => true
  */
 function includes(collection, value, fromIndex, guard) {
-  collection = isArrayLike$7(collection) ? collection : values(collection);
+  collection = isArrayLike$8(collection) ? collection : values(collection);
   fromIndex = fromIndex && !guard ? toInteger(fromIndex) : 0;
 
   var length = collection.length;

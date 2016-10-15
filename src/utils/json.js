@@ -1,3 +1,6 @@
+import map from 'lodash/map';
+import isArray from 'lodash/isArray';
+
 export const safeParse = (target, defaultValue) => {
   if (typeof target === 'string') {
     try {
@@ -16,4 +19,26 @@ export const safeStringify = (target, offset) => {
   }
 
   return target;
+};
+
+
+export const mapToNameValue = (obj) => {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map(obj || {}, (value, name) => ({name, value}));
+};
+
+export const nameValueToMap = (nameValueArray) => {
+  if (!isArray(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  const result = {};
+  for (const {name, value} of nameValueArray) {
+    result[name] = value;
+  }
+
+  return result;
 };

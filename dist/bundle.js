@@ -14,6 +14,8 @@ var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
 var omit = _interopDefault(require('lodash/omit'));
+var map = _interopDefault(require('lodash/map'));
+var isArray = _interopDefault(require('lodash/isArray'));
 var includes = _interopDefault(require('lodash/includes'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -297,9 +299,57 @@ var safeStringify = function safeStringify(target, offset) {
   return target;
 };
 
+var mapToNameValue = function mapToNameValue(obj) {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map(obj || {}, function (value, name) {
+    return { name: name, value: value };
+  });
+};
+
+var nameValueToMap = function nameValueToMap(nameValueArray) {
+  if (!isArray(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  var result = {};
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _step.value;
+      var name = _step$value.name;
+      var value = _step$value.value;
+
+      result[name] = value;
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+};
+
 var JSONHelpers = Object.freeze({
 	safeParse: safeParse,
-	safeStringify: safeStringify
+	safeStringify: safeStringify,
+	mapToNameValue: mapToNameValue,
+	nameValueToMap: nameValueToMap
 });
 
 var extractVariables = function extractVariables(target) {
