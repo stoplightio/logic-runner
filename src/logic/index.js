@@ -24,7 +24,7 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-export const runScript = (script, state = {}, tests = [], input = {}, output = {}, logger) => {
+export const runScript = (script, root, state = {}, tests = [], input = {}, output = {}, logger) => {
   // additional functions available to scripts
   const {safeStringify, safeParse} = JSONHelpers;
   const skip = () => {
@@ -88,7 +88,7 @@ export const runScript = (script, state = {}, tests = [], input = {}, output = {
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
  */
-export const runLogic = (node, logicPath, options) => {
+export const runLogic = (rootResultNode, node, logicPath, options) => {
   if (!node) {
     return {};
   }
@@ -125,7 +125,7 @@ export const runLogic = (node, logicPath, options) => {
   }
 
   // Run Transforms
-  Transforms.runTransforms(node, logic.transforms, options);
+  Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
 
   // Run Script
   const tests = {};
@@ -135,13 +135,15 @@ export const runLogic = (node, logicPath, options) => {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       const state = get(node, 'state') || {};
-      scriptResult = runScript(script, state, tests, input, {}, options.logger);
+      const resultOutput = get(rootResultNode, 'output');
+      scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
       const state = get(node, 'result.state') || {};
-      scriptResult = runScript(script, state, tests, input, output, options.logger);
+      const resultOutput = get(rootResultNode, 'output');
+      scriptResult = runScript(script, resultOutput, state, tests, input, output, options.logger);
       set(node, 'result.state', state);
     }
 

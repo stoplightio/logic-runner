@@ -26,7 +26,9 @@ export const extractVariables = (target, {strip = false, required = false} = {})
 };
 
 export const replaceVariables = (target, variables) => {
-  if (isEmpty(target) || isEmpty(variables)) {
+  const parsedVariables = safeParse(variables);
+
+  if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target || {};
   }
 
@@ -35,7 +37,7 @@ export const replaceVariables = (target, variables) => {
   forEach(matches, (match) => {
     const variable = trim(match, '<!>{}%3C%3E\\<\\>');
 
-    const value = get(variables, variable);
+    const value = get(parsedVariables, variable);
     if (typeof value === 'string') {
       toProcess = toProcess.replace(match, value);
     } else {
@@ -43,7 +45,7 @@ export const replaceVariables = (target, variables) => {
     }
   });
 
-  return safeParse(toProcess);
+  return safeParse(toProcess, target);
 };
 
 export const replaceNodeVariables = (node) => {

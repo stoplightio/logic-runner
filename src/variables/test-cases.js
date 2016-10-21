@@ -190,6 +190,30 @@ const buildCases = () => {
         return result.foo === false;
       },
     },
+    {
+      name: 'replaceVariables > handles variables that do not exist',
+      target: {
+        foo: '<<!doesNotExist>>',
+      },
+      variables: {
+        bar: false,
+      },
+      expected(result) {
+        return result.foo === '<<!doesNotExist>>';
+      },
+    },
+    {
+      name: 'replaceVariables > handles stringified variables',
+      target: {
+        foo: '<<bar>>',
+      },
+      variables: JSON.stringify({
+        bar: false,
+      }),
+      expected(result) {
+        return result.foo === false;
+      },
+    },
   ];
 };
 

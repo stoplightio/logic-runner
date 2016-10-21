@@ -2,17 +2,17 @@ import test from 'ava';
 import * as Logic from '.';
 
 test('logic > runLogic > handles undefined node', (t) => {
-  const result = Logic.runLogic();
+  const result = Logic.runLogic({}, );
   t.deepEqual(result, {});
 });
 
 test('logic > runLogic > handles null node', (t) => {
-  const result = Logic.runLogic(null);
+  const result = Logic.runLogic({}, null);
   t.deepEqual(result, {});
 });
 
 test('logic > runLogic > handles undefined logic', (t) => {
-  const result = Logic.runLogic({}, 'after');
+  const result = Logic.runLogic({}, {}, 'after');
   t.deepEqual(result, {});
 });
 
@@ -43,7 +43,7 @@ test('logic > runLogic > runs before assertions', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'before');
+  node = Logic.runLogic({}, node, 'before');
   t.is(node.before.assertions[0].result.pass, true);
   t.is(node.before.assertions[1].result.pass, false);
 });
@@ -76,7 +76,7 @@ test('logic > runLogic > runs after assertions', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'after');
+  node = Logic.runLogic({}, node, 'after');
   t.is(node.after.assertions[0].result.pass, true);
   t.is(node.after.assertions[1].result.pass, false);
 });
@@ -102,7 +102,7 @@ test('logic > runLogic > runs before transforms', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'before');
+  node = Logic.runLogic({}, node, 'before');
   t.is(node.state.boo2, 5);
 });
 test('logic > runLogic > runs after transforms', (t) => {
@@ -128,7 +128,7 @@ test('logic > runLogic > runs after transforms', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'after');
+  node = Logic.runLogic({}, node, 'after');
   t.is(node.result.state.boo2, 5);
 });
 
@@ -146,7 +146,7 @@ test('logic > runLogic > replaces variables before script is run', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'before');
+  node = Logic.runLogic({}, node, 'before');
   t.is(node.input.request.body.foo, 'dog');
 });
 
@@ -174,7 +174,7 @@ test('logic > runLogic > replaces variables after script is run', (t) => {
     },
   };
 
-  node = Logic.runLogic(node, 'before');
+  node = Logic.runLogic({}, node, 'before');
   t.is(node.input.request.body.dog, 'bart');
 });
 

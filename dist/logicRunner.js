@@ -8640,7 +8640,9 @@ var extractVariables = function extractVariables(target) {
 };
 
 var replaceVariables = function replaceVariables(target, variables) {
-  if (isEmpty_1(target) || isEmpty_1(variables)) {
+  var parsedVariables = safeParse(variables);
+
+  if (isEmpty_1(target) || isEmpty_1(parsedVariables)) {
     return target || {};
   }
 
@@ -8649,7 +8651,7 @@ var replaceVariables = function replaceVariables(target, variables) {
   forEach_1(matches, function (match) {
     var variable = trim_1(match, '<!>{}%3C%3E\\<\\>');
 
-    var value = get_1(variables, variable);
+    var value = get_1(parsedVariables, variable);
     if (typeof value === 'string') {
       toProcess = toProcess.replace(match, value);
     } else {
@@ -8657,7 +8659,7 @@ var replaceVariables = function replaceVariables(target, variables) {
     }
   });
 
-  return safeParse(toProcess);
+  return safeParse(toProcess, target);
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
@@ -9118,33 +9120,50 @@ var runAssertions = function runAssertions(resultNode, assertions) {
   return assertions;
 };
 
-var SOURCE_REGEX = new RegExp(/^state|status|result|input/);
+var SOURCE_REGEX = new RegExp(/^root|state|status|result|input/);
+var ROOT_REGEX = new RegExp(/^root\./);
 
-var runTransform = function runTransform(resultNode, transform) {
-  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+var runTransform = function runTransform(rootNode, resultNode, transform) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
   try {
-    var sourcePath = buildPathSelector([transform.sourceLocation, transform.sourcePath]);
-
+    var sourceLocation = transform.sourceLocation;
+    var useRootSource = sourceLocation.match(ROOT_REGEX);
+    if (useRootSource) {
+      sourceLocation = sourceLocation.replace(ROOT_REGEX, '');
+    }
+    var sourcePath = buildPathSelector([sourceLocation, transform.sourcePath]);
     if (!sourcePath.match(SOURCE_REGEX)) {
       return;
     }
 
-    var targetPath = buildPathSelector([transform.targetLocation, transform.targetPath]);
-    var value = get_1(resultNode, sourcePath);
-    set_1(resultNode, targetPath, value);
+    var targetLocation = transform.targetLocation;
+    var useRootTarget = targetLocation.match(ROOT_REGEX);
+    if (useRootTarget) {
+      targetLocation = targetLocation.replace(ROOT_REGEX, '');
+    }
+    var targetPath = buildPathSelector([targetLocation, transform.targetPath]);
+    if (!targetPath.match(SOURCE_REGEX)) {
+      return;
+    }
+
+    var sourceNode = useRootSource ? rootNode : resultNode;
+    var targetNode = useRootTarget ? rootNode : resultNode;
+
+    var value = get_1(sourceNode, sourcePath);
+    set_1(targetNode, targetPath, value);
   } catch (e) {
     console.warn('transforms#runTransform', e, resultNode, transform);
   }
 };
 
-var runTransforms = function runTransforms(resultNode, transforms) {
-  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
   transforms = transforms || [];
 
   forEach_1(transforms, function (a) {
-    runTransform(resultNode, a, options);
+    runTransform(rootNode, resultNode, a, options);
   });
 };
 
@@ -9162,12 +9181,12 @@ var patchAuthorization = function patchAuthorization(node, options) {
   }
 };
 
-var runScript = function runScript(script) {
-  var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-  var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-  var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
-  var logger = arguments[5];
+var runScript = function runScript(script, root) {
+  var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var input = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+  var output = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
+  var logger = arguments[6];
 
   // additional functions available to scripts
   var safeStringify$$1 = safeStringify;
@@ -9213,7 +9232,7 @@ var runScript = function runScript(script) {
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
  */
-var runLogic = function runLogic(node, logicPath, options) {
+var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!node) {
     return {};
   }
@@ -9252,7 +9271,7 @@ var runLogic = function runLogic(node, logicPath, options) {
   }
 
   // Run Transforms
-  runTransforms(node, logic.transforms, options);
+  runTransforms(rootResultNode, node, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -9262,13 +9281,15 @@ var runLogic = function runLogic(node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
       var state = get_1(node, 'state') || {};
-      scriptResult = runScript(script, state, tests, input, {}, options.logger);
+      var resultOutput = get_1(rootResultNode, 'output');
+      scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set_1(node, 'state', state);
     } else {
       var _input = get_1(node, 'result.input') || {};
       var output = get_1(node, 'result.output') || {};
       var _state = get_1(node, 'result.state') || {};
-      scriptResult = runScript(script, _state, tests, _input, output, options.logger);
+      var _resultOutput = get_1(rootResultNode, 'output');
+      scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
       set_1(node, 'result.state', _state);
     }
 
