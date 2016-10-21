@@ -1,5 +1,6 @@
 import map from 'lodash/map';
 import isArray from 'lodash/isArray';
+import stringify from 'json-stringify-safe';
 
 export const safeParse = (target, defaultValue) => {
   if (typeof target === 'string') {
@@ -15,7 +16,7 @@ export const safeParse = (target, defaultValue) => {
 
 export const safeStringify = (target, offset) => {
   if (target && typeof target !== 'string') {
-    return JSON.stringify(target, null, offset || 4);
+    return stringify(target, null, offset || 4);
   }
 
   return target;

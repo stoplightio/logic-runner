@@ -81,6 +81,7 @@
   },
   "dependencies": {
     "crypto-js": "3.x.x",
+    "json-stringify-safe": "5.0.x",
     "oauth-1.0a": "2.x.x",
     "qs": "6.x.x"
   }

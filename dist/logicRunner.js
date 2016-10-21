@@ -3709,20 +3709,22 @@ var Base64 = {
   }
 };
 
-var utils = createCommonjsModule(function (module, exports) {
+var utils$1 = createCommonjsModule(function (module, exports) {
     'use strict';
 
+    var has = Object.prototype.hasOwnProperty;
+
     var hexTable = function () {
-        var array = new Array(256);
+        var array = [];
         for (var i = 0; i < 256; ++i) {
-            array[i] = '%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase();
+            array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
         }
 
         return array;
     }();
 
     exports.arrayToObject = function (source, options) {
-        var obj = options.plainObjects ? Object.create(null) : {};
+        var obj = options && options.plainObjects ? Object.create(null) : {};
         for (var i = 0; i < source.length; ++i) {
             if (typeof source[i] !== 'undefined') {
                 obj[i] = source[i];
@@ -3756,6 +3758,21 @@ var utils = createCommonjsModule(function (module, exports) {
         var mergeTarget = target;
         if (Array.isArray(target) && !Array.isArray(source)) {
             mergeTarget = exports.arrayToObject(target, options);
+        }
+
+        if (Array.isArray(target) && Array.isArray(source)) {
+            source.forEach(function (item, i) {
+                if (has.call(target, i)) {
+                    if (target[i] && _typeof(target[i]) === 'object') {
+                        target[i] = exports.merge(target[i], item, options);
+                    } else {
+                        target.push(item);
+                    }
+                } else {
+                    target[i] = item;
+                }
+            });
+            return target;
         }
 
         return Object.keys(source).reduce(function (acc, key) {
@@ -3854,10 +3871,9 @@ var utils = createCommonjsModule(function (module, exports) {
         }
 
         var keys = Object.keys(obj);
-        for (var j = 0; j < keys.length; ++j) {
-            var key = keys[j];
+        keys.forEach(function (key) {
             obj[key] = exports.compact(obj[key], refs);
-        }
+        });
 
         return obj;
     };
@@ -3875,7 +3891,25 @@ var utils = createCommonjsModule(function (module, exports) {
     };
 });
 
-var Utils = utils;
+var replace = String.prototype.replace;
+var percentTwenties = /%20/g;
+
+var formats$2 = {
+    'default': 'RFC3986',
+    formatters: {
+        RFC1738: function RFC1738(value) {
+            return replace.call(value, percentTwenties, '+');
+        },
+        RFC3986: function RFC3986(value) {
+            return value;
+        }
+    },
+    RFC1738: 'RFC1738',
+    RFC3986: 'RFC3986'
+};
+
+var utils = utils$1;
+var formats$1 = formats$2;
 
 var arrayPrefixGenerators = {
     brackets: function brackets(prefix) {
@@ -3889,20 +3923,25 @@ var arrayPrefixGenerators = {
     }
 };
 
+var toISO = Date.prototype.toISOString;
+
 var defaults$1 = {
     delimiter: '&',
-    strictNullHandling: false,
-    skipNulls: false,
     encode: true,
-    encoder: Utils.encode
+    encoder: utils.encode,
+    serializeDate: function serializeDate(date) {
+        return toISO.call(date);
+    },
+    skipNulls: false,
+    strictNullHandling: false
 };
 
-var stringify$1 = function stringify$1(object, prefix, generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots) {
+var stringify$2 = function stringify$2(object, prefix, generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots, serializeDate, formatter) {
     var obj = object;
     if (typeof filter === 'function') {
         obj = filter(prefix, obj);
     } else if (obj instanceof Date) {
-        obj = obj.toISOString();
+        obj = serializeDate(obj);
     } else if (obj === null) {
         if (strictNullHandling) {
             return encoder ? encoder(prefix) : prefix;
@@ -3911,11 +3950,11 @@ var stringify$1 = function stringify$1(object, prefix, generateArrayPrefix, stri
         obj = '';
     }
 
-    if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean' || Utils.isBuffer(obj)) {
+    if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean' || utils.isBuffer(obj)) {
         if (encoder) {
-            return [encoder(prefix) + '=' + encoder(obj)];
+            return [formatter(encoder(prefix)) + '=' + formatter(encoder(obj))];
         }
-        return [prefix + '=' + String(obj)];
+        return [formatter(prefix) + '=' + formatter(String(obj))];
     }
 
     var values = [];
@@ -3940,9 +3979,9 @@ var stringify$1 = function stringify$1(object, prefix, generateArrayPrefix, stri
         }
 
         if (Array.isArray(obj)) {
-            values = values.concat(stringify$1(obj[key], generateArrayPrefix(prefix, key), generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots));
+            values = values.concat(stringify$2(obj[key], generateArrayPrefix(prefix, key), generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots, serializeDate, formatter));
         } else {
-            values = values.concat(stringify$1(obj[key], prefix + (allowDots ? '.' + key : '[' + key + ']'), generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots));
+            values = values.concat(stringify$2(obj[key], prefix + (allowDots ? '.' + key : '[' + key + ']'), generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots, serializeDate, formatter));
         }
     }
 
@@ -3959,6 +3998,13 @@ var stringify_1 = function stringify_1(object, opts) {
     var encoder = encode ? typeof options.encoder === 'function' ? options.encoder : defaults$1.encoder : null;
     var sort = typeof options.sort === 'function' ? options.sort : null;
     var allowDots = typeof options.allowDots === 'undefined' ? false : options.allowDots;
+    var serializeDate = typeof options.serializeDate === 'function' ? options.serializeDate : defaults$1.serializeDate;
+    if (typeof options.format === 'undefined') {
+        options.format = formats$1.default;
+    } else if (!Object.prototype.hasOwnProperty.call(formats$1.formatters, options.format)) {
+        throw new TypeError('Unknown format option provided.');
+    }
+    var formatter = formats$1.formatters[options.format];
     var objKeys;
     var filter;
 
@@ -3970,7 +4016,8 @@ var stringify_1 = function stringify_1(object, opts) {
         filter = options.filter;
         obj = filter('', obj);
     } else if (Array.isArray(options.filter)) {
-        objKeys = filter = options.filter;
+        filter = options.filter;
+        objKeys = filter;
     }
 
     var keys = [];
@@ -4005,26 +4052,26 @@ var stringify_1 = function stringify_1(object, opts) {
             continue;
         }
 
-        keys = keys.concat(stringify$1(obj[key], key, generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots));
+        keys = keys.concat(stringify$2(obj[key], key, generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots, serializeDate, formatter));
     }
 
     return keys.join(delimiter);
 };
 
-var Utils$1 = utils;
+var utils$3 = utils$1;
 
 var has$2 = Object.prototype.hasOwnProperty;
 
 var defaults$2 = {
+    allowDots: false,
+    allowPrototypes: false,
+    arrayLimit: 20,
+    decoder: utils$3.decode,
     delimiter: '&',
     depth: 5,
-    arrayLimit: 20,
     parameterLimit: 1000,
-    strictNullHandling: false,
     plainObjects: false,
-    allowPrototypes: false,
-    allowDots: false,
-    decoder: Utils$1.decode
+    strictNullHandling: false
 };
 
 var parseValues = function parseValues(str, options) {
@@ -4133,14 +4180,14 @@ var parseKeys = function parseKeys(givenKey, val, options) {
     return parseObject(keys, val, options);
 };
 
-var parse$1 = function parse$1(str, opts) {
+var parse$2 = function parse$2(str, opts) {
     var options = opts || {};
 
     if (options.decoder !== null && options.decoder !== undefined && typeof options.decoder !== 'function') {
         throw new TypeError('Decoder has to be a function.');
     }
 
-    options.delimiter = typeof options.delimiter === 'string' || Utils$1.isRegExp(options.delimiter) ? options.delimiter : defaults$2.delimiter;
+    options.delimiter = typeof options.delimiter === 'string' || utils$3.isRegExp(options.delimiter) ? options.delimiter : defaults$2.delimiter;
     options.depth = typeof options.depth === 'number' ? options.depth : defaults$2.depth;
     options.arrayLimit = typeof options.arrayLimit === 'number' ? options.arrayLimit : defaults$2.arrayLimit;
     options.parseArrays = options.parseArrays !== false;
@@ -4164,18 +4211,20 @@ var parse$1 = function parse$1(str, opts) {
     for (var i = 0; i < keys.length; ++i) {
         var key = keys[i];
         var newObj = parseKeys(key, tempObj[key], options);
-        obj = Utils$1.merge(obj, newObj, options);
+        obj = utils$3.merge(obj, newObj, options);
     }
 
-    return Utils$1.compact(obj);
+    return utils$3.compact(obj);
 };
 
-var Stringify = stringify_1;
-var Parse = parse$1;
+var stringify$1 = stringify_1;
+var parse$1 = parse$2;
+var formats = formats$2;
 
 var index$1 = {
-    stringify: Stringify,
-    parse: Parse
+    formats: formats,
+    parse: parse$1,
+    stringify: stringify$1
 };
 
 var ListCache$3 = _ListCache;
@@ -8171,6 +8220,36 @@ function map(collection, iteratee) {
 
 var map_1 = map;
 
+var stringify_1$2 = createCommonjsModule(function (module, exports) {
+  exports = module.exports = stringify;
+  exports.getSerialize = serializer;
+
+  function stringify(obj, replacer, spaces, cycleReplacer) {
+    return JSON.stringify(obj, serializer(replacer, cycleReplacer), spaces);
+  }
+
+  function serializer(replacer, cycleReplacer) {
+    var stack = [],
+        keys = [];
+
+    if (cycleReplacer == null) cycleReplacer = function cycleReplacer(key, value) {
+      if (stack[0] === value) return "[Circular ~]";
+      return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+    };
+
+    return function (key, value) {
+      if (stack.length > 0) {
+        var thisPos = stack.indexOf(this);
+        ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+        ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+        if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+      } else stack.push(value);
+
+      return replacer == null ? value : replacer.call(this, key, value);
+    };
+  }
+});
+
 var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
@@ -8185,7 +8264,7 @@ var safeParse = function safeParse(target, defaultValue) {
 
 var safeStringify = function safeStringify(target, offset) {
   if (target && typeof target !== 'string') {
-    return JSON.stringify(target, null, offset || 4);
+    return stringify_1$2(target, null, offset || 4);
   }
 
   return target;

@@ -16,6 +16,7 @@ var uniq = _interopDefault(require('lodash/uniq'));
 var omit = _interopDefault(require('lodash/omit'));
 var map = _interopDefault(require('lodash/map'));
 var isArray = _interopDefault(require('lodash/isArray'));
+var stringify = _interopDefault(require('json-stringify-safe'));
 var includes = _interopDefault(require('lodash/includes'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -293,7 +294,7 @@ var safeParse = function safeParse(target, defaultValue) {
 
 var safeStringify = function safeStringify(target, offset) {
   if (target && typeof target !== 'string') {
-    return JSON.stringify(target, null, offset || 4);
+    return stringify(target, null, offset || 4);
   }
 
   return target;
