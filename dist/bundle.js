@@ -10,6 +10,7 @@ var qs = _interopDefault(require('qs'));
 var merge = _interopDefault(require('lodash/merge'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
+var includes = _interopDefault(require('lodash/includes'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
@@ -17,7 +18,6 @@ var omit = _interopDefault(require('lodash/omit'));
 var map = _interopDefault(require('lodash/map'));
 var isArray = _interopDefault(require('lodash/isArray'));
 var stringify = _interopDefault(require('json-stringify-safe'));
-var includes = _interopDefault(require('lodash/includes'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
 var isUndefined = _interopDefault(require('lodash/isUndefined'));
@@ -836,18 +836,23 @@ var patchAuthorization = function patchAuthorization(node, options) {
   }
 };
 
-var runScript = function runScript(func) {
+var runScript = function runScript(script) {
   var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
   var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
   var logger = arguments[5];
 
-  // make these available
+  // additional functions available to scripts
   var safeStringify$$1 = safeStringify;
   var safeParse$$1 = safeParse;
 
-
+  var skip = function skip() {
+    throw new Error('SKIP');
+  };
+  var stop = function stop() {
+    throw new Error('STOP');
+  };
   var reportError = function reportError(e) {
     if (logger) {
       logger.log('error', 'script', ['script syntax error', String(e)]);
@@ -856,11 +861,23 @@ var runScript = function runScript(func) {
     }
   };
 
+  var result = {
+    status: null
+  };
+
   try {
-    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + func + '\n        }\n      }\n    ');
+    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + script + '\n        }\n      }\n    ');
   } catch (e) {
-    reportError(e);
+    if (e.message === 'SKIP') {
+      result.status = 'skipped';
+    } else if (e.message === 'STOP') {
+      result.status = 'stopped';
+    } else {
+      reportError(e);
+    }
   }
+
+  return result;
 };
 
 /**
@@ -914,18 +931,24 @@ var runLogic = function runLogic(node, logicPath, options) {
   // Run Script
   var tests = {};
   var script = logic.script;
+  var scriptResult = void 0;
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
       var state = get(node, 'state') || {};
-      runScript(script, state, tests, input, {}, options.logger);
+      scriptResult = runScript(script, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       var _input = get(node, 'result.input') || {};
       var output = get(node, 'result.output') || {};
       var _state = get(node, 'result.state') || {};
-      runScript(script, _state, tests, _input, output, options.logger);
+      scriptResult = runScript(script, _state, tests, _input, output, options.logger);
       set(node, 'result.state', _state);
+    }
+
+    if (includes(['skipped', 'stopped'], scriptResult.status)) {
+      node.status = scriptResult.status;
+      return node;
     }
   }
 

@@ -6384,6 +6384,400 @@ function set$1(object, path, value) {
 var set_1 = set$1;
 
 /**
+ * The base implementation of `_.findIndex` and `_.findLastIndex` without
+ * support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} predicate The function invoked per iteration.
+ * @param {number} fromIndex The index to search from.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseFindIndex$1(array, predicate, fromIndex, fromRight) {
+  var length = array.length,
+      index = fromIndex + (fromRight ? 1 : -1);
+
+  while (fromRight ? index-- : ++index < length) {
+    if (predicate(array[index], index, array)) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+var _baseFindIndex = baseFindIndex$1;
+
+/**
+ * The base implementation of `_.isNaN` without support for number objects.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
+ */
+function baseIsNaN$1(value) {
+  return value !== value;
+}
+
+var _baseIsNaN = baseIsNaN$1;
+
+/**
+ * A specialized version of `_.indexOf` which performs strict equality
+ * comparisons of values, i.e. `===`.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function strictIndexOf$1(array, value, fromIndex) {
+  var index = fromIndex - 1,
+      length = array.length;
+
+  while (++index < length) {
+    if (array[index] === value) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+var _strictIndexOf = strictIndexOf$1;
+
+var baseFindIndex = _baseFindIndex;
+var baseIsNaN = _baseIsNaN;
+var strictIndexOf = _strictIndexOf;
+
+/**
+ * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseIndexOf$1(array, value, fromIndex) {
+    return value === value ? strictIndexOf(array, value, fromIndex) : baseFindIndex(array, baseIsNaN, fromIndex);
+}
+
+var _baseIndexOf = baseIndexOf$1;
+
+var isArray$11 = isArray_1;
+var isObjectLike$5 = isObjectLike_1;
+
+/** `Object#toString` result references. */
+var stringTag$3 = '[object String]';
+
+/** Used for built-in method references. */
+var objectProto$18 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString$7 = objectProto$18.toString;
+
+/**
+ * Checks if `value` is classified as a `String` primitive or object.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a string, else `false`.
+ * @example
+ *
+ * _.isString('abc');
+ * // => true
+ *
+ * _.isString(1);
+ * // => false
+ */
+function isString$1(value) {
+  return typeof value == 'string' || !isArray$11(value) && isObjectLike$5(value) && objectToString$7.call(value) == stringTag$3;
+}
+
+var isString_1 = isString$1;
+
+var isObject$10 = isObject_1;
+var isSymbol$4 = isSymbol_1;
+
+/** Used as references for various `Number` constants. */
+var NAN = 0 / 0;
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber$1(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol$4(value)) {
+    return NAN;
+  }
+  if (isObject$10(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject$10(other) ? other + '' : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
+}
+
+var toNumber_1 = toNumber$1;
+
+var toNumber = toNumber_1;
+
+/** Used as references for various `Number` constants. */
+var INFINITY$2 = 1 / 0;
+var MAX_INTEGER = 1.7976931348623157e+308;
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite$1(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber(value);
+  if (value === INFINITY$2 || value === -INFINITY$2) {
+    var sign = value < 0 ? -1 : 1;
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+var toFinite_1 = toFinite$1;
+
+var toFinite = toFinite_1;
+
+/**
+ * Converts `value` to an integer.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted integer.
+ * @example
+ *
+ * _.toInteger(3.2);
+ * // => 3
+ *
+ * _.toInteger(Number.MIN_VALUE);
+ * // => 0
+ *
+ * _.toInteger(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toInteger('3.2');
+ * // => 3
+ */
+function toInteger$1(value) {
+  var result = toFinite(value),
+      remainder = result % 1;
+
+  return result === result ? remainder ? result - remainder : result : 0;
+}
+
+var toInteger_1 = toInteger$1;
+
+/**
+ * A specialized version of `_.map` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
+function arrayMap$1(array, iteratee) {
+  var index = -1,
+      length = array ? array.length : 0,
+      result = Array(length);
+
+  while (++index < length) {
+    result[index] = iteratee(array[index], index, array);
+  }
+  return result;
+}
+
+var _arrayMap = arrayMap$1;
+
+var arrayMap = _arrayMap;
+
+/**
+ * The base implementation of `_.values` and `_.valuesIn` which creates an
+ * array of `object` property values corresponding to the property names
+ * of `props`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array} props The property names to get values for.
+ * @returns {Object} Returns the array of property values.
+ */
+function baseValues$1(object, props) {
+  return arrayMap(props, function (key) {
+    return object[key];
+  });
+}
+
+var _baseValues = baseValues$1;
+
+var baseValues = _baseValues;
+var keys$4 = keys_1;
+
+/**
+ * Creates an array of the own enumerable string keyed property values of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property values.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.values(new Foo);
+ * // => [1, 2] (iteration order is not guaranteed)
+ *
+ * _.values('hi');
+ * // => ['h', 'i']
+ */
+function values$1(object) {
+  return object ? baseValues(object, keys$4(object)) : [];
+}
+
+var values_1 = values$1;
+
+var baseIndexOf = _baseIndexOf;
+var isArrayLike$6 = isArrayLike_1;
+var isString = isString_1;
+var toInteger = toInteger_1;
+var values = values_1;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMax$1 = Math.max;
+
+/**
+ * Checks if `value` is in `collection`. If `collection` is a string, it's
+ * checked for a substring of `value`, otherwise
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * is used for equality comparisons. If `fromIndex` is negative, it's used as
+ * the offset from the end of `collection`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object|string} collection The collection to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} [fromIndex=0] The index to search from.
+ * @param- {Object} [guard] Enables use as an iteratee for methods like `_.reduce`.
+ * @returns {boolean} Returns `true` if `value` is found, else `false`.
+ * @example
+ *
+ * _.includes([1, 2, 3], 1);
+ * // => true
+ *
+ * _.includes([1, 2, 3], 1, 2);
+ * // => false
+ *
+ * _.includes({ 'a': 1, 'b': 2 }, 1);
+ * // => true
+ *
+ * _.includes('abcd', 'bc');
+ * // => true
+ */
+function includes(collection, value, fromIndex, guard) {
+  collection = isArrayLike$6(collection) ? collection : values(collection);
+  fromIndex = fromIndex && !guard ? toInteger(fromIndex) : 0;
+
+  var length = collection.length;
+  if (fromIndex < 0) {
+    fromIndex = nativeMax$1(length + fromIndex, 0);
+  }
+  return isString(collection) ? fromIndex <= length && collection.indexOf(value, fromIndex) > -1 : !!length && baseIndexOf(collection, value, fromIndex) > -1;
+}
+
+var includes_1 = includes;
+
+/**
  * Creates a base function for methods like `_.forIn` and `_.forOwn`.
  *
  * @private
@@ -6427,7 +6821,7 @@ var baseFor$1 = createBaseFor();
 var _baseFor = baseFor$1;
 
 var baseFor = _baseFor;
-var keys$4 = keys_1;
+var keys$5 = keys_1;
 
 /**
  * The base implementation of `_.forOwn` without support for iteratee shorthands.
@@ -6438,12 +6832,12 @@ var keys$4 = keys_1;
  * @returns {Object} Returns `object`.
  */
 function baseForOwn$1(object, iteratee) {
-  return object && baseFor(object, iteratee, keys$4);
+  return object && baseFor(object, iteratee, keys$5);
 }
 
 var _baseForOwn = baseForOwn$1;
 
-var isArrayLike$6 = isArrayLike_1;
+var isArrayLike$7 = isArrayLike_1;
 
 /**
  * Creates a `baseEach` or `baseEachRight` function.
@@ -6458,7 +6852,7 @@ function createBaseEach$1(eachFunc, fromRight) {
     if (collection == null) {
       return collection;
     }
-    if (!isArrayLike$6(collection)) {
+    if (!isArrayLike$7(collection)) {
       return eachFunc(collection, iteratee);
     }
     var length = collection.length,
@@ -6690,7 +7084,7 @@ var mapTag$5 = '[object Map]';
 var numberTag$3 = '[object Number]';
 var regexpTag$3 = '[object RegExp]';
 var setTag$5 = '[object Set]';
-var stringTag$3 = '[object String]';
+var stringTag$4 = '[object String]';
 var symbolTag$3 = '[object Symbol]';
 
 var arrayBufferTag$3 = '[object ArrayBuffer]';
@@ -6744,7 +7138,7 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
       return object.name == other.name && object.message == other.message;
 
     case regexpTag$3:
-    case stringTag$3:
+    case stringTag$4:
       // Coerce regexes to strings and treat strings, primitives and objects,
       // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
       // for more details.
@@ -6783,16 +7177,16 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
 
 var _equalByTag = equalByTag$1;
 
-var keys$5 = keys_1;
+var keys$6 = keys_1;
 
 /** Used to compose bitmasks for comparison styles. */
 var PARTIAL_COMPARE_FLAG$4 = 2;
 
 /** Used for built-in method references. */
-var objectProto$19 = Object.prototype;
+var objectProto$20 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$13 = objectProto$19.hasOwnProperty;
+var hasOwnProperty$13 = objectProto$20.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqualDeep` for objects with support for
@@ -6810,9 +7204,9 @@ var hasOwnProperty$13 = objectProto$19.hasOwnProperty;
  */
 function equalObjects$1(object, other, equalFunc, customizer, bitmask, stack) {
   var isPartial = bitmask & PARTIAL_COMPARE_FLAG$4,
-      objProps = keys$5(object),
+      objProps = keys$6(object),
       objLength = objProps.length,
-      othProps = keys$5(other),
+      othProps = keys$6(other),
       othLength = othProps.length;
 
   if (objLength != othLength && !isPartial) {
@@ -6871,7 +7265,7 @@ var equalArrays = _equalArrays;
 var equalByTag = _equalByTag;
 var equalObjects = _equalObjects;
 var getTag$3 = _getTag;
-var isArray$13 = isArray_1;
+var isArray$14 = isArray_1;
 var isTypedArray$3 = isTypedArray_1;
 
 /** Used to compose bitmasks for comparison styles. */
@@ -6883,10 +7277,10 @@ var arrayTag$2 = '[object Array]';
 var objectTag$4 = '[object Object]';
 
 /** Used for built-in method references. */
-var objectProto$18 = Object.prototype;
+var objectProto$19 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$12 = objectProto$18.hasOwnProperty;
+var hasOwnProperty$12 = objectProto$19.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -6904,8 +7298,8 @@ var hasOwnProperty$12 = objectProto$18.hasOwnProperty;
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
 function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack) {
-  var objIsArr = isArray$13(object),
-      othIsArr = isArray$13(other),
+  var objIsArr = isArray$14(object),
+      othIsArr = isArray$14(other),
       objTag = arrayTag$2,
       othTag = arrayTag$2;
 
@@ -6947,8 +7341,8 @@ function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack)
 var _baseIsEqualDeep = baseIsEqualDeep$1;
 
 var baseIsEqualDeep = _baseIsEqualDeep;
-var isObject$10 = isObject_1;
-var isObjectLike$5 = isObjectLike_1;
+var isObject$11 = isObject_1;
+var isObjectLike$6 = isObjectLike_1;
 
 /**
  * The base implementation of `_.isEqual` which supports partial comparisons
@@ -6969,7 +7363,7 @@ function baseIsEqual$1(value, other, customizer, bitmask, stack) {
   if (value === other) {
     return true;
   }
-  if (value == null || other == null || !isObject$10(value) && !isObjectLike$5(other)) {
+  if (value == null || other == null || !isObject$11(value) && !isObjectLike$6(other)) {
     return value !== value && other !== other;
   }
   return baseIsEqualDeep(value, other, baseIsEqual$1, customizer, bitmask, stack);
@@ -7034,7 +7428,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
 
 var _baseIsMatch = baseIsMatch$1;
 
-var isObject$11 = isObject_1;
+var isObject$12 = isObject_1;
 
 /**
  * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
@@ -7045,13 +7439,13 @@ var isObject$11 = isObject_1;
  *  equality comparisons, else `false`.
  */
 function isStrictComparable$1(value) {
-  return value === value && !isObject$11(value);
+  return value === value && !isObject$12(value);
 }
 
 var _isStrictComparable = isStrictComparable$1;
 
 var isStrictComparable = _isStrictComparable;
-var keys$6 = keys_1;
+var keys$7 = keys_1;
 
 /**
  * Gets the property names, values, and compare flags of `object`.
@@ -7061,7 +7455,7 @@ var keys$6 = keys_1;
  * @returns {Array} Returns the match data of `object`.
  */
 function getMatchData$1(object) {
-    var result = keys$6(object),
+    var result = keys$7(object),
         length = result.length;
 
     while (length--) {
@@ -7267,7 +7661,7 @@ var property_1 = property$1;
 var baseMatches = _baseMatches;
 var baseMatchesProperty = _baseMatchesProperty;
 var identity$3 = identity_1;
-var isArray$12 = isArray_1;
+var isArray$13 = isArray_1;
 var property = property_1;
 
 /**
@@ -7287,7 +7681,7 @@ function baseIteratee$1(value) {
     return identity$3;
   }
   if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object') {
-    return isArray$12(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
+    return isArray$13(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
   }
   return property(value);
 }
@@ -7297,7 +7691,7 @@ var _baseIteratee = baseIteratee$1;
 var arrayEach$3 = _arrayEach;
 var baseEach = _baseEach;
 var baseIteratee = _baseIteratee;
-var isArray$11 = isArray_1;
+var isArray$12 = isArray_1;
 
 /**
  * Iterates over elements of `collection` and invokes `iteratee` for each element.
@@ -7330,7 +7724,7 @@ var isArray$11 = isArray_1;
  * // => Logs 'a' then 'b' (iteration order is not guaranteed).
  */
 function forEach(collection, iteratee) {
-  var func = isArray$11(collection) ? arrayEach$3 : baseEach;
+  var func = isArray$12(collection) ? arrayEach$3 : baseEach;
   return func(collection, baseIteratee(iteratee, 3));
 }
 
@@ -7387,88 +7781,7 @@ function castSlice$1(array, start, end) {
 
 var _castSlice = castSlice$1;
 
-/**
- * The base implementation of `_.findIndex` and `_.findLastIndex` without
- * support for iteratee shorthands.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {Function} predicate The function invoked per iteration.
- * @param {number} fromIndex The index to search from.
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseFindIndex$1(array, predicate, fromIndex, fromRight) {
-  var length = array.length,
-      index = fromIndex + (fromRight ? 1 : -1);
-
-  while (fromRight ? index-- : ++index < length) {
-    if (predicate(array[index], index, array)) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-var _baseFindIndex = baseFindIndex$1;
-
-/**
- * The base implementation of `_.isNaN` without support for number objects.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
- */
-function baseIsNaN$1(value) {
-  return value !== value;
-}
-
-var _baseIsNaN = baseIsNaN$1;
-
-/**
- * A specialized version of `_.indexOf` which performs strict equality
- * comparisons of values, i.e. `===`.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function strictIndexOf$1(array, value, fromIndex) {
-  var index = fromIndex - 1,
-      length = array.length;
-
-  while (++index < length) {
-    if (array[index] === value) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-var _strictIndexOf = strictIndexOf$1;
-
-var baseFindIndex = _baseFindIndex;
-var baseIsNaN = _baseIsNaN;
-var strictIndexOf = _strictIndexOf;
-
-/**
- * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseIndexOf$1(array, value, fromIndex) {
-    return value === value ? strictIndexOf(array, value, fromIndex) : baseFindIndex(array, baseIsNaN, fromIndex);
-}
-
-var _baseIndexOf = baseIndexOf$1;
-
-var baseIndexOf = _baseIndexOf;
+var baseIndexOf$2 = _baseIndexOf;
 
 /**
  * Used by `_.trim` and `_.trimEnd` to get the index of the last string symbol
@@ -7482,13 +7795,13 @@ var baseIndexOf = _baseIndexOf;
 function charsEndIndex$1(strSymbols, chrSymbols) {
   var index = strSymbols.length;
 
-  while (index-- && baseIndexOf(chrSymbols, strSymbols[index], 0) > -1) {}
+  while (index-- && baseIndexOf$2(chrSymbols, strSymbols[index], 0) > -1) {}
   return index;
 }
 
 var _charsEndIndex = charsEndIndex$1;
 
-var baseIndexOf$2 = _baseIndexOf;
+var baseIndexOf$3 = _baseIndexOf;
 
 /**
  * Used by `_.trim` and `_.trimStart` to get the index of the first string symbol
@@ -7503,7 +7816,7 @@ function charsStartIndex$1(strSymbols, chrSymbols) {
   var index = -1,
       length = strSymbols.length;
 
-  while (++index < length && baseIndexOf$2(chrSymbols, strSymbols[index], 0) > -1) {}
+  while (++index < length && baseIndexOf$3(chrSymbols, strSymbols[index], 0) > -1) {}
   return index;
 }
 
@@ -7611,7 +7924,7 @@ var stringToArray = _stringToArray;
 var toString$3 = toString_1;
 
 /** Used to match leading and trailing whitespace. */
-var reTrim = /^\s+|\s+$/g;
+var reTrim$1 = /^\s+|\s+$/g;
 
 /**
  * Removes leading and trailing whitespace or specified characters from `string`.
@@ -7638,7 +7951,7 @@ var reTrim = /^\s+|\s+$/g;
 function trim(string, chars, guard) {
   string = toString$3(string);
   if (string && (guard || chars === undefined)) {
-    return string.replace(reTrim, '');
+    return string.replace(reTrim$1, '');
   }
   if (!string || !(chars = baseToString$2(chars))) {
     return string;
@@ -7653,7 +7966,7 @@ function trim(string, chars, guard) {
 
 var trim_1 = trim;
 
-var baseIndexOf$3 = _baseIndexOf;
+var baseIndexOf$4 = _baseIndexOf;
 
 /**
  * A specialized version of `_.includes` for arrays without support for
@@ -7666,7 +7979,7 @@ var baseIndexOf$3 = _baseIndexOf;
  */
 function arrayIncludes$1(array, value) {
   var length = array ? array.length : 0;
-  return !!length && baseIndexOf$3(array, value, 0) > -1;
+  return !!length && baseIndexOf$4(array, value, 0) > -1;
 }
 
 var _arrayIncludes = arrayIncludes$1;
@@ -7717,7 +8030,7 @@ var noop = noop_1;
 var setToArray$4 = _setToArray;
 
 /** Used as references for various `Number` constants. */
-var INFINITY$2 = 1 / 0;
+var INFINITY$3 = 1 / 0;
 
 /**
  * Creates a set object of `values`.
@@ -7726,7 +8039,7 @@ var INFINITY$2 = 1 / 0;
  * @param {Array} values The values to add to the set.
  * @returns {Object} Returns the new set.
  */
-var createSet$1 = !(Set$2 && 1 / setToArray$4(new Set$2([, -0]))[1] == INFINITY$2) ? noop : function (values) {
+var createSet$1 = !(Set$2 && 1 / setToArray$4(new Set$2([, -0]))[1] == INFINITY$3) ? noop : function (values) {
   return new Set$2(values);
 };
 
@@ -7827,32 +8140,10 @@ function uniq(array) {
 
 var uniq_1 = uniq;
 
-/**
- * A specialized version of `_.map` for arrays without support for iteratee
- * shorthands.
- *
- * @private
- * @param {Array} [array] The array to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns the new mapped array.
- */
-function arrayMap$1(array, iteratee) {
-  var index = -1,
-      length = array ? array.length : 0,
-      result = Array(length);
-
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
-}
-
-var _arrayMap = arrayMap$1;
-
 var SetCache$3 = _SetCache;
 var arrayIncludes$2 = _arrayIncludes;
 var arrayIncludesWith$2 = _arrayIncludesWith;
-var arrayMap$2 = _arrayMap;
+var arrayMap$3 = _arrayMap;
 var baseUnary$2 = _baseUnary;
 var cacheHas$3 = _cacheHas;
 
@@ -7882,7 +8173,7 @@ function baseDifference$1(array, values, iteratee, comparator) {
     return result;
   }
   if (iteratee) {
-    values = arrayMap$2(values, baseUnary$2(iteratee));
+    values = arrayMap$3(values, baseUnary$2(iteratee));
   }
   if (comparator) {
     includes = arrayIncludesWith$2;
@@ -7965,7 +8256,7 @@ var _basePick = basePick$1;
 
 var _Symbol$5 = _Symbol$1;
 var isArguments$5 = isArguments_1;
-var isArray$14 = isArray_1;
+var isArray$15 = isArray_1;
 
 /** Built-in value references. */
 var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
@@ -7978,7 +8269,7 @@ var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
 function isFlattenable$1(value) {
-    return isArray$14(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
+    return isArray$15(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
 }
 
 var _isFlattenable = isFlattenable$1;
@@ -8107,7 +8398,7 @@ function getAllKeysIn$1(object) {
 
 var _getAllKeysIn = getAllKeysIn$1;
 
-var arrayMap = _arrayMap;
+var arrayMap$2 = _arrayMap;
 var baseDifference = _baseDifference;
 var basePick = _basePick;
 var flatRest = _flatRest;
@@ -8137,14 +8428,14 @@ var omit = flatRest(function (object, props) {
   if (object == null) {
     return {};
   }
-  props = arrayMap(props, toKey$6);
+  props = arrayMap$2(props, toKey$6);
   return basePick(object, baseDifference(getAllKeysIn(object), props));
 });
 
 var omit_1 = omit;
 
 var baseEach$2 = _baseEach;
-var isArrayLike$7 = isArrayLike_1;
+var isArrayLike$8 = isArrayLike_1;
 
 /**
  * The base implementation of `_.map` without support for iteratee shorthands.
@@ -8156,7 +8447,7 @@ var isArrayLike$7 = isArrayLike_1;
  */
 function baseMap$1(collection, iteratee) {
   var index = -1,
-      result = isArrayLike$7(collection) ? Array(collection.length) : [];
+      result = isArrayLike$8(collection) ? Array(collection.length) : [];
 
   baseEach$2(collection, function (value, key, collection) {
     result[++index] = iteratee(value, key, collection);
@@ -8166,10 +8457,10 @@ function baseMap$1(collection, iteratee) {
 
 var _baseMap = baseMap$1;
 
-var arrayMap$3 = _arrayMap;
+var arrayMap$4 = _arrayMap;
 var baseIteratee$2 = _baseIteratee;
 var baseMap = _baseMap;
-var isArray$15 = isArray_1;
+var isArray$16 = isArray_1;
 
 /**
  * Creates an array of values by running each element in `collection` thru
@@ -8214,7 +8505,7 @@ var isArray$15 = isArray_1;
  * // => ['barney', 'fred']
  */
 function map(collection, iteratee) {
-  var func = isArray$15(collection) ? arrayMap$3 : baseMap;
+  var func = isArray$16(collection) ? arrayMap$4 : baseMap;
   return func(collection, baseIteratee$2(iteratee, 3));
 }
 
@@ -8393,297 +8684,6 @@ var VariableHelpers = Object.freeze({
 	replaceVariables: replaceVariables,
 	replaceNodeVariables: replaceNodeVariables
 });
-
-var isArray$16 = isArray_1;
-var isObjectLike$6 = isObjectLike_1;
-
-/** `Object#toString` result references. */
-var stringTag$4 = '[object String]';
-
-/** Used for built-in method references. */
-var objectProto$20 = Object.prototype;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var objectToString$7 = objectProto$20.toString;
-
-/**
- * Checks if `value` is classified as a `String` primitive or object.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a string, else `false`.
- * @example
- *
- * _.isString('abc');
- * // => true
- *
- * _.isString(1);
- * // => false
- */
-function isString$1(value) {
-  return typeof value == 'string' || !isArray$16(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$4;
-}
-
-var isString_1 = isString$1;
-
-var isObject$12 = isObject_1;
-var isSymbol$4 = isSymbol_1;
-
-/** Used as references for various `Number` constants. */
-var NAN = 0 / 0;
-
-/** Used to match leading and trailing whitespace. */
-var reTrim$1 = /^\s+|\s+$/g;
-
-/** Used to detect bad signed hexadecimal string values. */
-var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-
-/** Used to detect binary string values. */
-var reIsBinary = /^0b[01]+$/i;
-
-/** Used to detect octal string values. */
-var reIsOctal = /^0o[0-7]+$/i;
-
-/** Built-in method references without a dependency on `root`. */
-var freeParseInt = parseInt;
-
-/**
- * Converts `value` to a number.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to process.
- * @returns {number} Returns the number.
- * @example
- *
- * _.toNumber(3.2);
- * // => 3.2
- *
- * _.toNumber(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toNumber(Infinity);
- * // => Infinity
- *
- * _.toNumber('3.2');
- * // => 3.2
- */
-function toNumber$1(value) {
-  if (typeof value == 'number') {
-    return value;
-  }
-  if (isSymbol$4(value)) {
-    return NAN;
-  }
-  if (isObject$12(value)) {
-    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-    value = isObject$12(other) ? other + '' : other;
-  }
-  if (typeof value != 'string') {
-    return value === 0 ? value : +value;
-  }
-  value = value.replace(reTrim$1, '');
-  var isBinary = reIsBinary.test(value);
-  return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
-}
-
-var toNumber_1 = toNumber$1;
-
-var toNumber = toNumber_1;
-
-/** Used as references for various `Number` constants. */
-var INFINITY$3 = 1 / 0;
-var MAX_INTEGER = 1.7976931348623157e+308;
-
-/**
- * Converts `value` to a finite number.
- *
- * @static
- * @memberOf _
- * @since 4.12.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted number.
- * @example
- *
- * _.toFinite(3.2);
- * // => 3.2
- *
- * _.toFinite(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toFinite(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toFinite('3.2');
- * // => 3.2
- */
-function toFinite$1(value) {
-  if (!value) {
-    return value === 0 ? value : 0;
-  }
-  value = toNumber(value);
-  if (value === INFINITY$3 || value === -INFINITY$3) {
-    var sign = value < 0 ? -1 : 1;
-    return sign * MAX_INTEGER;
-  }
-  return value === value ? value : 0;
-}
-
-var toFinite_1 = toFinite$1;
-
-var toFinite = toFinite_1;
-
-/**
- * Converts `value` to an integer.
- *
- * **Note:** This method is loosely based on
- * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted integer.
- * @example
- *
- * _.toInteger(3.2);
- * // => 3
- *
- * _.toInteger(Number.MIN_VALUE);
- * // => 0
- *
- * _.toInteger(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toInteger('3.2');
- * // => 3
- */
-function toInteger$1(value) {
-  var result = toFinite(value),
-      remainder = result % 1;
-
-  return result === result ? remainder ? result - remainder : result : 0;
-}
-
-var toInteger_1 = toInteger$1;
-
-var arrayMap$4 = _arrayMap;
-
-/**
- * The base implementation of `_.values` and `_.valuesIn` which creates an
- * array of `object` property values corresponding to the property names
- * of `props`.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array} props The property names to get values for.
- * @returns {Object} Returns the array of property values.
- */
-function baseValues$1(object, props) {
-  return arrayMap$4(props, function (key) {
-    return object[key];
-  });
-}
-
-var _baseValues = baseValues$1;
-
-var baseValues = _baseValues;
-var keys$7 = keys_1;
-
-/**
- * Creates an array of the own enumerable string keyed property values of `object`.
- *
- * **Note:** Non-object values are coerced to objects.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Object
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property values.
- * @example
- *
- * function Foo() {
- *   this.a = 1;
- *   this.b = 2;
- * }
- *
- * Foo.prototype.c = 3;
- *
- * _.values(new Foo);
- * // => [1, 2] (iteration order is not guaranteed)
- *
- * _.values('hi');
- * // => ['h', 'i']
- */
-function values$1(object) {
-  return object ? baseValues(object, keys$7(object)) : [];
-}
-
-var values_1 = values$1;
-
-var baseIndexOf$4 = _baseIndexOf;
-var isArrayLike$8 = isArrayLike_1;
-var isString = isString_1;
-var toInteger = toInteger_1;
-var values = values_1;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeMax$1 = Math.max;
-
-/**
- * Checks if `value` is in `collection`. If `collection` is a string, it's
- * checked for a substring of `value`, otherwise
- * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * is used for equality comparisons. If `fromIndex` is negative, it's used as
- * the offset from the end of `collection`.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Collection
- * @param {Array|Object|string} collection The collection to inspect.
- * @param {*} value The value to search for.
- * @param {number} [fromIndex=0] The index to search from.
- * @param- {Object} [guard] Enables use as an iteratee for methods like `_.reduce`.
- * @returns {boolean} Returns `true` if `value` is found, else `false`.
- * @example
- *
- * _.includes([1, 2, 3], 1);
- * // => true
- *
- * _.includes([1, 2, 3], 1, 2);
- * // => false
- *
- * _.includes({ 'a': 1, 'b': 2 }, 1);
- * // => true
- *
- * _.includes('abcd', 'bc');
- * // => true
- */
-function includes(collection, value, fromIndex, guard) {
-  collection = isArrayLike$8(collection) ? collection : values(collection);
-  fromIndex = fromIndex && !guard ? toInteger(fromIndex) : 0;
-
-  var length = collection.length;
-  if (fromIndex < 0) {
-    fromIndex = nativeMax$1(length + fromIndex, 0);
-  }
-  return isString(collection) ? fromIndex <= length && collection.indexOf(value, fromIndex) > -1 : !!length && baseIndexOf$4(collection, value, fromIndex) > -1;
-}
-
-var includes_1 = includes;
 
 var baseIsEqual$3 = _baseIsEqual;
 
@@ -9162,18 +9162,23 @@ var patchAuthorization = function patchAuthorization(node, options) {
   }
 };
 
-var runScript = function runScript(func) {
+var runScript = function runScript(script) {
   var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
   var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
   var logger = arguments[5];
 
-  // make these available
+  // additional functions available to scripts
   var safeStringify$$1 = safeStringify;
   var safeParse$$1 = safeParse;
 
-
+  var skip = function skip() {
+    throw new Error('SKIP');
+  };
+  var stop = function stop() {
+    throw new Error('STOP');
+  };
   var reportError = function reportError(e) {
     if (logger) {
       logger.log('error', 'script', ['script syntax error', String(e)]);
@@ -9182,11 +9187,23 @@ var runScript = function runScript(func) {
     }
   };
 
+  var result = {
+    status: null
+  };
+
   try {
-    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + func + '\n        }\n      }\n    ');
+    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + script + '\n        }\n      }\n    ');
   } catch (e) {
-    reportError(e);
+    if (e.message === 'SKIP') {
+      result.status = 'skipped';
+    } else if (e.message === 'STOP') {
+      result.status = 'stopped';
+    } else {
+      reportError(e);
+    }
   }
+
+  return result;
 };
 
 /**
@@ -9240,18 +9257,24 @@ var runLogic = function runLogic(node, logicPath, options) {
   // Run Script
   var tests = {};
   var script = logic.script;
+  var scriptResult = void 0;
   if (!isEmpty_1(script)) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
       var state = get_1(node, 'state') || {};
-      runScript(script, state, tests, input, {}, options.logger);
+      scriptResult = runScript(script, state, tests, input, {}, options.logger);
       set_1(node, 'state', state);
     } else {
       var _input = get_1(node, 'result.input') || {};
       var output = get_1(node, 'result.output') || {};
       var _state = get_1(node, 'result.state') || {};
-      runScript(script, _state, tests, _input, output, options.logger);
+      scriptResult = runScript(script, _state, tests, _input, output, options.logger);
       set_1(node, 'result.state', _state);
+    }
+
+    if (includes_1(['skipped', 'stopped'], scriptResult.status)) {
+      node.status = scriptResult.status;
+      return node;
     }
   }
 

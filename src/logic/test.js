@@ -177,3 +177,9 @@ test('logic > runLogic > replaces variables after script is run', (t) => {
   node = Logic.runLogic(node, 'before');
   t.is(node.input.request.body.dog, 'bart');
 });
+
+// TODO: Can't run script tests right now because of strict mode
+// test('logic > runScript > supports skip function', (t) => {
+//   const result = Logic.runScript('skip();');
+//   t.is(result.status, 'skipped');
+// });

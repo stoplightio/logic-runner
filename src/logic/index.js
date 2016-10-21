@@ -2,6 +2,7 @@ import get from 'lodash/get';
 import set from 'lodash/set';
 import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
+import includes from 'lodash/includes';
 
 import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
@@ -23,16 +24,25 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-const runScript = (func, state = {}, tests = [], input = {}, output = {}, logger) => {
-  // make these available
+export const runScript = (script, state = {}, tests = [], input = {}, output = {}, logger) => {
+  // additional functions available to scripts
   const {safeStringify, safeParse} = JSONHelpers;
-
+  const skip = () => {
+    throw new Error('SKIP');
+  };
+  const stop = () => {
+    throw new Error('STOP');
+  };
   const reportError = (e) => {
     if (logger) {
       logger.log('error', 'script', ['script syntax error', String(e)]);
     } else {
       console.error('unknown script error', e);
     }
+  };
+
+  const result = {
+    status: null,
   };
 
   try {
@@ -54,13 +64,21 @@ const runScript = (func, state = {}, tests = [], input = {}, output = {}, logger
 
       with (input) {
         with (output) {
-          ${func}
+          ${script}
         }
       }
     `);
   } catch (e) {
-    reportError(e);
+    if (e.message === 'SKIP') {
+      result.status = 'skipped';
+    } else if (e.message === 'STOP') {
+      result.status = 'stopped';
+    } else {
+      reportError(e);
+    }
   }
+
+  return result;
 };
 
 /**
@@ -112,18 +130,24 @@ export const runLogic = (node, logicPath, options) => {
   // Run Script
   const tests = {};
   const script = logic.script;
+  let scriptResult;
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       const state = get(node, 'state') || {};
-      runScript(script, state, tests, input, {}, options.logger);
+      scriptResult = runScript(script, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
       const state = get(node, 'result.state') || {};
-      runScript(script, state, tests, input, output, options.logger);
+      scriptResult = runScript(script, state, tests, input, output, options.logger);
       set(node, 'result.state', state);
+    }
+
+    if (includes(['skipped', 'stopped'], scriptResult.status)) {
+      node.status = scriptResult.status;
+      return node;
     }
   }
 
