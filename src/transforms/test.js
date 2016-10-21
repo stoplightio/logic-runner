@@ -115,44 +115,6 @@ test('transforms > runTransform > handles a undefined target', (t) => {
   t.is(resultNode.state.foo, undefined);
 });
 
-test('transforms > runTransform > enforces sourceLocation whitelist', (t) => {
-  const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
-      },
-    },
-  };
-
-  const resultNode2 = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
-      },
-    },
-  };
-
-  const transform = {
-    sourceLocation: 'someRandomKey',
-    sourcePath: 'response.body.foo',
-    targetLocation: 'state',
-    targetPath: 'boo',
-  };
-
-  Transforms.runTransform({}, resultNode, transform);
-  t.deepEqual(resultNode, resultNode2);
-});
-
 test('transforms > runTransforms > handles several transforms', (t) => {
   const resultNode = {
     result: {

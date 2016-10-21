@@ -132,6 +132,39 @@ test('logic > runLogic > runs after transforms', (t) => {
   t.is(node.result.state.boo2, 5);
 });
 
+test('logic > runLogic > runs after root transforms', (t) => {
+  let node = {
+    result: {
+      output: {
+        response: {
+          body: {
+            car: 'nissan',
+          },
+        },
+      },
+    },
+    after: {
+      transforms: [
+        {
+          sourceLocation: 'result.output',
+          sourcePath: 'response.body.car',
+          targetLocation: 'root.output',
+          targetPath: 'response.body.foo',
+        },
+      ],
+    },
+  };
+
+  const rootResult = {
+    output: {
+      response: {},
+    },
+  };
+
+  node = Logic.runLogic(rootResult, node, 'after');
+  t.is(rootResult.output.response.body.foo, 'nissan');
+});
+
 test('logic > runLogic > replaces variables before script is run', (t) => {
   let node = {
     input: {

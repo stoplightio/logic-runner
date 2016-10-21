@@ -4,7 +4,7 @@ import forEach from 'lodash/forEach';
 
 import {buildPathSelector} from '../utils/strings';
 
-const SOURCE_REGEX = new RegExp(/^root|state|status|result|input/);
+const SOURCE_REGEX = new RegExp(/^root|state|status|result|input|response/);
 const ROOT_REGEX = new RegExp(/^root\./);
 
 export const runTransform = (rootNode, resultNode, transform, options = {}) => {
@@ -33,6 +33,7 @@ export const runTransform = (rootNode, resultNode, transform, options = {}) => {
     const targetNode = useRootTarget ? rootNode : resultNode;
 
     const value = get(sourceNode, sourcePath);
+
     set(targetNode, targetPath, value);
   } catch (e) {
     console.warn('transforms#runTransform', e, resultNode, transform);

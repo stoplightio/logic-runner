@@ -9120,7 +9120,7 @@ var runAssertions = function runAssertions(resultNode, assertions) {
   return assertions;
 };
 
-var SOURCE_REGEX = new RegExp(/^root|state|status|result|input/);
+var SOURCE_REGEX = new RegExp(/^root|state|status|result|input|response/);
 var ROOT_REGEX = new RegExp(/^root\./);
 
 var runTransform = function runTransform(rootNode, resultNode, transform) {
@@ -9151,6 +9151,7 @@ var runTransform = function runTransform(rootNode, resultNode, transform) {
     var targetNode = useRootTarget ? rootNode : resultNode;
 
     var value = get_1(sourceNode, sourcePath);
+
     set_1(targetNode, targetPath, value);
   } catch (e) {
     console.warn('transforms#runTransform', e, resultNode, transform);
