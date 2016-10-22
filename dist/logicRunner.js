@@ -8652,14 +8652,16 @@ var replaceVariables = function replaceVariables(target, variables) {
     var variable = trim_1(match, '<!>{}%3C%3E\\<\\>');
 
     var value = get_1(parsedVariables, variable);
-    if (typeof value === 'string') {
-      toProcess = toProcess.replace(match, value);
-    } else {
-      toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
+    if (typeof value !== 'undefined') {
+      if (typeof value === 'string') {
+        toProcess = toProcess.replace(match, value);
+      } else {
+        toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
+      }
     }
   });
 
-  return safeParse(toProcess, target);
+  return safeParse(toProcess, toProcess || target);
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {

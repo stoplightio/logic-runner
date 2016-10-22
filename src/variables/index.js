@@ -38,14 +38,16 @@ export const replaceVariables = (target, variables) => {
     const variable = trim(match, '<!>{}%3C%3E\\<\\>');
 
     const value = get(parsedVariables, variable);
-    if (typeof value === 'string') {
-      toProcess = toProcess.replace(match, value);
-    } else {
-      toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), value);
+    if (typeof value !== 'undefined') {
+      if (typeof value === 'string') {
+        toProcess = toProcess.replace(match, value);
+      } else {
+        toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), value);
+      }
     }
   });
 
-  return safeParse(toProcess, target);
+  return safeParse(toProcess, toProcess || target);
 };
 
 export const replaceNodeVariables = (node) => {
