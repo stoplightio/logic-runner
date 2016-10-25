@@ -224,6 +224,16 @@ const buildCases = () => {
         return result === '';
       },
     },
+    {
+      name: 'replaceVariables > replaces multiple occurrences',
+      target: '<<foo>>is<<foo>>',
+      variables: JSON.stringify({
+        foo: 'cat',
+      }),
+      expected(result) {
+        return result === 'catiscat';
+      },
+    },
   ];
 };
 

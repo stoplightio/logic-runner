@@ -4,6 +4,7 @@ import trim from 'lodash/trim';
 import get from 'lodash/get';
 import uniq from 'lodash/uniq';
 import omit from 'lodash/omit';
+import escapeRegExp from 'lodash/escapeRegExp';
 
 import {safeParse, safeStringify} from '../utils/json';
 
@@ -40,7 +41,7 @@ export const replaceVariables = (target, variables) => {
     const value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
-        toProcess = toProcess.replace(match, value);
+        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
       } else {
         toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), value);
       }

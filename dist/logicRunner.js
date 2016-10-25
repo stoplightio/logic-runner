@@ -8434,6 +8434,37 @@ var omit = flatRest(function (object, props) {
 
 var omit_1 = omit;
 
+var toString$4 = toString_1;
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar$1 = /[\\^$.*+?()[\]{}|]/g;
+var reHasRegExpChar = RegExp(reRegExpChar$1.source);
+
+/**
+ * Escapes the `RegExp` special characters "^", "$", "\", ".", "*", "+",
+ * "?", "(", ")", "[", "]", "{", "}", and "|" in `string`.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category String
+ * @param {string} [string=''] The string to escape.
+ * @returns {string} Returns the escaped string.
+ * @example
+ *
+ * _.escapeRegExp('[lodash](https://lodash.com/)');
+ * // => '\[lodash\]\(https://lodash\.com/\)'
+ */
+function escapeRegExp(string) {
+  string = toString$4(string);
+  return string && reHasRegExpChar.test(string) ? string.replace(reRegExpChar$1, '\\$&') : string;
+}
+
+var escapeRegExp_1 = escapeRegExp;
+
 var baseEach$2 = _baseEach;
 var isArrayLike$8 = isArrayLike_1;
 
@@ -8654,7 +8685,7 @@ var replaceVariables = function replaceVariables(target, variables) {
     var value = get_1(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
-        toProcess = toProcess.replace(match, value);
+        toProcess = toProcess.replace(new RegExp(escapeRegExp_1(match), 'g'), value);
       } else {
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
       }

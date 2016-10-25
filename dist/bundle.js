@@ -15,6 +15,7 @@ var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
 var omit = _interopDefault(require('lodash/omit'));
+var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
 var map = _interopDefault(require('lodash/map'));
 var isArray = _interopDefault(require('lodash/isArray'));
 var stringify = _interopDefault(require('json-stringify-safe'));
@@ -393,7 +394,7 @@ var replaceVariables = function replaceVariables(target, variables) {
     var value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
-        toProcess = toProcess.replace(match, value);
+        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
       } else {
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
       }
