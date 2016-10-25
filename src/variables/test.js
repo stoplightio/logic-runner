@@ -4,7 +4,7 @@ import cases from './test-cases';
 
 test('variables > replaceVariables > handles undefined input', (t) => {
   const result = Variables.replaceVariables();
-  t.deepEqual(result, {});
+  t.deepEqual(result, undefined);
 });
 
 for (const c of cases) {

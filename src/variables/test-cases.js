@@ -214,6 +214,16 @@ const buildCases = () => {
         return result.foo === false;
       },
     },
+    {
+      name: 'replaceVariables > returns the original',
+      target: '',
+      variables: JSON.stringify({
+        bar: false,
+      }),
+      expected(result) {
+        return result === '';
+      },
+    },
   ];
 };
 

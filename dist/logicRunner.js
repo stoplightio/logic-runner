@@ -8643,7 +8643,7 @@ var replaceVariables = function replaceVariables(target, variables) {
   var parsedVariables = safeParse(variables);
 
   if (isEmpty_1(target) || isEmpty_1(parsedVariables)) {
-    return target || {};
+    return target;
   }
 
   var toProcess = safeStringify(target);

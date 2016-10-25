@@ -29,7 +29,7 @@ export const replaceVariables = (target, variables) => {
   const parsedVariables = safeParse(variables);
 
   if (isEmpty(target) || isEmpty(parsedVariables)) {
-    return target || {};
+    return target;
   }
 
   let toProcess = safeStringify(target);
