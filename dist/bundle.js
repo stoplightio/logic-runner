@@ -372,7 +372,7 @@ var extractVariables = function extractVariables(target) {
 
   if (strip) {
     for (var i in matches) {
-      matches[i] = trim(matches[i], '<!>{}%3C%3E\\<\\>');
+      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
     }
   }
 
@@ -389,7 +389,7 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trim(match, '<!>{}%3C%3E\\<\\>');
+    var variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
 
     var value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {

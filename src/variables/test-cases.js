@@ -234,6 +234,16 @@ const buildCases = () => {
         return result === 'catiscat';
       },
     },
+    {
+      name: 'replaceVariables > replaces variables that end in 3',
+      target: 'foo is <<bar3>>',
+      variables: JSON.stringify({
+        bar3: 'cat',
+      }),
+      expected(result) {
+        return result === 'foo is cat';
+      },
+    },
   ];
 };
 

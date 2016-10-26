@@ -19,7 +19,7 @@ export const extractVariables = (target, {strip = false, required = false} = {})
 
   if (strip) {
     for (const i in matches) {
-      matches[i] = trim(matches[i], '<!>{}%3C%3E\\<\\>');
+      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
     }
   }
 
@@ -36,7 +36,7 @@ export const replaceVariables = (target, variables) => {
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trim(match, '<!>{}%3C%3E\\<\\>');
+    const variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
 
     const value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
