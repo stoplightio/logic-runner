@@ -9,6 +9,7 @@ import * as Assertions from '../assertions/index';
 import * as Transforms from '../transforms/index';
 import * as Authorization from '../authorization/index';
 import * as JSONHelpers from '../utils/json';
+import _Base64 from '../utils/base64';
 
 const patchAuthorization = (node, options) => {
   const authNode = get(node, 'input.authorization');
@@ -26,6 +27,7 @@ const patchAuthorization = (node, options) => {
 
 export const runScript = (script, root, state = {}, tests = [], input = {}, output = {}, logger) => {
   // additional functions available to scripts
+  const Base64 = _Base64;
   const {safeStringify, safeParse} = JSONHelpers;
   const skip = () => {
     throw new Error('SKIP');

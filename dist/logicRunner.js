@@ -9223,6 +9223,7 @@ var runScript = function runScript(script, root) {
   var logger = arguments[6];
 
   // additional functions available to scripts
+  var Base64$$1 = Base64;
   var safeStringify$$1 = safeStringify;
   var safeParse$$1 = safeParse;
 

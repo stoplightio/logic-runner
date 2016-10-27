@@ -244,6 +244,17 @@ const buildCases = () => {
         return result === 'foo is cat';
       },
     },
+    {
+      name: 'replaceVariables > handles variable values with a space',
+      target: '<<foo>> are <<bar>>',
+      variables: JSON.stringify({
+        foo: 'dogs',
+        bar: 'better than cats',
+      }),
+      expected(result) {
+        return result === 'dogs are better than cats';
+      },
+    },
   ];
 };
 
