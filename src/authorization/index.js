@@ -1,7 +1,5 @@
 import isEmpty from 'lodash/isEmpty';
 import has from 'lodash/has';
-import get from 'lodash/get';
-import aws4 from 'aws4';
 import OAuth from 'oauth-1.0a';
 import HmacSHA1 from 'crypto-js/hmac-sha1';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
@@ -118,6 +116,12 @@ export const generateAws = (data, request, options) => {
   options = options || {};
 
   const patch = {};
+
+  if (!options.signAws) {
+    console.warn('authorization/generateAws signAws function not supplied!');
+    return patch;
+  }
+
   if (has(request, 'headers.Authorization')) {
     return patch;
   }
@@ -140,7 +144,7 @@ export const generateAws = (data, request, options) => {
     region: data.region,
   };
 
-  aws4.sign(requestToAuthorize, {
+  const headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken,
@@ -148,7 +152,7 @@ export const generateAws = (data, request, options) => {
 
   // add to the header
   patch.request = {
-    headers: requestToAuthorize.headers,
+    headers,
   };
 
   return patch;

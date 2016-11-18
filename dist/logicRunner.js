@@ -1,8 +1,4 @@
-var logicRunner = (function (url,querystring,crypto) {
-url = 'default' in url ? url['default'] : url;
-querystring = 'default' in querystring ? querystring['default'] : querystring;
-crypto = 'default' in crypto ? crypto['default'] : crypto;
-
+var logicRunner = (function () {
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -1905,450 +1901,6 @@ function has(object, path) {
 
 var has_1 = has;
 
-var castPath$2 = _castPath;
-var isKey$2 = _isKey;
-var toKey$2 = _toKey;
-
-/**
- * The base implementation of `_.get` without support for default values.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @returns {*} Returns the resolved value.
- */
-function baseGet$1(object, path) {
-  path = isKey$2(path, object) ? [path] : castPath$2(path);
-
-  var index = 0,
-      length = path.length;
-
-  while (object != null && index < length) {
-    object = object[toKey$2(path[index++])];
-  }
-  return index && index == length ? object : undefined;
-}
-
-var _baseGet = baseGet$1;
-
-var baseGet = _baseGet;
-
-/**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
- * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
- */
-function get$1(object, path, defaultValue) {
-  var result = object == null ? undefined : baseGet(object, path);
-  return result === undefined ? defaultValue : result;
-}
-
-var get_1 = get$1;
-
-var lru = function lru(size) {
-  return new LruCache(size);
-};
-
-function LruCache(size) {
-  this.capacity = size | 0;
-  this.map = Object.create(null);
-  this.list = new DoublyLinkedList();
-}
-
-LruCache.prototype.get = function (key) {
-  var node = this.map[key];
-  if (node == null) return undefined;
-  this.used(node);
-  return node.val;
-};
-
-LruCache.prototype.set = function (key, val) {
-  var node = this.map[key];
-  if (node != null) {
-    node.val = val;
-  } else {
-    if (!this.capacity) this.prune();
-    if (!this.capacity) return false;
-    node = new DoublyLinkedNode(key, val);
-    this.map[key] = node;
-    this.capacity--;
-  }
-  this.used(node);
-  return true;
-};
-
-LruCache.prototype.used = function (node) {
-  this.list.moveToFront(node);
-};
-
-LruCache.prototype.prune = function () {
-  var node = this.list.pop();
-  if (node != null) {
-    delete this.map[node.key];
-    this.capacity++;
-  }
-};
-
-function DoublyLinkedList() {
-  this.firstNode = null;
-  this.lastNode = null;
-}
-
-DoublyLinkedList.prototype.moveToFront = function (node) {
-  if (this.firstNode == node) return;
-
-  this.remove(node);
-
-  if (this.firstNode == null) {
-    this.firstNode = node;
-    this.lastNode = node;
-    node.prev = null;
-    node.next = null;
-  } else {
-    node.prev = null;
-    node.next = this.firstNode;
-    node.next.prev = node;
-    this.firstNode = node;
-  }
-};
-
-DoublyLinkedList.prototype.pop = function () {
-  var lastNode = this.lastNode;
-  if (lastNode != null) {
-    this.remove(lastNode);
-  }
-  return lastNode;
-};
-
-DoublyLinkedList.prototype.remove = function (node) {
-  if (this.firstNode == node) {
-    this.firstNode = node.next;
-  } else if (node.prev != null) {
-    node.prev.next = node.next;
-  }
-  if (this.lastNode == node) {
-    this.lastNode = node.prev;
-  } else if (node.next != null) {
-    node.next.prev = node.prev;
-  }
-};
-
-function DoublyLinkedNode(key, val) {
-  this.key = key;
-  this.val = val;
-  this.prev = null;
-  this.next = null;
-}
-
-var aws4_1 = createCommonjsModule(function (module, exports) {
-  var aws4 = exports,
-      url$$1 = url,
-      querystring$$1 = querystring,
-      crypto$$1 = crypto,
-      lru$$1 = lru,
-      credentialsCache = lru$$1(1000);
-
-  // http://docs.amazonwebservices.com/general/latest/gr/signature-version-4.html
-
-  function hmac(key, string, encoding) {
-    return crypto$$1.createHmac('sha256', key).update(string, 'utf8').digest(encoding);
-  }
-
-  function hash(string, encoding) {
-    return crypto$$1.createHash('sha256').update(string, 'utf8').digest(encoding);
-  }
-
-  // This function assumes the string has already been percent encoded
-  function encodeRfc3986(urlEncodedString) {
-    return urlEncodedString.replace(/[!'()*]/g, function (c) {
-      return '%' + c.charCodeAt(0).toString(16).toUpperCase();
-    });
-  }
-
-  // request: { path | body, [host], [method], [headers], [service], [region] }
-  // credentials: { accessKeyId, secretAccessKey, [sessionToken] }
-  function RequestSigner(request, credentials) {
-
-    if (typeof request === 'string') request = url$$1.parse(request);
-
-    var headers = request.headers = request.headers || {},
-        hostParts = this.matchHost(request.hostname || request.host || headers.Host || headers.host);
-
-    this.request = request;
-    this.credentials = credentials || this.defaultCredentials();
-
-    this.service = request.service || hostParts[0] || '';
-    this.region = request.region || hostParts[1] || 'us-east-1';
-
-    // SES uses a different domain from the service name
-    if (this.service === 'email') this.service = 'ses';
-
-    if (!request.method && request.body) request.method = 'POST';
-
-    if (!headers.Host && !headers.host) {
-      headers.Host = request.hostname || request.host || this.createHost();
-
-      // If a port is specified explicitly, use it as is
-      if (request.port) headers.Host += ':' + request.port;
-    }
-    if (!request.hostname && !request.host) request.hostname = headers.Host || headers.host;
-
-    this.isCodeCommitGit = this.service === 'codecommit' && request.method === 'GIT';
-  }
-
-  RequestSigner.prototype.matchHost = function (host) {
-    var match = (host || '').match(/([^\.]+)\.(?:([^\.]*)\.)?amazonaws\.com$/);
-    var hostParts = (match || []).slice(1, 3);
-
-    // ES's hostParts are sometimes the other way round, if the value that is expected
-    // to be region equals ‘es’ switch them back
-    // e.g. search-cluster-name-aaaa00aaaa0aaa0aaaaaaa0aaa.us-east-1.es.amazonaws.com
-    if (hostParts[1] === 'es') hostParts = hostParts.reverse();
-
-    return hostParts;
-  };
-
-  // http://docs.aws.amazon.com/general/latest/gr/rande.html
-  RequestSigner.prototype.isSingleRegion = function () {
-    // Special case for S3 and SimpleDB in us-east-1
-    if (['s3', 'sdb'].indexOf(this.service) >= 0 && this.region === 'us-east-1') return true;
-
-    return ['cloudfront', 'ls', 'route53', 'iam', 'importexport', 'sts'].indexOf(this.service) >= 0;
-  };
-
-  RequestSigner.prototype.createHost = function () {
-    var region = this.isSingleRegion() ? '' : (this.service === 's3' && this.region !== 'us-east-1' ? '-' : '.') + this.region,
-        service = this.service === 'ses' ? 'email' : this.service;
-    return service + region + '.amazonaws.com';
-  };
-
-  RequestSigner.prototype.prepareRequest = function () {
-    this.parsePath();
-
-    var request = this.request,
-        headers = request.headers,
-        query;
-
-    if (request.signQuery) {
-
-      this.parsedPath.query = query = this.parsedPath.query || {};
-
-      if (this.credentials.sessionToken) query['X-Amz-Security-Token'] = this.credentials.sessionToken;
-
-      if (this.service === 's3' && !query['X-Amz-Expires']) query['X-Amz-Expires'] = 86400;
-
-      if (query['X-Amz-Date']) this.datetime = query['X-Amz-Date'];else query['X-Amz-Date'] = this.getDateTime();
-
-      query['X-Amz-Algorithm'] = 'AWS4-HMAC-SHA256';
-      query['X-Amz-Credential'] = this.credentials.accessKeyId + '/' + this.credentialString();
-      query['X-Amz-SignedHeaders'] = this.signedHeaders();
-    } else {
-
-      if (!request.doNotModifyHeaders && !this.isCodeCommitGit) {
-        if (request.body && !headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
-
-        if (request.body && !headers['Content-Length'] && !headers['content-length']) headers['Content-Length'] = Buffer.byteLength(request.body);
-
-        if (this.credentials.sessionToken) headers['X-Amz-Security-Token'] = this.credentials.sessionToken;
-
-        if (this.service === 's3') headers['X-Amz-Content-Sha256'] = hash(this.request.body || '', 'hex');
-
-        if (headers['X-Amz-Date']) this.datetime = headers['X-Amz-Date'];else headers['X-Amz-Date'] = this.getDateTime();
-      }
-
-      delete headers.Authorization;
-      delete headers.authorization;
-    }
-  };
-
-  RequestSigner.prototype.sign = function () {
-    if (!this.parsedPath) this.prepareRequest();
-
-    if (this.request.signQuery) {
-      this.parsedPath.query['X-Amz-Signature'] = this.signature();
-    } else {
-      this.request.headers.Authorization = this.authHeader();
-    }
-
-    this.request.path = this.formatPath();
-
-    return this.request;
-  };
-
-  RequestSigner.prototype.getDateTime = function () {
-    if (!this.datetime) {
-      var headers = this.request.headers,
-          date = new Date(headers.Date || headers.date || new Date());
-
-      this.datetime = date.toISOString().replace(/[:\-]|\.\d{3}/g, '');
-
-      // Remove the trailing 'Z' on the timestamp string for CodeCommit git access
-      if (this.isCodeCommitGit) this.datetime = this.datetime.slice(0, -1);
-    }
-    return this.datetime;
-  };
-
-  RequestSigner.prototype.getDate = function () {
-    return this.getDateTime().substr(0, 8);
-  };
-
-  RequestSigner.prototype.authHeader = function () {
-    return ['AWS4-HMAC-SHA256 Credential=' + this.credentials.accessKeyId + '/' + this.credentialString(), 'SignedHeaders=' + this.signedHeaders(), 'Signature=' + this.signature()].join(', ');
-  };
-
-  RequestSigner.prototype.signature = function () {
-    var date = this.getDate(),
-        cacheKey = [this.credentials.secretAccessKey, date, this.region, this.service].join(),
-        kDate,
-        kRegion,
-        kService,
-        kCredentials = credentialsCache.get(cacheKey);
-    if (!kCredentials) {
-      kDate = hmac('AWS4' + this.credentials.secretAccessKey, date);
-      kRegion = hmac(kDate, this.region);
-      kService = hmac(kRegion, this.service);
-      kCredentials = hmac(kService, 'aws4_request');
-      credentialsCache.set(cacheKey, kCredentials);
-    }
-    return hmac(kCredentials, this.stringToSign(), 'hex');
-  };
-
-  RequestSigner.prototype.stringToSign = function () {
-    return ['AWS4-HMAC-SHA256', this.getDateTime(), this.credentialString(), hash(this.canonicalString(), 'hex')].join('\n');
-  };
-
-  RequestSigner.prototype.canonicalString = function () {
-    if (!this.parsedPath) this.prepareRequest();
-
-    var pathStr = this.parsedPath.path,
-        query = this.parsedPath.query,
-        queryStr = '',
-        normalizePath = this.service !== 's3',
-        decodePath = this.service === 's3' || this.request.doNotEncodePath,
-        decodeSlashesInPath = this.service === 's3',
-        firstValOnly = this.service === 's3',
-        bodyHash = this.service === 's3' && this.request.signQuery ? 'UNSIGNED-PAYLOAD' : this.isCodeCommitGit ? '' : hash(this.request.body || '', 'hex');
-
-    if (query) {
-      queryStr = encodeRfc3986(querystring$$1.stringify(Object.keys(query).sort().reduce(function (obj, key) {
-        if (!key) return obj;
-        obj[key] = !Array.isArray(query[key]) ? query[key] : firstValOnly ? query[key][0] : query[key].slice().sort();
-        return obj;
-      }, {})));
-    }
-    if (pathStr !== '/') {
-      if (normalizePath) pathStr = pathStr.replace(/\/{2,}/g, '/');
-      pathStr = pathStr.split('/').reduce(function (path, piece) {
-        if (normalizePath && piece === '..') {
-          path.pop();
-        } else if (!normalizePath || piece !== '.') {
-          if (decodePath) piece = querystring$$1.unescape(piece);
-          path.push(encodeRfc3986(querystring$$1.escape(piece)));
-        }
-        return path;
-      }, []).join('/');
-      if (pathStr[0] !== '/') pathStr = '/' + pathStr;
-      if (decodeSlashesInPath) pathStr = pathStr.replace(/%2F/g, '/');
-    }
-
-    return [this.request.method || 'GET', pathStr, queryStr, this.canonicalHeaders() + '\n', this.signedHeaders(), bodyHash].join('\n');
-  };
-
-  RequestSigner.prototype.canonicalHeaders = function () {
-    var headers = this.request.headers;
-    function trimAll(header) {
-      return header.toString().trim().replace(/\s+/g, ' ');
-    }
-    return Object.keys(headers).sort(function (a, b) {
-      return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
-    }).map(function (key) {
-      return key.toLowerCase() + ':' + trimAll(headers[key]);
-    }).join('\n');
-  };
-
-  RequestSigner.prototype.signedHeaders = function () {
-    return Object.keys(this.request.headers).map(function (key) {
-      return key.toLowerCase();
-    }).sort().join(';');
-  };
-
-  RequestSigner.prototype.credentialString = function () {
-    return [this.getDate(), this.region, this.service, 'aws4_request'].join('/');
-  };
-
-  RequestSigner.prototype.defaultCredentials = function () {
-    var env = process.env;
-    return {
-      accessKeyId: env.AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY,
-      secretAccessKey: env.AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_KEY,
-      sessionToken: env.AWS_SESSION_TOKEN
-    };
-  };
-
-  RequestSigner.prototype.parsePath = function () {
-    var path = this.request.path || '/',
-        queryIx = path.indexOf('?'),
-        query = null;
-
-    if (queryIx >= 0) {
-      query = querystring$$1.parse(path.slice(queryIx + 1));
-      path = path.slice(0, queryIx);
-    }
-
-    // S3 doesn't always encode characters > 127 correctly and
-    // all services don't encode characters > 255 correctly
-    // So if there are non-reserved chars (and it's not already all % encoded), just encode them all
-    if (/[^0-9A-Za-z!'()*\-._~%/]/.test(path)) {
-      path = path.split('/').map(function (piece) {
-        return querystring$$1.escape(querystring$$1.unescape(piece));
-      }).join('/');
-    }
-
-    this.parsedPath = {
-      path: path,
-      query: query
-    };
-  };
-
-  RequestSigner.prototype.formatPath = function () {
-    var path = this.parsedPath.path,
-        query = this.parsedPath.query;
-
-    if (!query) return path;
-
-    // Services don't support empty query string keys
-    if (query[''] != null) delete query[''];
-
-    return path + '?' + encodeRfc3986(querystring$$1.stringify(query));
-  };
-
-  aws4.RequestSigner = RequestSigner;
-
-  aws4.sign = function (request, credentials) {
-    return new RequestSigner(request, credentials).sign();
-  };
-});
-
 var oauth1_0a = createCommonjsModule(function (module, exports) {
     if (typeof module !== 'undefined' && typeof exports !== 'undefined') {
         module.exports = OAuth;
@@ -2519,8 +2071,8 @@ var oauth1_0a = createCommonjsModule(function (module, exports) {
      * @param  {String} url
      * @return {String}
      */
-    OAuth.prototype.getBaseUrl = function (url$$1) {
-        return url$$1.split('?')[0];
+    OAuth.prototype.getBaseUrl = function (url) {
+        return url.split('?')[0];
     };
 
     /**
@@ -2549,8 +2101,8 @@ var oauth1_0a = createCommonjsModule(function (module, exports) {
      * @param  {String} url
      * @return {Object}
      */
-    OAuth.prototype.deParamUrl = function (url$$1) {
-        var tmp = url$$1.split('?');
+    OAuth.prototype.deParamUrl = function (url) {
+        var tmp = url.split('?');
 
         if (tmp.length === 1) return {};
 
@@ -6536,14 +6088,14 @@ var merge$1 = createAssigner(function (object, source, srcIndex) {
 
 var merge_1 = merge$1;
 
-var setQuery = function setQuery(url$$1, queryObj, options) {
+var setQuery = function setQuery(url, queryObj, options) {
   options = options || {};
 
   if (isEmpty_1(queryObj)) {
-    return url$$1;
+    return url;
   }
 
-  var urlParts = url$$1.split('?');
+  var urlParts = url.split('?');
   var query = urlParts[1];
   var existingQueryObj = index$1.parse(query);
 
@@ -6574,8 +6126,8 @@ var createURL = function createURL(u) {
     }
   } else {
     // node
-    var url$$1 = require('url');
-    newURL = url$$1.parse(u);
+    var url = require('url');
+    newURL = url.parse(u);
   }
 
   return newURL;
@@ -7230,6 +6782,66 @@ function baseMatches$1(source) {
 
 var _baseMatches = baseMatches$1;
 
+var castPath$2 = _castPath;
+var isKey$3 = _isKey;
+var toKey$3 = _toKey;
+
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
+function baseGet$1(object, path) {
+  path = isKey$3(path, object) ? [path] : castPath$2(path);
+
+  var index = 0,
+      length = path.length;
+
+  while (object != null && index < length) {
+    object = object[toKey$3(path[index++])];
+  }
+  return index && index == length ? object : undefined;
+}
+
+var _baseGet = baseGet$1;
+
+var baseGet = _baseGet;
+
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
+function get$2(object, path, defaultValue) {
+  var result = object == null ? undefined : baseGet(object, path);
+  return result === undefined ? defaultValue : result;
+}
+
+var get_1 = get$2;
+
 /**
  * The base implementation of `_.hasIn` without support for deep paths.
  *
@@ -7280,12 +6892,12 @@ function hasIn$1(object, path) {
 var hasIn_1 = hasIn$1;
 
 var baseIsEqual$2 = _baseIsEqual;
-var get$3 = get_1;
+var get$1 = get_1;
 var hasIn = hasIn_1;
-var isKey$3 = _isKey;
+var isKey$2 = _isKey;
 var isStrictComparable$2 = _isStrictComparable;
 var matchesStrictComparable$2 = _matchesStrictComparable;
-var toKey$3 = _toKey;
+var toKey$2 = _toKey;
 
 /** Used to compose bitmasks for comparison styles. */
 var UNORDERED_COMPARE_FLAG$3 = 1;
@@ -7300,11 +6912,11 @@ var PARTIAL_COMPARE_FLAG$5 = 2;
  * @returns {Function} Returns the new spec function.
  */
 function baseMatchesProperty$1(path, srcValue) {
-  if (isKey$3(path) && isStrictComparable$2(srcValue)) {
-    return matchesStrictComparable$2(toKey$3(path), srcValue);
+  if (isKey$2(path) && isStrictComparable$2(srcValue)) {
+    return matchesStrictComparable$2(toKey$2(path), srcValue);
   }
   return function (object) {
-    var objValue = get$3(object, path);
+    var objValue = get$1(object, path);
     return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual$2(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG$3 | PARTIAL_COMPARE_FLAG$5);
   };
 }
@@ -7800,6 +7412,12 @@ var generateAws = function generateAws(data, request, options) {
   options = options || {};
 
   var patch = {};
+
+  if (!options.signAws) {
+    console.warn('authorization/generateAws signAws function not supplied!');
+    return patch;
+  }
+
   if (has_1(request, 'headers.Authorization')) {
     return patch;
   }
@@ -7822,7 +7440,7 @@ var generateAws = function generateAws(data, request, options) {
     region: data.region
   };
 
-  aws4_1.sign(requestToAuthorize, {
+  var headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken
@@ -7830,7 +7448,7 @@ var generateAws = function generateAws(data, request, options) {
 
   // add to the header
   patch.request = {
-    headers: requestToAuthorize.headers
+    headers: headers
   };
 
   return patch;
@@ -9841,4 +9459,4 @@ var index = _extends({
 
 return index;
 
-}(url,querystring,crypto));
+}());

@@ -2,8 +2,6 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var isEmpty = _interopDefault(require('lodash/isEmpty'));
 var has = _interopDefault(require('lodash/has'));
-var get = _interopDefault(require('lodash/get'));
-var aws4 = _interopDefault(require('aws4'));
 var OAuth = _interopDefault(require('oauth-1.0a'));
 var HmacSHA1 = _interopDefault(require('crypto-js/hmac-sha1'));
 var HmacSHA256 = _interopDefault(require('crypto-js/hmac-sha256'));
@@ -13,6 +11,7 @@ var merge = _interopDefault(require('lodash/merge'));
 var map = _interopDefault(require('lodash/map'));
 var isArray = _interopDefault(require('lodash/isArray'));
 var stringify = _interopDefault(require('json-stringify-safe'));
+var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var forEach = _interopDefault(require('lodash/forEach'));
@@ -568,6 +567,12 @@ var generateAws = function generateAws(data, request, options) {
   options = options || {};
 
   var patch = {};
+
+  if (!options.signAws) {
+    console.warn('authorization/generateAws signAws function not supplied!');
+    return patch;
+  }
+
   if (has(request, 'headers.Authorization')) {
     return patch;
   }
@@ -590,7 +595,7 @@ var generateAws = function generateAws(data, request, options) {
     region: data.region
   };
 
-  aws4.sign(requestToAuthorize, {
+  var headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken
@@ -598,7 +603,7 @@ var generateAws = function generateAws(data, request, options) {
 
   // add to the header
   patch.request = {
-    headers: requestToAuthorize.headers
+    headers: headers
   };
 
   return patch;
