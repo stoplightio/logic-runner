@@ -1,4 +1,8 @@
-var logicRunner = (function () {
+var logicRunner = (function (url,querystring,crypto) {
+url = 'default' in url ? url['default'] : url;
+querystring = 'default' in querystring ? querystring['default'] : querystring;
+crypto = 'default' in crypto ? crypto['default'] : crypto;
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -1901,6 +1905,450 @@ function has(object, path) {
 
 var has_1 = has;
 
+var castPath$2 = _castPath;
+var isKey$2 = _isKey;
+var toKey$2 = _toKey;
+
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
+function baseGet$1(object, path) {
+  path = isKey$2(path, object) ? [path] : castPath$2(path);
+
+  var index = 0,
+      length = path.length;
+
+  while (object != null && index < length) {
+    object = object[toKey$2(path[index++])];
+  }
+  return index && index == length ? object : undefined;
+}
+
+var _baseGet = baseGet$1;
+
+var baseGet = _baseGet;
+
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
+function get$1(object, path, defaultValue) {
+  var result = object == null ? undefined : baseGet(object, path);
+  return result === undefined ? defaultValue : result;
+}
+
+var get_1 = get$1;
+
+var lru = function lru(size) {
+  return new LruCache(size);
+};
+
+function LruCache(size) {
+  this.capacity = size | 0;
+  this.map = Object.create(null);
+  this.list = new DoublyLinkedList();
+}
+
+LruCache.prototype.get = function (key) {
+  var node = this.map[key];
+  if (node == null) return undefined;
+  this.used(node);
+  return node.val;
+};
+
+LruCache.prototype.set = function (key, val) {
+  var node = this.map[key];
+  if (node != null) {
+    node.val = val;
+  } else {
+    if (!this.capacity) this.prune();
+    if (!this.capacity) return false;
+    node = new DoublyLinkedNode(key, val);
+    this.map[key] = node;
+    this.capacity--;
+  }
+  this.used(node);
+  return true;
+};
+
+LruCache.prototype.used = function (node) {
+  this.list.moveToFront(node);
+};
+
+LruCache.prototype.prune = function () {
+  var node = this.list.pop();
+  if (node != null) {
+    delete this.map[node.key];
+    this.capacity++;
+  }
+};
+
+function DoublyLinkedList() {
+  this.firstNode = null;
+  this.lastNode = null;
+}
+
+DoublyLinkedList.prototype.moveToFront = function (node) {
+  if (this.firstNode == node) return;
+
+  this.remove(node);
+
+  if (this.firstNode == null) {
+    this.firstNode = node;
+    this.lastNode = node;
+    node.prev = null;
+    node.next = null;
+  } else {
+    node.prev = null;
+    node.next = this.firstNode;
+    node.next.prev = node;
+    this.firstNode = node;
+  }
+};
+
+DoublyLinkedList.prototype.pop = function () {
+  var lastNode = this.lastNode;
+  if (lastNode != null) {
+    this.remove(lastNode);
+  }
+  return lastNode;
+};
+
+DoublyLinkedList.prototype.remove = function (node) {
+  if (this.firstNode == node) {
+    this.firstNode = node.next;
+  } else if (node.prev != null) {
+    node.prev.next = node.next;
+  }
+  if (this.lastNode == node) {
+    this.lastNode = node.prev;
+  } else if (node.next != null) {
+    node.next.prev = node.prev;
+  }
+};
+
+function DoublyLinkedNode(key, val) {
+  this.key = key;
+  this.val = val;
+  this.prev = null;
+  this.next = null;
+}
+
+var aws4_1 = createCommonjsModule(function (module, exports) {
+  var aws4 = exports,
+      url$$1 = url,
+      querystring$$1 = querystring,
+      crypto$$1 = crypto,
+      lru$$1 = lru,
+      credentialsCache = lru$$1(1000);
+
+  // http://docs.amazonwebservices.com/general/latest/gr/signature-version-4.html
+
+  function hmac(key, string, encoding) {
+    return crypto$$1.createHmac('sha256', key).update(string, 'utf8').digest(encoding);
+  }
+
+  function hash(string, encoding) {
+    return crypto$$1.createHash('sha256').update(string, 'utf8').digest(encoding);
+  }
+
+  // This function assumes the string has already been percent encoded
+  function encodeRfc3986(urlEncodedString) {
+    return urlEncodedString.replace(/[!'()*]/g, function (c) {
+      return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+    });
+  }
+
+  // request: { path | body, [host], [method], [headers], [service], [region] }
+  // credentials: { accessKeyId, secretAccessKey, [sessionToken] }
+  function RequestSigner(request, credentials) {
+
+    if (typeof request === 'string') request = url$$1.parse(request);
+
+    var headers = request.headers = request.headers || {},
+        hostParts = this.matchHost(request.hostname || request.host || headers.Host || headers.host);
+
+    this.request = request;
+    this.credentials = credentials || this.defaultCredentials();
+
+    this.service = request.service || hostParts[0] || '';
+    this.region = request.region || hostParts[1] || 'us-east-1';
+
+    // SES uses a different domain from the service name
+    if (this.service === 'email') this.service = 'ses';
+
+    if (!request.method && request.body) request.method = 'POST';
+
+    if (!headers.Host && !headers.host) {
+      headers.Host = request.hostname || request.host || this.createHost();
+
+      // If a port is specified explicitly, use it as is
+      if (request.port) headers.Host += ':' + request.port;
+    }
+    if (!request.hostname && !request.host) request.hostname = headers.Host || headers.host;
+
+    this.isCodeCommitGit = this.service === 'codecommit' && request.method === 'GIT';
+  }
+
+  RequestSigner.prototype.matchHost = function (host) {
+    var match = (host || '').match(/([^\.]+)\.(?:([^\.]*)\.)?amazonaws\.com$/);
+    var hostParts = (match || []).slice(1, 3);
+
+    // ES's hostParts are sometimes the other way round, if the value that is expected
+    // to be region equals ‘es’ switch them back
+    // e.g. search-cluster-name-aaaa00aaaa0aaa0aaaaaaa0aaa.us-east-1.es.amazonaws.com
+    if (hostParts[1] === 'es') hostParts = hostParts.reverse();
+
+    return hostParts;
+  };
+
+  // http://docs.aws.amazon.com/general/latest/gr/rande.html
+  RequestSigner.prototype.isSingleRegion = function () {
+    // Special case for S3 and SimpleDB in us-east-1
+    if (['s3', 'sdb'].indexOf(this.service) >= 0 && this.region === 'us-east-1') return true;
+
+    return ['cloudfront', 'ls', 'route53', 'iam', 'importexport', 'sts'].indexOf(this.service) >= 0;
+  };
+
+  RequestSigner.prototype.createHost = function () {
+    var region = this.isSingleRegion() ? '' : (this.service === 's3' && this.region !== 'us-east-1' ? '-' : '.') + this.region,
+        service = this.service === 'ses' ? 'email' : this.service;
+    return service + region + '.amazonaws.com';
+  };
+
+  RequestSigner.prototype.prepareRequest = function () {
+    this.parsePath();
+
+    var request = this.request,
+        headers = request.headers,
+        query;
+
+    if (request.signQuery) {
+
+      this.parsedPath.query = query = this.parsedPath.query || {};
+
+      if (this.credentials.sessionToken) query['X-Amz-Security-Token'] = this.credentials.sessionToken;
+
+      if (this.service === 's3' && !query['X-Amz-Expires']) query['X-Amz-Expires'] = 86400;
+
+      if (query['X-Amz-Date']) this.datetime = query['X-Amz-Date'];else query['X-Amz-Date'] = this.getDateTime();
+
+      query['X-Amz-Algorithm'] = 'AWS4-HMAC-SHA256';
+      query['X-Amz-Credential'] = this.credentials.accessKeyId + '/' + this.credentialString();
+      query['X-Amz-SignedHeaders'] = this.signedHeaders();
+    } else {
+
+      if (!request.doNotModifyHeaders && !this.isCodeCommitGit) {
+        if (request.body && !headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+
+        if (request.body && !headers['Content-Length'] && !headers['content-length']) headers['Content-Length'] = Buffer.byteLength(request.body);
+
+        if (this.credentials.sessionToken) headers['X-Amz-Security-Token'] = this.credentials.sessionToken;
+
+        if (this.service === 's3') headers['X-Amz-Content-Sha256'] = hash(this.request.body || '', 'hex');
+
+        if (headers['X-Amz-Date']) this.datetime = headers['X-Amz-Date'];else headers['X-Amz-Date'] = this.getDateTime();
+      }
+
+      delete headers.Authorization;
+      delete headers.authorization;
+    }
+  };
+
+  RequestSigner.prototype.sign = function () {
+    if (!this.parsedPath) this.prepareRequest();
+
+    if (this.request.signQuery) {
+      this.parsedPath.query['X-Amz-Signature'] = this.signature();
+    } else {
+      this.request.headers.Authorization = this.authHeader();
+    }
+
+    this.request.path = this.formatPath();
+
+    return this.request;
+  };
+
+  RequestSigner.prototype.getDateTime = function () {
+    if (!this.datetime) {
+      var headers = this.request.headers,
+          date = new Date(headers.Date || headers.date || new Date());
+
+      this.datetime = date.toISOString().replace(/[:\-]|\.\d{3}/g, '');
+
+      // Remove the trailing 'Z' on the timestamp string for CodeCommit git access
+      if (this.isCodeCommitGit) this.datetime = this.datetime.slice(0, -1);
+    }
+    return this.datetime;
+  };
+
+  RequestSigner.prototype.getDate = function () {
+    return this.getDateTime().substr(0, 8);
+  };
+
+  RequestSigner.prototype.authHeader = function () {
+    return ['AWS4-HMAC-SHA256 Credential=' + this.credentials.accessKeyId + '/' + this.credentialString(), 'SignedHeaders=' + this.signedHeaders(), 'Signature=' + this.signature()].join(', ');
+  };
+
+  RequestSigner.prototype.signature = function () {
+    var date = this.getDate(),
+        cacheKey = [this.credentials.secretAccessKey, date, this.region, this.service].join(),
+        kDate,
+        kRegion,
+        kService,
+        kCredentials = credentialsCache.get(cacheKey);
+    if (!kCredentials) {
+      kDate = hmac('AWS4' + this.credentials.secretAccessKey, date);
+      kRegion = hmac(kDate, this.region);
+      kService = hmac(kRegion, this.service);
+      kCredentials = hmac(kService, 'aws4_request');
+      credentialsCache.set(cacheKey, kCredentials);
+    }
+    return hmac(kCredentials, this.stringToSign(), 'hex');
+  };
+
+  RequestSigner.prototype.stringToSign = function () {
+    return ['AWS4-HMAC-SHA256', this.getDateTime(), this.credentialString(), hash(this.canonicalString(), 'hex')].join('\n');
+  };
+
+  RequestSigner.prototype.canonicalString = function () {
+    if (!this.parsedPath) this.prepareRequest();
+
+    var pathStr = this.parsedPath.path,
+        query = this.parsedPath.query,
+        queryStr = '',
+        normalizePath = this.service !== 's3',
+        decodePath = this.service === 's3' || this.request.doNotEncodePath,
+        decodeSlashesInPath = this.service === 's3',
+        firstValOnly = this.service === 's3',
+        bodyHash = this.service === 's3' && this.request.signQuery ? 'UNSIGNED-PAYLOAD' : this.isCodeCommitGit ? '' : hash(this.request.body || '', 'hex');
+
+    if (query) {
+      queryStr = encodeRfc3986(querystring$$1.stringify(Object.keys(query).sort().reduce(function (obj, key) {
+        if (!key) return obj;
+        obj[key] = !Array.isArray(query[key]) ? query[key] : firstValOnly ? query[key][0] : query[key].slice().sort();
+        return obj;
+      }, {})));
+    }
+    if (pathStr !== '/') {
+      if (normalizePath) pathStr = pathStr.replace(/\/{2,}/g, '/');
+      pathStr = pathStr.split('/').reduce(function (path, piece) {
+        if (normalizePath && piece === '..') {
+          path.pop();
+        } else if (!normalizePath || piece !== '.') {
+          if (decodePath) piece = querystring$$1.unescape(piece);
+          path.push(encodeRfc3986(querystring$$1.escape(piece)));
+        }
+        return path;
+      }, []).join('/');
+      if (pathStr[0] !== '/') pathStr = '/' + pathStr;
+      if (decodeSlashesInPath) pathStr = pathStr.replace(/%2F/g, '/');
+    }
+
+    return [this.request.method || 'GET', pathStr, queryStr, this.canonicalHeaders() + '\n', this.signedHeaders(), bodyHash].join('\n');
+  };
+
+  RequestSigner.prototype.canonicalHeaders = function () {
+    var headers = this.request.headers;
+    function trimAll(header) {
+      return header.toString().trim().replace(/\s+/g, ' ');
+    }
+    return Object.keys(headers).sort(function (a, b) {
+      return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
+    }).map(function (key) {
+      return key.toLowerCase() + ':' + trimAll(headers[key]);
+    }).join('\n');
+  };
+
+  RequestSigner.prototype.signedHeaders = function () {
+    return Object.keys(this.request.headers).map(function (key) {
+      return key.toLowerCase();
+    }).sort().join(';');
+  };
+
+  RequestSigner.prototype.credentialString = function () {
+    return [this.getDate(), this.region, this.service, 'aws4_request'].join('/');
+  };
+
+  RequestSigner.prototype.defaultCredentials = function () {
+    var env = process.env;
+    return {
+      accessKeyId: env.AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY,
+      secretAccessKey: env.AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_KEY,
+      sessionToken: env.AWS_SESSION_TOKEN
+    };
+  };
+
+  RequestSigner.prototype.parsePath = function () {
+    var path = this.request.path || '/',
+        queryIx = path.indexOf('?'),
+        query = null;
+
+    if (queryIx >= 0) {
+      query = querystring$$1.parse(path.slice(queryIx + 1));
+      path = path.slice(0, queryIx);
+    }
+
+    // S3 doesn't always encode characters > 127 correctly and
+    // all services don't encode characters > 255 correctly
+    // So if there are non-reserved chars (and it's not already all % encoded), just encode them all
+    if (/[^0-9A-Za-z!'()*\-._~%/]/.test(path)) {
+      path = path.split('/').map(function (piece) {
+        return querystring$$1.escape(querystring$$1.unescape(piece));
+      }).join('/');
+    }
+
+    this.parsedPath = {
+      path: path,
+      query: query
+    };
+  };
+
+  RequestSigner.prototype.formatPath = function () {
+    var path = this.parsedPath.path,
+        query = this.parsedPath.query;
+
+    if (!query) return path;
+
+    // Services don't support empty query string keys
+    if (query[''] != null) delete query[''];
+
+    return path + '?' + encodeRfc3986(querystring$$1.stringify(query));
+  };
+
+  aws4.RequestSigner = RequestSigner;
+
+  aws4.sign = function (request, credentials) {
+    return new RequestSigner(request, credentials).sign();
+  };
+});
+
 var oauth1_0a = createCommonjsModule(function (module, exports) {
     if (typeof module !== 'undefined' && typeof exports !== 'undefined') {
         module.exports = OAuth;
@@ -2071,8 +2519,8 @@ var oauth1_0a = createCommonjsModule(function (module, exports) {
      * @param  {String} url
      * @return {String}
      */
-    OAuth.prototype.getBaseUrl = function (url) {
-        return url.split('?')[0];
+    OAuth.prototype.getBaseUrl = function (url$$1) {
+        return url$$1.split('?')[0];
     };
 
     /**
@@ -2101,8 +2549,8 @@ var oauth1_0a = createCommonjsModule(function (module, exports) {
      * @param  {String} url
      * @return {Object}
      */
-    OAuth.prototype.deParamUrl = function (url) {
-        var tmp = url.split('?');
+    OAuth.prototype.deParamUrl = function (url$$1) {
+        var tmp = url$$1.split('?');
 
         if (tmp.length === 1) return {};
 
@@ -6088,14 +6536,14 @@ var merge$1 = createAssigner(function (object, source, srcIndex) {
 
 var merge_1 = merge$1;
 
-var setQuery = function setQuery(url, queryObj, options) {
+var setQuery = function setQuery(url$$1, queryObj, options) {
   options = options || {};
 
   if (isEmpty_1(queryObj)) {
-    return url;
+    return url$$1;
   }
 
-  var urlParts = url.split('?');
+  var urlParts = url$$1.split('?');
   var query = urlParts[1];
   var existingQueryObj = index$1.parse(query);
 
@@ -6108,545 +6556,30 @@ var setQuery = function setQuery(url, queryObj, options) {
   return urlParts[0] + '?' + index$1.stringify(existingQueryObj);
 };
 
-var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
+// this function creates a fallback for IE browser which does not support URL function
 
-var generateBasicAuth = function generateBasicAuth(username, password, options) {
-  options = options || {};
+var createURL = function createURL(u) {
+  var newURL = {};
 
-  var string = [username, password].join(':');
-  string = Base64.encode(string); // Need to use custom base64 for golang vm.
+  if ((typeof document === 'undefined' ? 'undefined' : _typeof(document)) !== (typeof undefined === 'undefined' ? 'undefined' : _typeof(undefined))) {
+    // browser
 
-  return {
-    request: {
-      headers: {
-        Authorization: 'Basic ' + string
-      }
+    if (typeof URL === 'function') {
+      // modern
+      newURL = new URL(u);
+    } else {
+      // old
+      newURL = document.createElement('a');
+      newURL.href = u;
     }
-  };
-};
-
-var hashFunction = function hashFunction(method, encode, options) {
-  options = options || {};
-
-  return function (base_string, key) {
-    var hash = void 0;
-
-    switch (method) {
-      case 'HMAC-SHA1':
-        hash = hmacSha1(base_string, key);
-        break;
-      case 'HMAC-SHA256':
-        hash = hmacSha256(base_string, key);
-        break;
-      default:
-        return key;
-    }
-
-    if (encode) {
-      return hash.toString(encBase64);
-    }
-
-    return hash.toString();
-  };
-};
-var generateOAuth1 = function generateOAuth1(data, request, options) {
-  options = options || {};
-
-  var patch = {};
-  if (data.useHeader && has_1(request, 'headers.Authorization')) {
-    return patch;
-  }
-
-  var signatureMethod = data.signatureMethod || 'HMAC-SHA1';
-
-  var encode = data.encode;
-  var oauth = oauth1_0a({
-    consumer: {
-      key: data.consumerKey,
-      secret: data.consumerSecret
-    },
-    signature_method: signatureMethod,
-    hash_function: hashFunction(signatureMethod, encode, options),
-    version: data.version || '1.0',
-    nonce_length: data.nonceLength || 32,
-    parameter_seperator: data.parameterSeperator || ', '
-  });
-
-  var token = null;
-  if (data.token) {
-    token = {
-      key: data.token,
-      secret: data.tokenSecret
-    };
-  }
-
-  var requestToAuthorize = {
-    url: request.url,
-    method: request.method.toUpperCase(),
-    data: request.body
-  };
-  var authPatch = oauth.authorize(requestToAuthorize, token);
-  patch.authorization = {
-    oauth1: {
-      nonce: authPatch.oauth_nonce
-    }
-  };
-
-  if (data.useHeader) {
-    // add to the header
-    var headerPatch = oauth.toHeader(authPatch);
-    patch.request = {
-      headers: {
-        Authorization: headerPatch.Authorization
-      }
-    };
   } else {
-    // add to the query string
-    patch.request = {
-      url: setQuery(request.url, authPatch, { preserve: true })
-    };
+    // node
+    var url$$1 = require('url');
+    newURL = url$$1.parse(u);
   }
 
-  return patch;
+  return newURL;
 };
-
-var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
-  options = options || {};
-  var patch = {};
-
-  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
-    return patch;
-  }
-
-  var details = authNode[authNode.type];
-  if (isEmpty_1(details)) {
-    return patch;
-  }
-
-  switch (authNode.type) {
-    case 'basic':
-      if (!has_1(request, 'headers.Authorization')) {
-        patch = generateBasicAuth(details.username, details.password, options);
-      }
-
-      break;
-    case 'oauth1':
-      patch = generateOAuth1(details, request, options);
-      break;
-    default:
-      console.log(authNode.type + ' auth not implemented');
-  }
-
-  return patch;
-};
-
-var castPath$2 = _castPath;
-var isKey$2 = _isKey;
-var toKey$2 = _toKey;
-
-/**
- * The base implementation of `_.get` without support for default values.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @returns {*} Returns the resolved value.
- */
-function baseGet$1(object, path) {
-  path = isKey$2(path, object) ? [path] : castPath$2(path);
-
-  var index = 0,
-      length = path.length;
-
-  while (object != null && index < length) {
-    object = object[toKey$2(path[index++])];
-  }
-  return index && index == length ? object : undefined;
-}
-
-var _baseGet = baseGet$1;
-
-var baseGet = _baseGet;
-
-/**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
- * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
- */
-function get$1(object, path, defaultValue) {
-  var result = object == null ? undefined : baseGet(object, path);
-  return result === undefined ? defaultValue : result;
-}
-
-var get_1 = get$1;
-
-var assignValue$3 = _assignValue;
-var castPath$3 = _castPath;
-var isIndex$4 = _isIndex;
-var isKey$3 = _isKey;
-var isObject$9 = isObject_1;
-var toKey$3 = _toKey;
-
-/**
- * The base implementation of `_.set`.
- *
- * @private
- * @param {Object} object The object to modify.
- * @param {Array|string} path The path of the property to set.
- * @param {*} value The value to set.
- * @param {Function} [customizer] The function to customize path creation.
- * @returns {Object} Returns `object`.
- */
-function baseSet$1(object, path, value, customizer) {
-  if (!isObject$9(object)) {
-    return object;
-  }
-  path = isKey$3(path, object) ? [path] : castPath$3(path);
-
-  var index = -1,
-      length = path.length,
-      lastIndex = length - 1,
-      nested = object;
-
-  while (nested != null && ++index < length) {
-    var key = toKey$3(path[index]),
-        newValue = value;
-
-    if (index != lastIndex) {
-      var objValue = nested[key];
-      newValue = customizer ? customizer(objValue, key, nested) : undefined;
-      if (newValue === undefined) {
-        newValue = isObject$9(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
-      }
-    }
-    assignValue$3(nested, key, newValue);
-    nested = nested[key];
-  }
-  return object;
-}
-
-var _baseSet = baseSet$1;
-
-var baseSet = _baseSet;
-
-/**
- * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
- * it's created. Arrays are created for missing index properties while objects
- * are created for all other missing properties. Use `_.setWith` to customize
- * `path` creation.
- *
- * **Note:** This method mutates `object`.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to modify.
- * @param {Array|string} path The path of the property to set.
- * @param {*} value The value to set.
- * @returns {Object} Returns `object`.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.set(object, 'a[0].b.c', 4);
- * console.log(object.a[0].b.c);
- * // => 4
- *
- * _.set(object, ['x', '0', 'y', 'z'], 5);
- * console.log(object.x[0].y.z);
- * // => 5
- */
-function set$1(object, path, value) {
-  return object == null ? object : baseSet(object, path, value);
-}
-
-var set_1 = set$1;
-
-/**
- * The base implementation of `_.findIndex` and `_.findLastIndex` without
- * support for iteratee shorthands.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {Function} predicate The function invoked per iteration.
- * @param {number} fromIndex The index to search from.
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseFindIndex$1(array, predicate, fromIndex, fromRight) {
-  var length = array.length,
-      index = fromIndex + (fromRight ? 1 : -1);
-
-  while (fromRight ? index-- : ++index < length) {
-    if (predicate(array[index], index, array)) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-var _baseFindIndex = baseFindIndex$1;
-
-/**
- * The base implementation of `_.isNaN` without support for number objects.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
- */
-function baseIsNaN$1(value) {
-  return value !== value;
-}
-
-var _baseIsNaN = baseIsNaN$1;
-
-/**
- * A specialized version of `_.indexOf` which performs strict equality
- * comparisons of values, i.e. `===`.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function strictIndexOf$1(array, value, fromIndex) {
-  var index = fromIndex - 1,
-      length = array.length;
-
-  while (++index < length) {
-    if (array[index] === value) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-var _strictIndexOf = strictIndexOf$1;
-
-var baseFindIndex = _baseFindIndex;
-var baseIsNaN = _baseIsNaN;
-var strictIndexOf = _strictIndexOf;
-
-/**
- * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} fromIndex The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-function baseIndexOf$1(array, value, fromIndex) {
-    return value === value ? strictIndexOf(array, value, fromIndex) : baseFindIndex(array, baseIsNaN, fromIndex);
-}
-
-var _baseIndexOf = baseIndexOf$1;
-
-var isArray$11 = isArray_1;
-var isObjectLike$5 = isObjectLike_1;
-
-/** `Object#toString` result references. */
-var stringTag$3 = '[object String]';
-
-/** Used for built-in method references. */
-var objectProto$18 = Object.prototype;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var objectToString$7 = objectProto$18.toString;
-
-/**
- * Checks if `value` is classified as a `String` primitive or object.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a string, else `false`.
- * @example
- *
- * _.isString('abc');
- * // => true
- *
- * _.isString(1);
- * // => false
- */
-function isString$1(value) {
-  return typeof value == 'string' || !isArray$11(value) && isObjectLike$5(value) && objectToString$7.call(value) == stringTag$3;
-}
-
-var isString_1 = isString$1;
-
-var isObject$10 = isObject_1;
-var isSymbol$4 = isSymbol_1;
-
-/** Used as references for various `Number` constants. */
-var NAN = 0 / 0;
-
-/** Used to match leading and trailing whitespace. */
-var reTrim = /^\s+|\s+$/g;
-
-/** Used to detect bad signed hexadecimal string values. */
-var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-
-/** Used to detect binary string values. */
-var reIsBinary = /^0b[01]+$/i;
-
-/** Used to detect octal string values. */
-var reIsOctal = /^0o[0-7]+$/i;
-
-/** Built-in method references without a dependency on `root`. */
-var freeParseInt = parseInt;
-
-/**
- * Converts `value` to a number.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to process.
- * @returns {number} Returns the number.
- * @example
- *
- * _.toNumber(3.2);
- * // => 3.2
- *
- * _.toNumber(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toNumber(Infinity);
- * // => Infinity
- *
- * _.toNumber('3.2');
- * // => 3.2
- */
-function toNumber$1(value) {
-  if (typeof value == 'number') {
-    return value;
-  }
-  if (isSymbol$4(value)) {
-    return NAN;
-  }
-  if (isObject$10(value)) {
-    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-    value = isObject$10(other) ? other + '' : other;
-  }
-  if (typeof value != 'string') {
-    return value === 0 ? value : +value;
-  }
-  value = value.replace(reTrim, '');
-  var isBinary = reIsBinary.test(value);
-  return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
-}
-
-var toNumber_1 = toNumber$1;
-
-var toNumber = toNumber_1;
-
-/** Used as references for various `Number` constants. */
-var INFINITY$2 = 1 / 0;
-var MAX_INTEGER = 1.7976931348623157e+308;
-
-/**
- * Converts `value` to a finite number.
- *
- * @static
- * @memberOf _
- * @since 4.12.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted number.
- * @example
- *
- * _.toFinite(3.2);
- * // => 3.2
- *
- * _.toFinite(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toFinite(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toFinite('3.2');
- * // => 3.2
- */
-function toFinite$1(value) {
-  if (!value) {
-    return value === 0 ? value : 0;
-  }
-  value = toNumber(value);
-  if (value === INFINITY$2 || value === -INFINITY$2) {
-    var sign = value < 0 ? -1 : 1;
-    return sign * MAX_INTEGER;
-  }
-  return value === value ? value : 0;
-}
-
-var toFinite_1 = toFinite$1;
-
-var toFinite = toFinite_1;
-
-/**
- * Converts `value` to an integer.
- *
- * **Note:** This method is loosely based on
- * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted integer.
- * @example
- *
- * _.toInteger(3.2);
- * // => 3
- *
- * _.toInteger(Number.MIN_VALUE);
- * // => 0
- *
- * _.toInteger(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toInteger('3.2');
- * // => 3
- */
-function toInteger$1(value) {
-  var result = toFinite(value),
-      remainder = result % 1;
-
-  return result === result ? remainder ? result - remainder : result : 0;
-}
-
-var toInteger_1 = toInteger$1;
 
 /**
  * A specialized version of `_.map` for arrays without support for iteratee
@@ -6669,221 +6602,6 @@ function arrayMap$1(array, iteratee) {
 }
 
 var _arrayMap = arrayMap$1;
-
-var arrayMap = _arrayMap;
-
-/**
- * The base implementation of `_.values` and `_.valuesIn` which creates an
- * array of `object` property values corresponding to the property names
- * of `props`.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array} props The property names to get values for.
- * @returns {Object} Returns the array of property values.
- */
-function baseValues$1(object, props) {
-  return arrayMap(props, function (key) {
-    return object[key];
-  });
-}
-
-var _baseValues = baseValues$1;
-
-var baseValues = _baseValues;
-var keys$4 = keys_1;
-
-/**
- * Creates an array of the own enumerable string keyed property values of `object`.
- *
- * **Note:** Non-object values are coerced to objects.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Object
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property values.
- * @example
- *
- * function Foo() {
- *   this.a = 1;
- *   this.b = 2;
- * }
- *
- * Foo.prototype.c = 3;
- *
- * _.values(new Foo);
- * // => [1, 2] (iteration order is not guaranteed)
- *
- * _.values('hi');
- * // => ['h', 'i']
- */
-function values$1(object) {
-  return object ? baseValues(object, keys$4(object)) : [];
-}
-
-var values_1 = values$1;
-
-var baseIndexOf = _baseIndexOf;
-var isArrayLike$6 = isArrayLike_1;
-var isString = isString_1;
-var toInteger = toInteger_1;
-var values = values_1;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeMax$1 = Math.max;
-
-/**
- * Checks if `value` is in `collection`. If `collection` is a string, it's
- * checked for a substring of `value`, otherwise
- * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * is used for equality comparisons. If `fromIndex` is negative, it's used as
- * the offset from the end of `collection`.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Collection
- * @param {Array|Object|string} collection The collection to inspect.
- * @param {*} value The value to search for.
- * @param {number} [fromIndex=0] The index to search from.
- * @param- {Object} [guard] Enables use as an iteratee for methods like `_.reduce`.
- * @returns {boolean} Returns `true` if `value` is found, else `false`.
- * @example
- *
- * _.includes([1, 2, 3], 1);
- * // => true
- *
- * _.includes([1, 2, 3], 1, 2);
- * // => false
- *
- * _.includes({ 'a': 1, 'b': 2 }, 1);
- * // => true
- *
- * _.includes('abcd', 'bc');
- * // => true
- */
-function includes(collection, value, fromIndex, guard) {
-  collection = isArrayLike$6(collection) ? collection : values(collection);
-  fromIndex = fromIndex && !guard ? toInteger(fromIndex) : 0;
-
-  var length = collection.length;
-  if (fromIndex < 0) {
-    fromIndex = nativeMax$1(length + fromIndex, 0);
-  }
-  return isString(collection) ? fromIndex <= length && collection.indexOf(value, fromIndex) > -1 : !!length && baseIndexOf(collection, value, fromIndex) > -1;
-}
-
-var includes_1 = includes;
-
-/**
- * Creates a base function for methods like `_.forIn` and `_.forOwn`.
- *
- * @private
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {Function} Returns the new base function.
- */
-function createBaseFor$1(fromRight) {
-  return function (object, iteratee, keysFunc) {
-    var index = -1,
-        iterable = Object(object),
-        props = keysFunc(object),
-        length = props.length;
-
-    while (length--) {
-      var key = props[fromRight ? length : ++index];
-      if (iteratee(iterable[key], key, iterable) === false) {
-        break;
-      }
-    }
-    return object;
-  };
-}
-
-var _createBaseFor = createBaseFor$1;
-
-var createBaseFor = _createBaseFor;
-
-/**
- * The base implementation of `baseForOwn` which iterates over `object`
- * properties returned by `keysFunc` and invokes `iteratee` for each property.
- * Iteratee functions may exit iteration early by explicitly returning `false`.
- *
- * @private
- * @param {Object} object The object to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @param {Function} keysFunc The function to get the keys of `object`.
- * @returns {Object} Returns `object`.
- */
-var baseFor$1 = createBaseFor();
-
-var _baseFor = baseFor$1;
-
-var baseFor = _baseFor;
-var keys$5 = keys_1;
-
-/**
- * The base implementation of `_.forOwn` without support for iteratee shorthands.
- *
- * @private
- * @param {Object} object The object to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Object} Returns `object`.
- */
-function baseForOwn$1(object, iteratee) {
-  return object && baseFor(object, iteratee, keys$5);
-}
-
-var _baseForOwn = baseForOwn$1;
-
-var isArrayLike$7 = isArrayLike_1;
-
-/**
- * Creates a `baseEach` or `baseEachRight` function.
- *
- * @private
- * @param {Function} eachFunc The function to iterate over a collection.
- * @param {boolean} [fromRight] Specify iterating from right to left.
- * @returns {Function} Returns the new base function.
- */
-function createBaseEach$1(eachFunc, fromRight) {
-  return function (collection, iteratee) {
-    if (collection == null) {
-      return collection;
-    }
-    if (!isArrayLike$7(collection)) {
-      return eachFunc(collection, iteratee);
-    }
-    var length = collection.length,
-        index = fromRight ? length : -1,
-        iterable = Object(collection);
-
-    while (fromRight ? index-- : ++index < length) {
-      if (iteratee(iterable[index], index, iterable) === false) {
-        break;
-      }
-    }
-    return collection;
-  };
-}
-
-var _createBaseEach = createBaseEach$1;
-
-var baseForOwn = _baseForOwn;
-var createBaseEach = _createBaseEach;
-
-/**
- * The base implementation of `_.forEach` without support for iteratee shorthands.
- *
- * @private
- * @param {Array|Object} collection The collection to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array|Object} Returns `collection`.
- */
-var baseEach$1 = createBaseEach(baseForOwn);
-
-var _baseEach = baseEach$1;
 
 /** Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED$2 = '__lodash_hash_undefined__';
@@ -7084,7 +6802,7 @@ var mapTag$5 = '[object Map]';
 var numberTag$3 = '[object Number]';
 var regexpTag$3 = '[object RegExp]';
 var setTag$5 = '[object Set]';
-var stringTag$4 = '[object String]';
+var stringTag$3 = '[object String]';
 var symbolTag$3 = '[object Symbol]';
 
 var arrayBufferTag$3 = '[object ArrayBuffer]';
@@ -7138,7 +6856,7 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
       return object.name == other.name && object.message == other.message;
 
     case regexpTag$3:
-    case stringTag$4:
+    case stringTag$3:
       // Coerce regexes to strings and treat strings, primitives and objects,
       // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
       // for more details.
@@ -7177,16 +6895,16 @@ function equalByTag$1(object, other, tag, equalFunc, customizer, bitmask, stack)
 
 var _equalByTag = equalByTag$1;
 
-var keys$6 = keys_1;
+var keys$4 = keys_1;
 
 /** Used to compose bitmasks for comparison styles. */
 var PARTIAL_COMPARE_FLAG$4 = 2;
 
 /** Used for built-in method references. */
-var objectProto$20 = Object.prototype;
+var objectProto$19 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$13 = objectProto$20.hasOwnProperty;
+var hasOwnProperty$13 = objectProto$19.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqualDeep` for objects with support for
@@ -7204,9 +6922,9 @@ var hasOwnProperty$13 = objectProto$20.hasOwnProperty;
  */
 function equalObjects$1(object, other, equalFunc, customizer, bitmask, stack) {
   var isPartial = bitmask & PARTIAL_COMPARE_FLAG$4,
-      objProps = keys$6(object),
+      objProps = keys$4(object),
       objLength = objProps.length,
-      othProps = keys$6(other),
+      othProps = keys$4(other),
       othLength = othProps.length;
 
   if (objLength != othLength && !isPartial) {
@@ -7265,7 +6983,7 @@ var equalArrays = _equalArrays;
 var equalByTag = _equalByTag;
 var equalObjects = _equalObjects;
 var getTag$3 = _getTag;
-var isArray$14 = isArray_1;
+var isArray$13 = isArray_1;
 var isTypedArray$3 = isTypedArray_1;
 
 /** Used to compose bitmasks for comparison styles. */
@@ -7277,10 +6995,10 @@ var arrayTag$2 = '[object Array]';
 var objectTag$4 = '[object Object]';
 
 /** Used for built-in method references. */
-var objectProto$19 = Object.prototype;
+var objectProto$18 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$12 = objectProto$19.hasOwnProperty;
+var hasOwnProperty$12 = objectProto$18.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -7298,8 +7016,8 @@ var hasOwnProperty$12 = objectProto$19.hasOwnProperty;
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
 function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack) {
-  var objIsArr = isArray$14(object),
-      othIsArr = isArray$14(other),
+  var objIsArr = isArray$13(object),
+      othIsArr = isArray$13(other),
       objTag = arrayTag$2,
       othTag = arrayTag$2;
 
@@ -7341,8 +7059,8 @@ function baseIsEqualDeep$1(object, other, equalFunc, customizer, bitmask, stack)
 var _baseIsEqualDeep = baseIsEqualDeep$1;
 
 var baseIsEqualDeep = _baseIsEqualDeep;
-var isObject$11 = isObject_1;
-var isObjectLike$6 = isObjectLike_1;
+var isObject$9 = isObject_1;
+var isObjectLike$5 = isObjectLike_1;
 
 /**
  * The base implementation of `_.isEqual` which supports partial comparisons
@@ -7363,7 +7081,7 @@ function baseIsEqual$1(value, other, customizer, bitmask, stack) {
   if (value === other) {
     return true;
   }
-  if (value == null || other == null || !isObject$11(value) && !isObjectLike$6(other)) {
+  if (value == null || other == null || !isObject$9(value) && !isObjectLike$5(other)) {
     return value !== value && other !== other;
   }
   return baseIsEqualDeep(value, other, baseIsEqual$1, customizer, bitmask, stack);
@@ -7428,7 +7146,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
 
 var _baseIsMatch = baseIsMatch$1;
 
-var isObject$12 = isObject_1;
+var isObject$10 = isObject_1;
 
 /**
  * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
@@ -7439,13 +7157,13 @@ var isObject$12 = isObject_1;
  *  equality comparisons, else `false`.
  */
 function isStrictComparable$1(value) {
-  return value === value && !isObject$12(value);
+  return value === value && !isObject$10(value);
 }
 
 var _isStrictComparable = isStrictComparable$1;
 
 var isStrictComparable = _isStrictComparable;
-var keys$7 = keys_1;
+var keys$5 = keys_1;
 
 /**
  * Gets the property names, values, and compare flags of `object`.
@@ -7455,7 +7173,7 @@ var keys$7 = keys_1;
  * @returns {Array} Returns the match data of `object`.
  */
 function getMatchData$1(object) {
-    var result = keys$7(object),
+    var result = keys$5(object),
         length = result.length;
 
     while (length--) {
@@ -7564,10 +7282,10 @@ var hasIn_1 = hasIn$1;
 var baseIsEqual$2 = _baseIsEqual;
 var get$3 = get_1;
 var hasIn = hasIn_1;
-var isKey$4 = _isKey;
+var isKey$3 = _isKey;
 var isStrictComparable$2 = _isStrictComparable;
 var matchesStrictComparable$2 = _matchesStrictComparable;
-var toKey$4 = _toKey;
+var toKey$3 = _toKey;
 
 /** Used to compose bitmasks for comparison styles. */
 var UNORDERED_COMPARE_FLAG$3 = 1;
@@ -7582,8 +7300,8 @@ var PARTIAL_COMPARE_FLAG$5 = 2;
  * @returns {Function} Returns the new spec function.
  */
 function baseMatchesProperty$1(path, srcValue) {
-  if (isKey$4(path) && isStrictComparable$2(srcValue)) {
-    return matchesStrictComparable$2(toKey$4(path), srcValue);
+  if (isKey$3(path) && isStrictComparable$2(srcValue)) {
+    return matchesStrictComparable$2(toKey$3(path), srcValue);
   }
   return function (object) {
     var objValue = get$3(object, path);
@@ -7627,8 +7345,8 @@ var _basePropertyDeep = basePropertyDeep$1;
 
 var baseProperty = _baseProperty;
 var basePropertyDeep = _basePropertyDeep;
-var isKey$5 = _isKey;
-var toKey$5 = _toKey;
+var isKey$4 = _isKey;
+var toKey$4 = _toKey;
 
 /**
  * Creates a function that returns the value at `path` of a given object.
@@ -7653,7 +7371,7 @@ var toKey$5 = _toKey;
  * // => [1, 2]
  */
 function property$1(path) {
-  return isKey$5(path) ? baseProperty(toKey$5(path)) : basePropertyDeep(path);
+  return isKey$4(path) ? baseProperty(toKey$4(path)) : basePropertyDeep(path);
 }
 
 var property_1 = property$1;
@@ -7661,7 +7379,7 @@ var property_1 = property$1;
 var baseMatches = _baseMatches;
 var baseMatchesProperty = _baseMatchesProperty;
 var identity$3 = identity_1;
-var isArray$13 = isArray_1;
+var isArray$12 = isArray_1;
 var property = property_1;
 
 /**
@@ -7681,17 +7399,935 @@ function baseIteratee$1(value) {
     return identity$3;
   }
   if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object') {
-    return isArray$13(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
+    return isArray$12(value) ? baseMatchesProperty(value[0], value[1]) : baseMatches(value);
   }
   return property(value);
 }
 
 var _baseIteratee = baseIteratee$1;
 
-var arrayEach$3 = _arrayEach;
+/**
+ * Creates a base function for methods like `_.forIn` and `_.forOwn`.
+ *
+ * @private
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new base function.
+ */
+function createBaseFor$1(fromRight) {
+  return function (object, iteratee, keysFunc) {
+    var index = -1,
+        iterable = Object(object),
+        props = keysFunc(object),
+        length = props.length;
+
+    while (length--) {
+      var key = props[fromRight ? length : ++index];
+      if (iteratee(iterable[key], key, iterable) === false) {
+        break;
+      }
+    }
+    return object;
+  };
+}
+
+var _createBaseFor = createBaseFor$1;
+
+var createBaseFor = _createBaseFor;
+
+/**
+ * The base implementation of `baseForOwn` which iterates over `object`
+ * properties returned by `keysFunc` and invokes `iteratee` for each property.
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * @private
+ * @param {Object} object The object to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @returns {Object} Returns `object`.
+ */
+var baseFor$1 = createBaseFor();
+
+var _baseFor = baseFor$1;
+
+var baseFor = _baseFor;
+var keys$6 = keys_1;
+
+/**
+ * The base implementation of `_.forOwn` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The object to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Object} Returns `object`.
+ */
+function baseForOwn$1(object, iteratee) {
+  return object && baseFor(object, iteratee, keys$6);
+}
+
+var _baseForOwn = baseForOwn$1;
+
+var isArrayLike$7 = isArrayLike_1;
+
+/**
+ * Creates a `baseEach` or `baseEachRight` function.
+ *
+ * @private
+ * @param {Function} eachFunc The function to iterate over a collection.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new base function.
+ */
+function createBaseEach$1(eachFunc, fromRight) {
+  return function (collection, iteratee) {
+    if (collection == null) {
+      return collection;
+    }
+    if (!isArrayLike$7(collection)) {
+      return eachFunc(collection, iteratee);
+    }
+    var length = collection.length,
+        index = fromRight ? length : -1,
+        iterable = Object(collection);
+
+    while (fromRight ? index-- : ++index < length) {
+      if (iteratee(iterable[index], index, iterable) === false) {
+        break;
+      }
+    }
+    return collection;
+  };
+}
+
+var _createBaseEach = createBaseEach$1;
+
+var baseForOwn = _baseForOwn;
+var createBaseEach = _createBaseEach;
+
+/**
+ * The base implementation of `_.forEach` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array|Object} Returns `collection`.
+ */
+var baseEach$1 = createBaseEach(baseForOwn);
+
+var _baseEach = baseEach$1;
+
 var baseEach = _baseEach;
+var isArrayLike$6 = isArrayLike_1;
+
+/**
+ * The base implementation of `_.map` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
+function baseMap$1(collection, iteratee) {
+  var index = -1,
+      result = isArrayLike$6(collection) ? Array(collection.length) : [];
+
+  baseEach(collection, function (value, key, collection) {
+    result[++index] = iteratee(value, key, collection);
+  });
+  return result;
+}
+
+var _baseMap = baseMap$1;
+
+var arrayMap = _arrayMap;
 var baseIteratee = _baseIteratee;
-var isArray$12 = isArray_1;
+var baseMap = _baseMap;
+var isArray$11 = isArray_1;
+
+/**
+ * Creates an array of values by running each element in `collection` thru
+ * `iteratee`. The iteratee is invoked with three arguments:
+ * (value, index|key, collection).
+ *
+ * Many lodash methods are guarded to work as iteratees for methods like
+ * `_.every`, `_.filter`, `_.map`, `_.mapValues`, `_.reject`, and `_.some`.
+ *
+ * The guarded methods are:
+ * `ary`, `chunk`, `curry`, `curryRight`, `drop`, `dropRight`, `every`,
+ * `fill`, `invert`, `parseInt`, `random`, `range`, `rangeRight`, `repeat`,
+ * `sampleSize`, `slice`, `some`, `sortBy`, `split`, `take`, `takeRight`,
+ * `template`, `trim`, `trimEnd`, `trimStart`, and `words`
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ * @example
+ *
+ * function square(n) {
+ *   return n * n;
+ * }
+ *
+ * _.map([4, 8], square);
+ * // => [16, 64]
+ *
+ * _.map({ 'a': 4, 'b': 8 }, square);
+ * // => [16, 64] (iteration order is not guaranteed)
+ *
+ * var users = [
+ *   { 'user': 'barney' },
+ *   { 'user': 'fred' }
+ * ];
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.map(users, 'user');
+ * // => ['barney', 'fred']
+ */
+function map(collection, iteratee) {
+  var func = isArray$11(collection) ? arrayMap : baseMap;
+  return func(collection, baseIteratee(iteratee, 3));
+}
+
+var map_1 = map;
+
+var stringify_1$2 = createCommonjsModule(function (module, exports) {
+  exports = module.exports = stringify;
+  exports.getSerialize = serializer;
+
+  function stringify(obj, replacer, spaces, cycleReplacer) {
+    return JSON.stringify(obj, serializer(replacer, cycleReplacer), spaces);
+  }
+
+  function serializer(replacer, cycleReplacer) {
+    var stack = [],
+        keys = [];
+
+    if (cycleReplacer == null) cycleReplacer = function cycleReplacer(key, value) {
+      if (stack[0] === value) return "[Circular ~]";
+      return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
+    };
+
+    return function (key, value) {
+      if (stack.length > 0) {
+        var thisPos = stack.indexOf(this);
+        ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
+        ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
+        if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
+      } else stack.push(value);
+
+      return replacer == null ? value : replacer.call(this, key, value);
+    };
+  }
+});
+
+var safeParse = function safeParse(target, defaultValue) {
+  if (typeof target === 'string') {
+    try {
+      return JSON.parse(target);
+    } catch (e) {
+      return defaultValue || {};
+    }
+  }
+
+  return target;
+};
+
+var safeStringify = function safeStringify(target, offset) {
+  if (target && typeof target !== 'string') {
+    return stringify_1$2(target, null, offset || 4);
+  }
+
+  return target;
+};
+
+var mapToNameValue = function mapToNameValue(obj) {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map_1(obj || {}, function (value, name) {
+    return { name: name, value: value };
+  });
+};
+
+var nameValueToMap = function nameValueToMap(nameValueArray) {
+  if (!isArray_1(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  var result = {};
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _step.value;
+      var name = _step$value.name;
+      var value = _step$value.value;
+
+      result[name] = value;
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+};
+
+var JSONHelpers = Object.freeze({
+	safeParse: safeParse,
+	safeStringify: safeStringify,
+	mapToNameValue: mapToNameValue,
+	nameValueToMap: nameValueToMap
+});
+
+var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
+
+var generateBasicAuth = function generateBasicAuth(username, password, options) {
+  options = options || {};
+
+  var string = [username, password].join(':');
+  string = Base64.encode(string); // Need to use custom base64 for golang vm.
+
+  return {
+    request: {
+      headers: {
+        Authorization: 'Basic ' + string
+      }
+    }
+  };
+};
+
+var hashFunction = function hashFunction(method, encode, options) {
+  options = options || {};
+
+  return function (base_string, key) {
+    var hash = void 0;
+
+    switch (method) {
+      case 'HMAC-SHA1':
+        hash = hmacSha1(base_string, key);
+        break;
+      case 'HMAC-SHA256':
+        hash = hmacSha256(base_string, key);
+        break;
+      default:
+        return key;
+    }
+
+    if (encode) {
+      return hash.toString(encBase64);
+    }
+
+    return hash.toString();
+  };
+};
+var generateOAuth1 = function generateOAuth1(data, request, options) {
+  options = options || {};
+
+  var patch = {};
+  if (data.useHeader && has_1(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  var signatureMethod = data.signatureMethod || 'HMAC-SHA1';
+
+  var encode = data.encode;
+  var oauth = oauth1_0a({
+    consumer: {
+      key: data.consumerKey,
+      secret: data.consumerSecret
+    },
+    signature_method: signatureMethod,
+    hash_function: hashFunction(signatureMethod, encode, options),
+    version: data.version || '1.0',
+    nonce_length: data.nonceLength || 32,
+    parameter_seperator: data.parameterSeperator || ', '
+  });
+
+  var token = null;
+  if (data.token) {
+    token = {
+      key: data.token,
+      secret: data.tokenSecret
+    };
+  }
+
+  var requestToAuthorize = {
+    url: request.url,
+    method: request.method.toUpperCase(),
+    data: request.body
+  };
+  var authPatch = oauth.authorize(requestToAuthorize, token);
+  patch.authorization = {
+    oauth1: {
+      nonce: authPatch.oauth_nonce
+    }
+  };
+
+  if (data.useHeader) {
+    // add to the header
+    var headerPatch = oauth.toHeader(authPatch);
+    patch.request = {
+      headers: {
+        Authorization: headerPatch.Authorization
+      }
+    };
+  } else {
+    // add to the query string
+    patch.request = {
+      url: setQuery(request.url, authPatch, { preserve: true })
+    };
+  }
+
+  return patch;
+};
+
+var generateAws = function generateAws(data, request, options) {
+  options = options || {};
+
+  var patch = {};
+  if (has_1(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  var processedUrl = void 0;
+  try {
+    processedUrl = createURL(request.url);
+  } catch (e) {
+    console.warn('authorization/generateAws parse url error', e);
+    return patch;
+  }
+
+  var requestToAuthorize = {
+    host: processedUrl.host,
+    path: processedUrl.pathname,
+    method: request.method.toUpperCase(),
+    headers: request.headers,
+    body: safeStringify(request.body, ''),
+    service: data.service,
+    region: data.region
+  };
+
+  aws4_1.sign(requestToAuthorize, {
+    secretAccessKey: data.secretKey,
+    accessKeyId: data.accessKey,
+    sessionToken: data.sessionToken
+  });
+
+  // add to the header
+  patch.request = {
+    headers: requestToAuthorize.headers
+  };
+
+  return patch;
+};
+
+var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
+  options = options || {};
+  var patch = {};
+
+  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
+    return patch;
+  }
+
+  var details = authNode[authNode.type];
+  if (isEmpty_1(details)) {
+    return patch;
+  }
+
+  switch (authNode.type) {
+    case 'basic':
+      if (!has_1(request, 'headers.Authorization')) {
+        patch = generateBasicAuth(details.username, details.password, options);
+      }
+
+      break;
+    case 'oauth1':
+      patch = generateOAuth1(details, request, options);
+      break;
+    case 'aws':
+      patch = generateAws(details, request, options);
+      break;
+    default:
+      console.log(authNode.type + ' auth not implemented');
+  }
+
+  return patch;
+};
+
+var assignValue$3 = _assignValue;
+var castPath$3 = _castPath;
+var isIndex$4 = _isIndex;
+var isKey$5 = _isKey;
+var isObject$11 = isObject_1;
+var toKey$5 = _toKey;
+
+/**
+ * The base implementation of `_.set`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @param {Function} [customizer] The function to customize path creation.
+ * @returns {Object} Returns `object`.
+ */
+function baseSet$1(object, path, value, customizer) {
+  if (!isObject$11(object)) {
+    return object;
+  }
+  path = isKey$5(path, object) ? [path] : castPath$3(path);
+
+  var index = -1,
+      length = path.length,
+      lastIndex = length - 1,
+      nested = object;
+
+  while (nested != null && ++index < length) {
+    var key = toKey$5(path[index]),
+        newValue = value;
+
+    if (index != lastIndex) {
+      var objValue = nested[key];
+      newValue = customizer ? customizer(objValue, key, nested) : undefined;
+      if (newValue === undefined) {
+        newValue = isObject$11(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
+      }
+    }
+    assignValue$3(nested, key, newValue);
+    nested = nested[key];
+  }
+  return object;
+}
+
+var _baseSet = baseSet$1;
+
+var baseSet = _baseSet;
+
+/**
+ * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
+ * it's created. Arrays are created for missing index properties while objects
+ * are created for all other missing properties. Use `_.setWith` to customize
+ * `path` creation.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.set(object, 'a[0].b.c', 4);
+ * console.log(object.a[0].b.c);
+ * // => 4
+ *
+ * _.set(object, ['x', '0', 'y', 'z'], 5);
+ * console.log(object.x[0].y.z);
+ * // => 5
+ */
+function set$1(object, path, value) {
+  return object == null ? object : baseSet(object, path, value);
+}
+
+var set_1 = set$1;
+
+/**
+ * The base implementation of `_.findIndex` and `_.findLastIndex` without
+ * support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} predicate The function invoked per iteration.
+ * @param {number} fromIndex The index to search from.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseFindIndex$1(array, predicate, fromIndex, fromRight) {
+  var length = array.length,
+      index = fromIndex + (fromRight ? 1 : -1);
+
+  while (fromRight ? index-- : ++index < length) {
+    if (predicate(array[index], index, array)) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+var _baseFindIndex = baseFindIndex$1;
+
+/**
+ * The base implementation of `_.isNaN` without support for number objects.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
+ */
+function baseIsNaN$1(value) {
+  return value !== value;
+}
+
+var _baseIsNaN = baseIsNaN$1;
+
+/**
+ * A specialized version of `_.indexOf` which performs strict equality
+ * comparisons of values, i.e. `===`.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function strictIndexOf$1(array, value, fromIndex) {
+  var index = fromIndex - 1,
+      length = array.length;
+
+  while (++index < length) {
+    if (array[index] === value) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+var _strictIndexOf = strictIndexOf$1;
+
+var baseFindIndex = _baseFindIndex;
+var baseIsNaN = _baseIsNaN;
+var strictIndexOf = _strictIndexOf;
+
+/**
+ * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseIndexOf$1(array, value, fromIndex) {
+    return value === value ? strictIndexOf(array, value, fromIndex) : baseFindIndex(array, baseIsNaN, fromIndex);
+}
+
+var _baseIndexOf = baseIndexOf$1;
+
+var isArray$14 = isArray_1;
+var isObjectLike$6 = isObjectLike_1;
+
+/** `Object#toString` result references. */
+var stringTag$4 = '[object String]';
+
+/** Used for built-in method references. */
+var objectProto$20 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString$7 = objectProto$20.toString;
+
+/**
+ * Checks if `value` is classified as a `String` primitive or object.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a string, else `false`.
+ * @example
+ *
+ * _.isString('abc');
+ * // => true
+ *
+ * _.isString(1);
+ * // => false
+ */
+function isString$1(value) {
+  return typeof value == 'string' || !isArray$14(value) && isObjectLike$6(value) && objectToString$7.call(value) == stringTag$4;
+}
+
+var isString_1 = isString$1;
+
+var isObject$12 = isObject_1;
+var isSymbol$4 = isSymbol_1;
+
+/** Used as references for various `Number` constants. */
+var NAN = 0 / 0;
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber$1(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol$4(value)) {
+    return NAN;
+  }
+  if (isObject$12(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject$12(other) ? other + '' : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
+}
+
+var toNumber_1 = toNumber$1;
+
+var toNumber = toNumber_1;
+
+/** Used as references for various `Number` constants. */
+var INFINITY$2 = 1 / 0;
+var MAX_INTEGER = 1.7976931348623157e+308;
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite$1(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber(value);
+  if (value === INFINITY$2 || value === -INFINITY$2) {
+    var sign = value < 0 ? -1 : 1;
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+var toFinite_1 = toFinite$1;
+
+var toFinite = toFinite_1;
+
+/**
+ * Converts `value` to an integer.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted integer.
+ * @example
+ *
+ * _.toInteger(3.2);
+ * // => 3
+ *
+ * _.toInteger(Number.MIN_VALUE);
+ * // => 0
+ *
+ * _.toInteger(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toInteger('3.2');
+ * // => 3
+ */
+function toInteger$1(value) {
+  var result = toFinite(value),
+      remainder = result % 1;
+
+  return result === result ? remainder ? result - remainder : result : 0;
+}
+
+var toInteger_1 = toInteger$1;
+
+var arrayMap$2 = _arrayMap;
+
+/**
+ * The base implementation of `_.values` and `_.valuesIn` which creates an
+ * array of `object` property values corresponding to the property names
+ * of `props`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array} props The property names to get values for.
+ * @returns {Object} Returns the array of property values.
+ */
+function baseValues$1(object, props) {
+  return arrayMap$2(props, function (key) {
+    return object[key];
+  });
+}
+
+var _baseValues = baseValues$1;
+
+var baseValues = _baseValues;
+var keys$7 = keys_1;
+
+/**
+ * Creates an array of the own enumerable string keyed property values of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property values.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.values(new Foo);
+ * // => [1, 2] (iteration order is not guaranteed)
+ *
+ * _.values('hi');
+ * // => ['h', 'i']
+ */
+function values$1(object) {
+  return object ? baseValues(object, keys$7(object)) : [];
+}
+
+var values_1 = values$1;
+
+var baseIndexOf = _baseIndexOf;
+var isArrayLike$8 = isArrayLike_1;
+var isString = isString_1;
+var toInteger = toInteger_1;
+var values = values_1;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMax$1 = Math.max;
+
+/**
+ * Checks if `value` is in `collection`. If `collection` is a string, it's
+ * checked for a substring of `value`, otherwise
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * is used for equality comparisons. If `fromIndex` is negative, it's used as
+ * the offset from the end of `collection`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object|string} collection The collection to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} [fromIndex=0] The index to search from.
+ * @param- {Object} [guard] Enables use as an iteratee for methods like `_.reduce`.
+ * @returns {boolean} Returns `true` if `value` is found, else `false`.
+ * @example
+ *
+ * _.includes([1, 2, 3], 1);
+ * // => true
+ *
+ * _.includes([1, 2, 3], 1, 2);
+ * // => false
+ *
+ * _.includes({ 'a': 1, 'b': 2 }, 1);
+ * // => true
+ *
+ * _.includes('abcd', 'bc');
+ * // => true
+ */
+function includes(collection, value, fromIndex, guard) {
+  collection = isArrayLike$8(collection) ? collection : values(collection);
+  fromIndex = fromIndex && !guard ? toInteger(fromIndex) : 0;
+
+  var length = collection.length;
+  if (fromIndex < 0) {
+    fromIndex = nativeMax$1(length + fromIndex, 0);
+  }
+  return isString(collection) ? fromIndex <= length && collection.indexOf(value, fromIndex) > -1 : !!length && baseIndexOf(collection, value, fromIndex) > -1;
+}
+
+var includes_1 = includes;
+
+var arrayEach$3 = _arrayEach;
+var baseEach$2 = _baseEach;
+var baseIteratee$2 = _baseIteratee;
+var isArray$15 = isArray_1;
 
 /**
  * Iterates over elements of `collection` and invokes `iteratee` for each element.
@@ -7724,8 +8360,8 @@ var isArray$12 = isArray_1;
  * // => Logs 'a' then 'b' (iteration order is not guaranteed).
  */
 function forEach(collection, iteratee) {
-  var func = isArray$12(collection) ? arrayEach$3 : baseEach;
-  return func(collection, baseIteratee(iteratee, 3));
+  var func = isArray$15(collection) ? arrayEach$3 : baseEach$2;
+  return func(collection, baseIteratee$2(iteratee, 3));
 }
 
 var forEach_1 = forEach;
@@ -8143,7 +8779,7 @@ var uniq_1 = uniq;
 var SetCache$3 = _SetCache;
 var arrayIncludes$2 = _arrayIncludes;
 var arrayIncludesWith$2 = _arrayIncludesWith;
-var arrayMap$3 = _arrayMap;
+var arrayMap$4 = _arrayMap;
 var baseUnary$2 = _baseUnary;
 var cacheHas$3 = _cacheHas;
 
@@ -8173,7 +8809,7 @@ function baseDifference$1(array, values, iteratee, comparator) {
     return result;
   }
   if (iteratee) {
-    values = arrayMap$3(values, baseUnary$2(iteratee));
+    values = arrayMap$4(values, baseUnary$2(iteratee));
   }
   if (comparator) {
     includes = arrayIncludesWith$2;
@@ -8256,7 +8892,7 @@ var _basePick = basePick$1;
 
 var _Symbol$5 = _Symbol$1;
 var isArguments$5 = isArguments_1;
-var isArray$15 = isArray_1;
+var isArray$16 = isArray_1;
 
 /** Built-in value references. */
 var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
@@ -8269,7 +8905,7 @@ var spreadableSymbol = _Symbol$5 ? _Symbol$5.isConcatSpreadable : undefined;
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
 function isFlattenable$1(value) {
-    return isArray$15(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
+    return isArray$16(value) || isArguments$5(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
 }
 
 var _isFlattenable = isFlattenable$1;
@@ -8398,7 +9034,7 @@ function getAllKeysIn$1(object) {
 
 var _getAllKeysIn = getAllKeysIn$1;
 
-var arrayMap$2 = _arrayMap;
+var arrayMap$3 = _arrayMap;
 var baseDifference = _baseDifference;
 var basePick = _basePick;
 var flatRest = _flatRest;
@@ -8428,7 +9064,7 @@ var omit = flatRest(function (object, props) {
   if (object == null) {
     return {};
   }
-  props = arrayMap$2(props, toKey$6);
+  props = arrayMap$3(props, toKey$6);
   return basePick(object, baseDifference(getAllKeysIn(object), props));
 });
 
@@ -8464,186 +9100,6 @@ function escapeRegExp(string) {
 }
 
 var escapeRegExp_1 = escapeRegExp;
-
-var baseEach$2 = _baseEach;
-var isArrayLike$8 = isArrayLike_1;
-
-/**
- * The base implementation of `_.map` without support for iteratee shorthands.
- *
- * @private
- * @param {Array|Object} collection The collection to iterate over.
- * @param {Function} iteratee The function invoked per iteration.
- * @returns {Array} Returns the new mapped array.
- */
-function baseMap$1(collection, iteratee) {
-  var index = -1,
-      result = isArrayLike$8(collection) ? Array(collection.length) : [];
-
-  baseEach$2(collection, function (value, key, collection) {
-    result[++index] = iteratee(value, key, collection);
-  });
-  return result;
-}
-
-var _baseMap = baseMap$1;
-
-var arrayMap$4 = _arrayMap;
-var baseIteratee$2 = _baseIteratee;
-var baseMap = _baseMap;
-var isArray$16 = isArray_1;
-
-/**
- * Creates an array of values by running each element in `collection` thru
- * `iteratee`. The iteratee is invoked with three arguments:
- * (value, index|key, collection).
- *
- * Many lodash methods are guarded to work as iteratees for methods like
- * `_.every`, `_.filter`, `_.map`, `_.mapValues`, `_.reject`, and `_.some`.
- *
- * The guarded methods are:
- * `ary`, `chunk`, `curry`, `curryRight`, `drop`, `dropRight`, `every`,
- * `fill`, `invert`, `parseInt`, `random`, `range`, `rangeRight`, `repeat`,
- * `sampleSize`, `slice`, `some`, `sortBy`, `split`, `take`, `takeRight`,
- * `template`, `trim`, `trimEnd`, `trimStart`, and `words`
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Collection
- * @param {Array|Object} collection The collection to iterate over.
- * @param {Function} [iteratee=_.identity] The function invoked per iteration.
- * @returns {Array} Returns the new mapped array.
- * @example
- *
- * function square(n) {
- *   return n * n;
- * }
- *
- * _.map([4, 8], square);
- * // => [16, 64]
- *
- * _.map({ 'a': 4, 'b': 8 }, square);
- * // => [16, 64] (iteration order is not guaranteed)
- *
- * var users = [
- *   { 'user': 'barney' },
- *   { 'user': 'fred' }
- * ];
- *
- * // The `_.property` iteratee shorthand.
- * _.map(users, 'user');
- * // => ['barney', 'fred']
- */
-function map(collection, iteratee) {
-  var func = isArray$16(collection) ? arrayMap$4 : baseMap;
-  return func(collection, baseIteratee$2(iteratee, 3));
-}
-
-var map_1 = map;
-
-var stringify_1$2 = createCommonjsModule(function (module, exports) {
-  exports = module.exports = stringify;
-  exports.getSerialize = serializer;
-
-  function stringify(obj, replacer, spaces, cycleReplacer) {
-    return JSON.stringify(obj, serializer(replacer, cycleReplacer), spaces);
-  }
-
-  function serializer(replacer, cycleReplacer) {
-    var stack = [],
-        keys = [];
-
-    if (cycleReplacer == null) cycleReplacer = function cycleReplacer(key, value) {
-      if (stack[0] === value) return "[Circular ~]";
-      return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]";
-    };
-
-    return function (key, value) {
-      if (stack.length > 0) {
-        var thisPos = stack.indexOf(this);
-        ~thisPos ? stack.splice(thisPos + 1) : stack.push(this);
-        ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key);
-        if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value);
-      } else stack.push(value);
-
-      return replacer == null ? value : replacer.call(this, key, value);
-    };
-  }
-});
-
-var safeParse = function safeParse(target, defaultValue) {
-  if (typeof target === 'string') {
-    try {
-      return JSON.parse(target);
-    } catch (e) {
-      return defaultValue || {};
-    }
-  }
-
-  return target;
-};
-
-var safeStringify = function safeStringify(target, offset) {
-  if (target && typeof target !== 'string') {
-    return stringify_1$2(target, null, offset || 4);
-  }
-
-  return target;
-};
-
-var mapToNameValue = function mapToNameValue(obj) {
-  if (obj instanceof Array) {
-    return obj;
-  }
-
-  return map_1(obj || {}, function (value, name) {
-    return { name: name, value: value };
-  });
-};
-
-var nameValueToMap = function nameValueToMap(nameValueArray) {
-  if (!isArray_1(nameValueArray)) {
-    return nameValueArray;
-  }
-
-  var result = {};
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _step.value;
-      var name = _step$value.name;
-      var value = _step$value.value;
-
-      result[name] = value;
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  return result;
-};
-
-var JSONHelpers = Object.freeze({
-	safeParse: safeParse,
-	safeStringify: safeStringify,
-	mapToNameValue: mapToNameValue,
-	nameValueToMap: nameValueToMap
-});
 
 var extractVariables = function extractVariables(target) {
   var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -9385,4 +9841,4 @@ var index = _extends({
 
 return index;
 
-}());
+}(url,querystring,crypto));

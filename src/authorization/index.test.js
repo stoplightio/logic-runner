@@ -1,4 +1,6 @@
 import test from 'ava';
+import isEmpty from 'lodash/isEmpty';
+import size from 'lodash/size';
 import * as Authorization from '.';
 
 test('authorization > generateBasicAuth > set correct authorization header', (t) => {
@@ -115,12 +117,37 @@ test('authorization > generateAuthPatch:basicAuth > do not overwrite existing au
   t.deepEqual(result, expected);
 });
 
-// test('authorization > runAssertions > handles undefined assertions', (t) => {
-//   const result = Assertions.runAssertions();
-//   t.deepEqual(result, []);
-// });
+const awsData = () => {
+  return {
+    aws: {
+      region: 'us-east-1',
+      service: 'sqs',
+      accessKey: '123',
+      secretKey: '123',
+    },
+    request: {
+      method: 'get',
+      url: 'http://example.com/foo',
+      body: {},
+    },
+  };
+};
+test('authorization > generateAws > set correct header', (t) => {
+  const data = awsData();
+  const result = Authorization.generateAws(data.aws, data.request);
+  t.true(result.request.headers.Authorization ? true : false);
+});
+test('authorization > generateAws > preserves existing headers', (t) => {
+  const data = awsData();
+  data.request.headers = {
+    foo: 'bar',
+  };
+  const result = Authorization.generateAws(data.aws, data.request);
+  t.true(result.request.headers.foo === 'bar');
+  t.true(size(result.request.headers) === 6);
 
-// test('authorization > runAssertions > handles null assertions', (t) => {
-//   const result = Assertions.runAssertions({}, null);
-//   t.deepEqual(result, []);
-// });
+  // should not patch now, since we already have Authorization defined
+  const result2 = Authorization.generateAws(data.aws, result.request);
+  t.true(isEmpty(result2));
+});
+

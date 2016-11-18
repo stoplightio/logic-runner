@@ -2,13 +2,17 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var isEmpty = _interopDefault(require('lodash/isEmpty'));
 var has = _interopDefault(require('lodash/has'));
+var get = _interopDefault(require('lodash/get'));
+var aws4 = _interopDefault(require('aws4'));
 var OAuth = _interopDefault(require('oauth-1.0a'));
 var HmacSHA1 = _interopDefault(require('crypto-js/hmac-sha1'));
 var HmacSHA256 = _interopDefault(require('crypto-js/hmac-sha256'));
 var EncBASE64 = _interopDefault(require('crypto-js/enc-base64'));
 var qs = _interopDefault(require('qs'));
 var merge = _interopDefault(require('lodash/merge'));
-var get = _interopDefault(require('lodash/get'));
+var map = _interopDefault(require('lodash/map'));
+var isArray = _interopDefault(require('lodash/isArray'));
+var stringify = _interopDefault(require('json-stringify-safe'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var forEach = _interopDefault(require('lodash/forEach'));
@@ -16,9 +20,6 @@ var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
 var omit = _interopDefault(require('lodash/omit'));
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
-var map = _interopDefault(require('lodash/map'));
-var isArray = _interopDefault(require('lodash/isArray'));
-var stringify = _interopDefault(require('json-stringify-safe'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
 var isUndefined = _interopDefault(require('lodash/isUndefined'));
@@ -147,303 +148,6 @@ var setQuery = function setQuery(url, queryObj, options) {
   merge(existingQueryObj, queryObj);
 
   return urlParts[0] + '?' + qs.stringify(existingQueryObj);
-};
-
-var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
-
-var generateBasicAuth = function generateBasicAuth(username, password, options) {
-  options = options || {};
-
-  var string = [username, password].join(':');
-  string = Base64.encode(string); // Need to use custom base64 for golang vm.
-
-  return {
-    request: {
-      headers: {
-        Authorization: 'Basic ' + string
-      }
-    }
-  };
-};
-
-var hashFunction = function hashFunction(method, encode, options) {
-  options = options || {};
-
-  return function (base_string, key) {
-    var hash = void 0;
-
-    switch (method) {
-      case 'HMAC-SHA1':
-        hash = HmacSHA1(base_string, key);
-        break;
-      case 'HMAC-SHA256':
-        hash = HmacSHA256(base_string, key);
-        break;
-      default:
-        return key;
-    }
-
-    if (encode) {
-      return hash.toString(EncBASE64);
-    }
-
-    return hash.toString();
-  };
-};
-var generateOAuth1 = function generateOAuth1(data, request, options) {
-  options = options || {};
-
-  var patch = {};
-  if (data.useHeader && has(request, 'headers.Authorization')) {
-    return patch;
-  }
-
-  var signatureMethod = data.signatureMethod || 'HMAC-SHA1';
-
-  var encode = data.encode;
-  var oauth = OAuth({
-    consumer: {
-      key: data.consumerKey,
-      secret: data.consumerSecret
-    },
-    signature_method: signatureMethod,
-    hash_function: hashFunction(signatureMethod, encode, options),
-    version: data.version || '1.0',
-    nonce_length: data.nonceLength || 32,
-    parameter_seperator: data.parameterSeperator || ', '
-  });
-
-  var token = null;
-  if (data.token) {
-    token = {
-      key: data.token,
-      secret: data.tokenSecret
-    };
-  }
-
-  var requestToAuthorize = {
-    url: request.url,
-    method: request.method.toUpperCase(),
-    data: request.body
-  };
-  var authPatch = oauth.authorize(requestToAuthorize, token);
-  patch.authorization = {
-    oauth1: {
-      nonce: authPatch.oauth_nonce
-    }
-  };
-
-  if (data.useHeader) {
-    // add to the header
-    var headerPatch = oauth.toHeader(authPatch);
-    patch.request = {
-      headers: {
-        Authorization: headerPatch.Authorization
-      }
-    };
-  } else {
-    // add to the query string
-    patch.request = {
-      url: setQuery(request.url, authPatch, { preserve: true })
-    };
-  }
-
-  return patch;
-};
-
-var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
-  options = options || {};
-  var patch = {};
-
-  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
-    return patch;
-  }
-
-  var details = authNode[authNode.type];
-  if (isEmpty(details)) {
-    return patch;
-  }
-
-  switch (authNode.type) {
-    case 'basic':
-      if (!has(request, 'headers.Authorization')) {
-        patch = generateBasicAuth(details.username, details.password, options);
-      }
-
-      break;
-    case 'oauth1':
-      patch = generateOAuth1(details, request, options);
-      break;
-    default:
-      console.log(authNode.type + ' auth not implemented');
-  }
-
-  return patch;
-};
-
-var safeParse = function safeParse(target, defaultValue) {
-  if (typeof target === 'string') {
-    try {
-      return JSON.parse(target);
-    } catch (e) {
-      return defaultValue || {};
-    }
-  }
-
-  return target;
-};
-
-var safeStringify = function safeStringify(target, offset) {
-  if (target && typeof target !== 'string') {
-    return stringify(target, null, offset || 4);
-  }
-
-  return target;
-};
-
-var mapToNameValue = function mapToNameValue(obj) {
-  if (obj instanceof Array) {
-    return obj;
-  }
-
-  return map(obj || {}, function (value, name) {
-    return { name: name, value: value };
-  });
-};
-
-var nameValueToMap = function nameValueToMap(nameValueArray) {
-  if (!isArray(nameValueArray)) {
-    return nameValueArray;
-  }
-
-  var result = {};
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _step.value;
-      var name = _step$value.name;
-      var value = _step$value.value;
-
-      result[name] = value;
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  return result;
-};
-
-var JSONHelpers = Object.freeze({
-	safeParse: safeParse,
-	safeStringify: safeStringify,
-	mapToNameValue: mapToNameValue,
-	nameValueToMap: nameValueToMap
-});
-
-var extractVariables = function extractVariables(target) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-  var _ref$strip = _ref.strip;
-  var strip = _ref$strip === undefined ? false : _ref$strip;
-  var _ref$required = _ref.required;
-  var required = _ref$required === undefined ? false : _ref$required;
-
-  var toProcess = safeStringify(target);
-  var matches = void 0;
-  if (required) {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
-  } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
-  }
-
-  if (strip) {
-    for (var i in matches) {
-      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
-    }
-  }
-
-  return matches;
-};
-
-var replaceVariables = function replaceVariables(target, variables) {
-  var parsedVariables = safeParse(variables);
-
-  if (isEmpty(target) || isEmpty(parsedVariables)) {
-    return target;
-  }
-
-  var toProcess = safeStringify(target);
-  var matches = extractVariables(target);
-  forEach(matches, function (match) {
-    var variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
-
-    var value = get(parsedVariables, variable);
-    if (typeof value !== 'undefined') {
-      if (typeof value === 'string') {
-        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
-      } else {
-        toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
-      }
-    }
-  });
-
-  return safeParse(toProcess, toProcess || target);
-};
-
-var replaceNodeVariables = function replaceNodeVariables(node) {
-  var steps = node.steps;
-  var children = node.children;
-  var functions = node.functions;
-
-  var newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    newNode.steps = steps;
-  }
-  if (children) {
-    newNode.children = children;
-  }
-  if (functions) {
-    newNode.functions = functions;
-  }
-
-  return newNode;
-};
-
-var VariableHelpers = Object.freeze({
-	extractVariables: extractVariables,
-	replaceVariables: replaceVariables,
-	replaceNodeVariables: replaceNodeVariables
-});
-
-var buildPathSelector = function buildPathSelector(parts) {
-  parts = parts || [];
-  var targetPath = '';
-
-  forEach(parts, function (part) {
-    if (!isEmpty(part)) {
-      if (isEmpty(targetPath) || part.charAt(0) === '[') {
-        targetPath += part;
-      } else {
-        targetPath += '.' + part;
-      }
-    }
-  });
-
-  return targetPath;
 };
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
@@ -658,6 +362,371 @@ var set$1 = function set$1(object, property, value, receiver) {
   }
 
   return value;
+};
+
+// this function creates a fallback for IE browser which does not support URL function
+
+var createURL = function createURL(u) {
+  var newURL = {};
+
+  if ((typeof document === 'undefined' ? 'undefined' : _typeof(document)) !== (typeof undefined === 'undefined' ? 'undefined' : _typeof(undefined))) {
+    // browser
+
+    if (typeof URL === 'function') {
+      // modern
+      newURL = new URL(u);
+    } else {
+      // old
+      newURL = document.createElement('a');
+      newURL.href = u;
+    }
+  } else {
+    // node
+    var url = require('url');
+    newURL = url.parse(u);
+  }
+
+  return newURL;
+};
+
+var safeParse = function safeParse(target, defaultValue) {
+  if (typeof target === 'string') {
+    try {
+      return JSON.parse(target);
+    } catch (e) {
+      return defaultValue || {};
+    }
+  }
+
+  return target;
+};
+
+var safeStringify = function safeStringify(target, offset) {
+  if (target && typeof target !== 'string') {
+    return stringify(target, null, offset || 4);
+  }
+
+  return target;
+};
+
+var mapToNameValue = function mapToNameValue(obj) {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map(obj || {}, function (value, name) {
+    return { name: name, value: value };
+  });
+};
+
+var nameValueToMap = function nameValueToMap(nameValueArray) {
+  if (!isArray(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  var result = {};
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _step.value;
+      var name = _step$value.name;
+      var value = _step$value.value;
+
+      result[name] = value;
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+};
+
+var JSONHelpers = Object.freeze({
+	safeParse: safeParse,
+	safeStringify: safeStringify,
+	mapToNameValue: mapToNameValue,
+	nameValueToMap: nameValueToMap
+});
+
+var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
+
+var generateBasicAuth = function generateBasicAuth(username, password, options) {
+  options = options || {};
+
+  var string = [username, password].join(':');
+  string = Base64.encode(string); // Need to use custom base64 for golang vm.
+
+  return {
+    request: {
+      headers: {
+        Authorization: 'Basic ' + string
+      }
+    }
+  };
+};
+
+var hashFunction = function hashFunction(method, encode, options) {
+  options = options || {};
+
+  return function (base_string, key) {
+    var hash = void 0;
+
+    switch (method) {
+      case 'HMAC-SHA1':
+        hash = HmacSHA1(base_string, key);
+        break;
+      case 'HMAC-SHA256':
+        hash = HmacSHA256(base_string, key);
+        break;
+      default:
+        return key;
+    }
+
+    if (encode) {
+      return hash.toString(EncBASE64);
+    }
+
+    return hash.toString();
+  };
+};
+var generateOAuth1 = function generateOAuth1(data, request, options) {
+  options = options || {};
+
+  var patch = {};
+  if (data.useHeader && has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  var signatureMethod = data.signatureMethod || 'HMAC-SHA1';
+
+  var encode = data.encode;
+  var oauth = OAuth({
+    consumer: {
+      key: data.consumerKey,
+      secret: data.consumerSecret
+    },
+    signature_method: signatureMethod,
+    hash_function: hashFunction(signatureMethod, encode, options),
+    version: data.version || '1.0',
+    nonce_length: data.nonceLength || 32,
+    parameter_seperator: data.parameterSeperator || ', '
+  });
+
+  var token = null;
+  if (data.token) {
+    token = {
+      key: data.token,
+      secret: data.tokenSecret
+    };
+  }
+
+  var requestToAuthorize = {
+    url: request.url,
+    method: request.method.toUpperCase(),
+    data: request.body
+  };
+  var authPatch = oauth.authorize(requestToAuthorize, token);
+  patch.authorization = {
+    oauth1: {
+      nonce: authPatch.oauth_nonce
+    }
+  };
+
+  if (data.useHeader) {
+    // add to the header
+    var headerPatch = oauth.toHeader(authPatch);
+    patch.request = {
+      headers: {
+        Authorization: headerPatch.Authorization
+      }
+    };
+  } else {
+    // add to the query string
+    patch.request = {
+      url: setQuery(request.url, authPatch, { preserve: true })
+    };
+  }
+
+  return patch;
+};
+
+var generateAws = function generateAws(data, request, options) {
+  options = options || {};
+
+  var patch = {};
+  if (has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  var processedUrl = void 0;
+  try {
+    processedUrl = createURL(request.url);
+  } catch (e) {
+    console.warn('authorization/generateAws parse url error', e);
+    return patch;
+  }
+
+  var requestToAuthorize = {
+    host: processedUrl.host,
+    path: processedUrl.pathname,
+    method: request.method.toUpperCase(),
+    headers: request.headers,
+    body: safeStringify(request.body, ''),
+    service: data.service,
+    region: data.region
+  };
+
+  aws4.sign(requestToAuthorize, {
+    secretAccessKey: data.secretKey,
+    accessKeyId: data.accessKey,
+    sessionToken: data.sessionToken
+  });
+
+  // add to the header
+  patch.request = {
+    headers: requestToAuthorize.headers
+  };
+
+  return patch;
+};
+
+var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
+  options = options || {};
+  var patch = {};
+
+  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
+    return patch;
+  }
+
+  var details = authNode[authNode.type];
+  if (isEmpty(details)) {
+    return patch;
+  }
+
+  switch (authNode.type) {
+    case 'basic':
+      if (!has(request, 'headers.Authorization')) {
+        patch = generateBasicAuth(details.username, details.password, options);
+      }
+
+      break;
+    case 'oauth1':
+      patch = generateOAuth1(details, request, options);
+      break;
+    case 'aws':
+      patch = generateAws(details, request, options);
+      break;
+    default:
+      console.log(authNode.type + ' auth not implemented');
+  }
+
+  return patch;
+};
+
+var extractVariables = function extractVariables(target) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  var _ref$strip = _ref.strip;
+  var strip = _ref$strip === undefined ? false : _ref$strip;
+  var _ref$required = _ref.required;
+  var required = _ref$required === undefined ? false : _ref$required;
+
+  var toProcess = safeStringify(target);
+  var matches = void 0;
+  if (required) {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
+  } else {
+    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
+  }
+
+  if (strip) {
+    for (var i in matches) {
+      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+    }
+  }
+
+  return matches;
+};
+
+var replaceVariables = function replaceVariables(target, variables) {
+  var parsedVariables = safeParse(variables);
+
+  if (isEmpty(target) || isEmpty(parsedVariables)) {
+    return target;
+  }
+
+  var toProcess = safeStringify(target);
+  var matches = extractVariables(target);
+  forEach(matches, function (match) {
+    var variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+
+    var value = get(parsedVariables, variable);
+    if (typeof value !== 'undefined') {
+      if (typeof value === 'string') {
+        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
+      } else {
+        toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
+      }
+    }
+  });
+
+  return safeParse(toProcess, toProcess || target);
+};
+
+var replaceNodeVariables = function replaceNodeVariables(node) {
+  var steps = node.steps;
+  var children = node.children;
+  var functions = node.functions;
+
+  var newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
+  if (steps) {
+    newNode.steps = steps;
+  }
+  if (children) {
+    newNode.children = children;
+  }
+  if (functions) {
+    newNode.functions = functions;
+  }
+
+  return newNode;
+};
+
+var VariableHelpers = Object.freeze({
+	extractVariables: extractVariables,
+	replaceVariables: replaceVariables,
+	replaceNodeVariables: replaceNodeVariables
+});
+
+var buildPathSelector = function buildPathSelector(parts) {
+  parts = parts || [];
+  var targetPath = '';
+
+  forEach(parts, function (part) {
+    if (!isEmpty(part)) {
+      if (isEmpty(targetPath) || part.charAt(0) === '[') {
+        targetPath += part;
+      } else {
+        targetPath += '.' + part;
+      }
+    }
+  });
+
+  return targetPath;
 };
 
 var ASSERTION_OPS = ['eq', 'ne', 'exists', 'contains', 'gt', 'gte', 'lt', 'lte', 'validate', 'validate.pass', 'validate.contract', 'validate.fail'];

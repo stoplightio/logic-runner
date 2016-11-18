@@ -1,5 +1,7 @@
 import isEmpty from 'lodash/isEmpty';
 import has from 'lodash/has';
+import get from 'lodash/get';
+import aws4 from 'aws4';
 import OAuth from 'oauth-1.0a';
 import HmacSHA1 from 'crypto-js/hmac-sha1';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
@@ -7,8 +9,10 @@ import EncBASE64 from 'crypto-js/enc-base64';
 
 import Base64 from '../utils/base64';
 import {setQuery} from '../utils/query';
+import {createURL} from '../utils/url';
+import {safeStringify} from '../utils/json';
 
-const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2'];
+const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
 
 export const generateBasicAuth = (username, password, options) => {
   options = options || {};
@@ -110,6 +114,46 @@ export const generateOAuth1 = (data, request, options) => {
   return patch;
 };
 
+export const generateAws = (data, request, options) => {
+  options = options || {};
+
+  const patch = {};
+  if (has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  let processedUrl;
+  try {
+    processedUrl = createURL(request.url);
+  } catch (e) {
+    console.warn('authorization/generateAws parse url error', e);
+    return patch;
+  }
+
+  const requestToAuthorize = {
+    host: processedUrl.host,
+    path: processedUrl.pathname,
+    method: request.method.toUpperCase(),
+    headers: request.headers,
+    body: safeStringify(request.body, ''),
+    service: data.service,
+    region: data.region,
+  };
+
+  aws4.sign(requestToAuthorize, {
+    secretAccessKey: data.secretKey,
+    accessKeyId: data.accessKey,
+    sessionToken: data.sessionToken,
+  });
+
+  // add to the header
+  patch.request = {
+    headers: requestToAuthorize.headers,
+  };
+
+  return patch;
+};
+
 export const generateAuthPatch = (authNode, request, options) => {
   options = options || {};
   let patch = {};
@@ -132,6 +176,9 @@ export const generateAuthPatch = (authNode, request, options) => {
       break;
     case 'oauth1':
       patch = generateOAuth1(details, request, options);
+      break;
+    case 'aws':
+      patch = generateAws(details, request, options);
       break;
     default:
       console.log(`${authNode.type} auth not implemented`);
