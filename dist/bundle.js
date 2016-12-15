@@ -149,6 +149,10 @@ var setQuery = function setQuery(url, queryObj, options) {
   return urlParts[0] + '?' + qs.stringify(existingQueryObj);
 };
 
+var QueryHelpers = Object.freeze({
+	setQuery: setQuery
+});
+
 var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
@@ -1063,6 +1067,6 @@ var index = _extends({
   generateAuthPatch: generateAuthPatch,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-}, VariableHelpers, JSONHelpers);
+}, VariableHelpers, JSONHelpers, QueryHelpers);
 
 module.exports = index;

@@ -6108,6 +6108,10 @@ var setQuery = function setQuery(url, queryObj, options) {
   return urlParts[0] + '?' + index$1.stringify(existingQueryObj);
 };
 
+var QueryHelpers = Object.freeze({
+	setQuery: setQuery
+});
+
 /**
  * A specialized version of `_.map` for arrays without support for iteratee
  * shorthands.
@@ -9419,7 +9423,7 @@ var index = _extends({
   generateAuthPatch: generateAuthPatch,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
-}, VariableHelpers, JSONHelpers);
+}, VariableHelpers, JSONHelpers, QueryHelpers);
 
 return index;
 
