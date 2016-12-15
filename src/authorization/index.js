@@ -7,7 +7,6 @@ import EncBASE64 from 'crypto-js/enc-base64';
 
 import Base64 from '../utils/base64';
 import {setQuery} from '../utils/query';
-import {createURL} from '../utils/url';
 import {safeStringify} from '../utils/json';
 
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
@@ -126,20 +125,10 @@ export const generateAws = (data, request, options) => {
     return patch;
   }
 
-  let processedUrl;
-  try {
-    processedUrl = createURL(request.url);
-  } catch (e) {
-    console.warn('authorization/generateAws parse url error', e);
-    return patch;
-  }
-
   const requestToAuthorize = {
-    host: processedUrl.host,
-    path: processedUrl.pathname,
+    ...request,
     method: request.method.toUpperCase(),
-    headers: request.headers,
-    body: safeStringify(request.body, ''),
+    body: safeStringify(request.body) || '',
     service: data.service,
     region: data.region,
   };

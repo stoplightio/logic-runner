@@ -149,6 +149,79 @@ var setQuery = function setQuery(url, queryObj, options) {
   return urlParts[0] + '?' + qs.stringify(existingQueryObj);
 };
 
+var safeParse = function safeParse(target, defaultValue) {
+  if (typeof target === 'string') {
+    try {
+      return JSON.parse(target);
+    } catch (e) {
+      return defaultValue || {};
+    }
+  }
+
+  return target;
+};
+
+var safeStringify = function safeStringify(target, offset) {
+  if (target && typeof target !== 'string') {
+    return stringify(target, null, offset || 4);
+  }
+
+  return target;
+};
+
+var mapToNameValue = function mapToNameValue(obj) {
+  if (obj instanceof Array) {
+    return obj;
+  }
+
+  return map(obj || {}, function (value, name) {
+    return { name: name, value: value };
+  });
+};
+
+var nameValueToMap = function nameValueToMap(nameValueArray) {
+  if (!isArray(nameValueArray)) {
+    return nameValueArray;
+  }
+
+  var result = {};
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _step.value;
+      var name = _step$value.name;
+      var value = _step$value.value;
+
+      result[name] = value;
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return result;
+};
+
+var JSONHelpers = Object.freeze({
+	safeParse: safeParse,
+	safeStringify: safeStringify,
+	mapToNameValue: mapToNameValue,
+	nameValueToMap: nameValueToMap
+});
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -363,104 +436,6 @@ var set$1 = function set$1(object, property, value, receiver) {
   return value;
 };
 
-// this function creates a fallback for IE browser which does not support URL function
-
-var createURL = function createURL(u) {
-  var newURL = {};
-
-  if ((typeof document === 'undefined' ? 'undefined' : _typeof(document)) !== (typeof undefined === 'undefined' ? 'undefined' : _typeof(undefined))) {
-    // browser
-
-    if (typeof URL === 'function') {
-      // modern
-      newURL = new URL(u);
-    } else {
-      // old
-      newURL = document.createElement('a');
-      newURL.href = u;
-    }
-  } else {
-    // node
-    var url = require('url');
-    newURL = url.parse(u);
-  }
-
-  return newURL;
-};
-
-var safeParse = function safeParse(target, defaultValue) {
-  if (typeof target === 'string') {
-    try {
-      return JSON.parse(target);
-    } catch (e) {
-      return defaultValue || {};
-    }
-  }
-
-  return target;
-};
-
-var safeStringify = function safeStringify(target, offset) {
-  if (target && typeof target !== 'string') {
-    return stringify(target, null, offset || 4);
-  }
-
-  return target;
-};
-
-var mapToNameValue = function mapToNameValue(obj) {
-  if (obj instanceof Array) {
-    return obj;
-  }
-
-  return map(obj || {}, function (value, name) {
-    return { name: name, value: value };
-  });
-};
-
-var nameValueToMap = function nameValueToMap(nameValueArray) {
-  if (!isArray(nameValueArray)) {
-    return nameValueArray;
-  }
-
-  var result = {};
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _step.value;
-      var name = _step$value.name;
-      var value = _step$value.value;
-
-      result[name] = value;
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  return result;
-};
-
-var JSONHelpers = Object.freeze({
-	safeParse: safeParse,
-	safeStringify: safeStringify,
-	mapToNameValue: mapToNameValue,
-	nameValueToMap: nameValueToMap
-});
-
 var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
 
 var generateBasicAuth = function generateBasicAuth(username, password, options) {
@@ -577,23 +552,12 @@ var generateAws = function generateAws(data, request, options) {
     return patch;
   }
 
-  var processedUrl = void 0;
-  try {
-    processedUrl = createURL(request.url);
-  } catch (e) {
-    console.warn('authorization/generateAws parse url error', e);
-    return patch;
-  }
-
-  var requestToAuthorize = {
-    host: processedUrl.host,
-    path: processedUrl.pathname,
+  var requestToAuthorize = _extends({}, request, {
     method: request.method.toUpperCase(),
-    headers: request.headers,
-    body: safeStringify(request.body, ''),
+    body: safeStringify(request.body) || '',
     service: data.service,
     region: data.region
-  };
+  });
 
   var headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
@@ -1033,14 +997,14 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
-      var state = get(node, 'state') || {};
+      var state = Object.assign({}, get(node, 'state') || {});
       var resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       var _input = get(node, 'result.input') || {};
       var output = get(node, 'result.output') || {};
-      var _state = get(node, 'result.state') || {};
+      var _state = Object.assign({}, get(node, 'result.state') || {});
       var _resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
       set(node, 'result.state', _state);

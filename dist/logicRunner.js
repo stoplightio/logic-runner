@@ -6108,31 +6108,6 @@ var setQuery = function setQuery(url, queryObj, options) {
   return urlParts[0] + '?' + index$1.stringify(existingQueryObj);
 };
 
-// this function creates a fallback for IE browser which does not support URL function
-
-var createURL = function createURL(u) {
-  var newURL = {};
-
-  if ((typeof document === 'undefined' ? 'undefined' : _typeof(document)) !== (typeof undefined === 'undefined' ? 'undefined' : _typeof(undefined))) {
-    // browser
-
-    if (typeof URL === 'function') {
-      // modern
-      newURL = new URL(u);
-    } else {
-      // old
-      newURL = document.createElement('a');
-      newURL.href = u;
-    }
-  } else {
-    // node
-    var url = require('url');
-    newURL = url.parse(u);
-  }
-
-  return newURL;
-};
-
 /**
  * A specialized version of `_.map` for arrays without support for iteratee
  * shorthands.
@@ -7422,23 +7397,12 @@ var generateAws = function generateAws(data, request, options) {
     return patch;
   }
 
-  var processedUrl = void 0;
-  try {
-    processedUrl = createURL(request.url);
-  } catch (e) {
-    console.warn('authorization/generateAws parse url error', e);
-    return patch;
-  }
-
-  var requestToAuthorize = {
-    host: processedUrl.host,
-    path: processedUrl.pathname,
+  var requestToAuthorize = _extends({}, request, {
     method: request.method.toUpperCase(),
-    headers: request.headers,
-    body: safeStringify(request.body, ''),
+    body: safeStringify(request.body) || '',
     service: data.service,
     region: data.region
-  };
+  });
 
   var headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
@@ -9389,14 +9353,14 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!isEmpty_1(script)) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
-      var state = get_1(node, 'state') || {};
+      var state = Object.assign({}, get_1(node, 'state') || {});
       var resultOutput = get_1(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set_1(node, 'state', state);
     } else {
       var _input = get_1(node, 'result.input') || {};
       var output = get_1(node, 'result.output') || {};
-      var _state = get_1(node, 'result.state') || {};
+      var _state = Object.assign({}, get_1(node, 'result.state') || {});
       var _resultOutput = get_1(rootResultNode, 'output');
       scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
       set_1(node, 'result.state', _state);

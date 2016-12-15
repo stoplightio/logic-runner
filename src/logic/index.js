@@ -136,14 +136,14 @@ export const runLogic = (rootResultNode, node, logicPath, options) => {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
-      const state = get(node, 'state') || {};
+      const state = Object.assign({}, get(node, 'state') || {});
       const resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
-      const state = get(node, 'result.state') || {};
+      const state = Object.assign({}, get(node, 'result.state') || {});
       const resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, output, options.logger);
       set(node, 'result.state', state);
