@@ -3,6 +3,7 @@ import set from 'lodash/set';
 import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
 import includes from 'lodash/includes';
+import cloneDeep from 'lodash/clone';
 
 import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
@@ -76,6 +77,14 @@ export const runScript = (script, root, state = {}, tests = [], input = {}, outp
     } else if (e.message === 'STOP') {
       result.status = 'stopped';
     } else {
+      // adjust the line number to remove code added that the user doesn't know about
+      const match = e.message.match(/line [0-9]+/);
+      if (match) {
+        const parts = match[0].split(' ');
+        const lineNum = Number(parts[1]);
+        e.message = e.message.replace(`line ${lineNum}`, `line ${lineNum - 18}`);
+      }
+
       reportError(e);
     }
   }
@@ -136,14 +145,14 @@ export const runLogic = (rootResultNode, node, logicPath, options) => {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
-      const state = Object.assign({}, get(node, 'state') || {});
+      const state = cloneDeep(get(node, 'state') || {});
       const resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       const input = get(node, 'result.input') || {};
       const output = get(node, 'result.output') || {};
-      const state = Object.assign({}, get(node, 'result.state') || {});
+      const state = cloneDeep(get(node, 'result.state') || {});
       const resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, output, options.logger);
       set(node, 'result.state', state);
