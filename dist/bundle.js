@@ -14,6 +14,7 @@ var stringify = _interopDefault(require('json-stringify-safe'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
+var cloneDeep = _interopDefault(require('lodash/clone'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
@@ -195,9 +196,9 @@ var nameValueToMap = function nameValueToMap(nameValueArray) {
 
   try {
     for (var _iterator = nameValueArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _step.value;
-      var name = _step$value.name;
-      var value = _step$value.value;
+      var _ref2 = _step.value;
+      var name = _ref2.name,
+          value = _ref2.value;
 
       result[name] = value;
     }
@@ -236,118 +237,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 
-var asyncGenerator = function () {
-  function AwaitValue(value) {
-    this.value = value;
-  }
 
-  function AsyncGenerator(gen) {
-    var front, back;
-
-    function send(key, arg) {
-      return new Promise(function (resolve, reject) {
-        var request = {
-          key: key,
-          arg: arg,
-          resolve: resolve,
-          reject: reject,
-          next: null
-        };
-
-        if (back) {
-          back = back.next = request;
-        } else {
-          front = back = request;
-          resume(key, arg);
-        }
-      });
-    }
-
-    function resume(key, arg) {
-      try {
-        var result = gen[key](arg);
-        var value = result.value;
-
-        if (value instanceof AwaitValue) {
-          Promise.resolve(value.value).then(function (arg) {
-            resume("next", arg);
-          }, function (arg) {
-            resume("throw", arg);
-          });
-        } else {
-          settle(result.done ? "return" : "normal", result.value);
-        }
-      } catch (err) {
-        settle("throw", err);
-      }
-    }
-
-    function settle(type, value) {
-      switch (type) {
-        case "return":
-          front.resolve({
-            value: value,
-            done: true
-          });
-          break;
-
-        case "throw":
-          front.reject(value);
-          break;
-
-        default:
-          front.resolve({
-            value: value,
-            done: false
-          });
-          break;
-      }
-
-      front = front.next;
-
-      if (front) {
-        resume(front.key, front.arg);
-      } else {
-        back = null;
-      }
-    }
-
-    this._invoke = send;
-
-    if (typeof gen.return !== "function") {
-      this.return = undefined;
-    }
-  }
-
-  if (typeof Symbol === "function" && Symbol.asyncIterator) {
-    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
-      return this;
-    };
-  }
-
-  AsyncGenerator.prototype.next = function (arg) {
-    return this._invoke("next", arg);
-  };
-
-  AsyncGenerator.prototype.throw = function (arg) {
-    return this._invoke("throw", arg);
-  };
-
-  AsyncGenerator.prototype.return = function (arg) {
-    return this._invoke("return", arg);
-  };
-
-  return {
-    wrap: function (fn) {
-      return function () {
-        return new AsyncGenerator(fn.apply(this, arguments));
-      };
-    },
-    await: function (value) {
-      return new AwaitValue(value);
-    }
-  };
-}();
 
 
 
@@ -375,69 +265,6 @@ var _extends = Object.assign || function (target) {
   }
 
   return target;
-};
-
-var get$1 = function get$1(object, property, receiver) {
-  if (object === null) object = Function.prototype;
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent === null) {
-      return undefined;
-    } else {
-      return get$1(parent, property, receiver);
-    }
-  } else if ("value" in desc) {
-    return desc.value;
-  } else {
-    var getter = desc.get;
-
-    if (getter === undefined) {
-      return undefined;
-    }
-
-    return getter.call(receiver);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var set$1 = function set$1(object, property, value, receiver) {
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent !== null) {
-      set$1(parent, property, value, receiver);
-    }
-  } else if ("value" in desc && desc.writable) {
-    desc.value = value;
-  } else {
-    var setter = desc.set;
-
-    if (setter !== undefined) {
-      setter.call(receiver, value);
-    }
-  }
-
-  return value;
 };
 
 var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
@@ -611,12 +438,11 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 };
 
 var extractVariables = function extractVariables(target) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-  var _ref$strip = _ref.strip;
-  var strip = _ref$strip === undefined ? false : _ref$strip;
-  var _ref$required = _ref.required;
-  var required = _ref$required === undefined ? false : _ref$required;
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      _ref$strip = _ref.strip,
+      strip = _ref$strip === undefined ? false : _ref$strip,
+      _ref$required = _ref.required,
+      required = _ref$required === undefined ? false : _ref$required;
 
   var toProcess = safeStringify(target);
   var matches = void 0;
@@ -910,8 +736,8 @@ var runScript = function runScript(script, root) {
 
   // additional functions available to scripts
   var Base64$$1 = Base64;
-  var safeStringify$$1 = safeStringify;
-  var safeParse$$1 = safeParse;
+  var safeStringify$$1 = safeStringify,
+      safeParse$$1 = safeParse;
 
   var skip = function skip() {
     throw new Error('SKIP');
@@ -939,6 +765,14 @@ var runScript = function runScript(script, root) {
     } else if (e.message === 'STOP') {
       result.status = 'stopped';
     } else {
+      // adjust the line number to remove code added that the user doesn't know about
+      var match = e.message.match(/line [0-9]+/);
+      if (match) {
+        var parts = match[0].split(' ');
+        var lineNum = Number(parts[1]);
+        e.message = e.message.replace('line ' + lineNum, 'line ' + (lineNum - 18));
+      }
+
       reportError(e);
     }
   }
@@ -1001,14 +835,14 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
-      var state = Object.assign({}, get(node, 'state') || {});
+      var state = cloneDeep(get(node, 'state') || {});
       var resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
       set(node, 'state', state);
     } else {
       var _input = get(node, 'result.input') || {};
       var output = get(node, 'result.output') || {};
-      var _state = Object.assign({}, get(node, 'result.state') || {});
+      var _state = cloneDeep(get(node, 'result.state') || {});
       var _resultOutput = get(rootResultNode, 'output');
       scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
       set(node, 'result.state', _state);
