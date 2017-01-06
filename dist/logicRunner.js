@@ -236,8 +236,7 @@ function baseGetTag$2(value) {
     if (value == null) {
         return value === undefined ? undefinedTag : nullTag;
     }
-    value = Object(value);
-    return symToStringTag && symToStringTag in value ? getRawTag(value) : objectToString(value);
+    return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
 }
 
 var _baseGetTag = baseGetTag$2;
@@ -693,7 +692,7 @@ function isLength$1(value) {
 
 var isLength_1 = isLength$1;
 
-var isFunction$2 = isFunction_1;
+var isFunction$3 = isFunction_1;
 var isLength = isLength_1;
 
 /**
@@ -722,7 +721,7 @@ var isLength = isLength_1;
  * // => false
  */
 function isArrayLike$1(value) {
-  return value != null && isLength(value.length) && !isFunction$2(value);
+  return value != null && isLength(value.length) && !isFunction$3(value);
 }
 
 var isArrayLike_1 = isArrayLike$1;
@@ -4862,7 +4861,7 @@ var _baseTimes = baseTimes$1;
 var baseTimes = _baseTimes;
 var isArguments$4 = isArguments_1;
 var isArray$8 = isArray_1;
-var isBuffer$3 = isBuffer_1;
+var isBuffer$2 = isBuffer_1;
 var isIndex$2 = _isIndex;
 var isTypedArray$3 = isTypedArray_1;
 
@@ -4883,7 +4882,7 @@ var hasOwnProperty$10 = objectProto$12.hasOwnProperty;
 function arrayLikeKeys$1(value, inherited) {
   var isArr = isArray$8(value),
       isArg = !isArr && isArguments$4(value),
-      isBuff = !isArr && !isArg && isBuffer$3(value),
+      isBuff = !isArr && !isArg && isBuffer$2(value),
       isType = !isArr && !isArg && !isBuff && isTypedArray$3(value),
       skipIndexes = isArr || isArg || isBuff || isType,
       result = skipIndexes ? baseTimes(value.length, String) : [],
@@ -5036,8 +5035,8 @@ var initCloneObject = _initCloneObject;
 var isArguments$3 = isArguments_1;
 var isArray$7 = isArray_1;
 var isArrayLikeObject = isArrayLikeObject_1;
-var isBuffer$2 = isBuffer_1;
-var isFunction$3 = isFunction_1;
+var isBuffer$1 = isBuffer_1;
+var isFunction$4 = isFunction_1;
 var isObject$4 = isObject_1;
 var isPlainObject = isPlainObject_1;
 var isTypedArray$2 = isTypedArray_1;
@@ -5073,7 +5072,7 @@ function baseMergeDeep$1(object, source, key, srcIndex, mergeFunc, customizer, s
 
   if (isCommon) {
     var isArr = isArray$7(srcValue),
-        isBuff = !isArr && isBuffer$2(srcValue),
+        isBuff = !isArr && isBuffer$1(srcValue),
         isTyped = !isArr && !isBuff && isTypedArray$2(srcValue);
 
     newValue = srcValue;
@@ -5095,7 +5094,7 @@ function baseMergeDeep$1(object, source, key, srcIndex, mergeFunc, customizer, s
       newValue = objValue;
       if (isArguments$3(objValue)) {
         newValue = toPlainObject(objValue);
-      } else if (!isObject$4(objValue) || srcIndex && isFunction$3(objValue)) {
+      } else if (!isObject$4(objValue) || srcIndex && isFunction$4(objValue)) {
         newValue = initCloneObject(srcValue);
       }
     } else {
@@ -5456,11 +5455,11 @@ var createAssigner = _createAssigner;
  * _.merge(object, other);
  * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
  */
-var merge$1 = createAssigner(function (object, source, srcIndex) {
+var merge = createAssigner(function (object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
-var merge_1 = merge$1;
+var merge_1 = merge;
 
 var setQuery = function setQuery(url, queryObj, options) {
   options = options || {};
@@ -5814,6 +5813,129 @@ function equalByTag$1(object, other, tag, bitmask, customizer, equalFunc, stack)
 
 var _equalByTag = equalByTag$1;
 
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush$1(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+var _arrayPush = arrayPush$1;
+
+var arrayPush = _arrayPush;
+var isArray$12 = isArray_1;
+
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function baseGetAllKeys$1(object, keysFunc, symbolsFunc) {
+  var result = keysFunc(object);
+  return isArray$12(object) ? result : arrayPush(result, symbolsFunc(object));
+}
+
+var _baseGetAllKeys = baseGetAllKeys$1;
+
+/**
+ * A specialized version of `_.filter` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
+function arrayFilter$1(array, predicate) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      resIndex = 0,
+      result = [];
+
+  while (++index < length) {
+    var value = array[index];
+    if (predicate(value, index, array)) {
+      result[resIndex++] = value;
+    }
+  }
+  return result;
+}
+
+var _arrayFilter = arrayFilter$1;
+
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+function stubArray$1() {
+  return [];
+}
+
+var stubArray_1 = stubArray$1;
+
+var arrayFilter = _arrayFilter;
+var stubArray = stubArray_1;
+
+/** Used for built-in method references. */
+var objectProto$16 = Object.prototype;
+
+/** Built-in value references. */
+var propertyIsEnumerable$1 = objectProto$16.propertyIsEnumerable;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+/**
+ * Creates an array of the own enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbols$1 = !nativeGetSymbols ? stubArray : function (object) {
+  if (object == null) {
+    return [];
+  }
+  object = Object(object);
+  return arrayFilter(nativeGetSymbols(object), function (symbol) {
+    return propertyIsEnumerable$1.call(object, symbol);
+  });
+};
+
+var _getSymbols = getSymbols$1;
+
 var arrayLikeKeys$2 = _arrayLikeKeys;
 var baseKeys$2 = _baseKeys;
 var isArrayLike$5 = isArrayLike_1;
@@ -5852,7 +5974,24 @@ function keys$1(object) {
 
 var keys_1 = keys$1;
 
+var baseGetAllKeys = _baseGetAllKeys;
+var getSymbols = _getSymbols;
 var keys = keys_1;
+
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeys$1(object) {
+  return baseGetAllKeys(object, keys, getSymbols);
+}
+
+var _getAllKeys = getAllKeys$1;
+
+var getAllKeys = _getAllKeys;
 
 /** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG$4 = 1;
@@ -5878,9 +6017,9 @@ var hasOwnProperty$13 = objectProto$15.hasOwnProperty;
  */
 function equalObjects$1(object, other, bitmask, customizer, equalFunc, stack) {
   var isPartial = bitmask & COMPARE_PARTIAL_FLAG$4,
-      objProps = keys(object),
+      objProps = getAllKeys(object),
       objLength = objProps.length,
-      othProps = keys(other),
+      othProps = getAllKeys(other),
       othLength = othProps.length;
 
   if (objLength != othLength && !isPartial) {
@@ -5940,7 +6079,7 @@ var equalByTag = _equalByTag;
 var equalObjects = _equalObjects;
 var getTag$2 = _getTag;
 var isArray$11 = isArray_1;
-var isBuffer$4 = isBuffer_1;
+var isBuffer$3 = isBuffer_1;
 var isTypedArray$4 = isTypedArray_1;
 
 /** Used to compose bitmasks for value comparisons. */
@@ -5974,23 +6113,18 @@ var hasOwnProperty$12 = objectProto$14.hasOwnProperty;
 function baseIsEqualDeep$1(object, other, bitmask, customizer, equalFunc, stack) {
   var objIsArr = isArray$11(object),
       othIsArr = isArray$11(other),
-      objTag = arrayTag$1,
-      othTag = arrayTag$1;
+      objTag = objIsArr ? arrayTag$1 : getTag$2(object),
+      othTag = othIsArr ? arrayTag$1 : getTag$2(other);
 
-  if (!objIsArr) {
-    objTag = getTag$2(object);
-    objTag = objTag == argsTag$2 ? objectTag$3 : objTag;
-  }
-  if (!othIsArr) {
-    othTag = getTag$2(other);
-    othTag = othTag == argsTag$2 ? objectTag$3 : othTag;
-  }
+  objTag = objTag == argsTag$2 ? objectTag$3 : objTag;
+  othTag = othTag == argsTag$2 ? objectTag$3 : othTag;
+
   var objIsObj = objTag == objectTag$3,
       othIsObj = othTag == objectTag$3,
       isSameTag = objTag == othTag;
 
-  if (isSameTag && isBuffer$4(object)) {
-    if (!isBuffer$4(other)) {
+  if (isSameTag && isBuffer$3(object)) {
+    if (!isBuffer$3(other)) {
       return false;
     }
     objIsArr = true;
@@ -6022,7 +6156,6 @@ function baseIsEqualDeep$1(object, other, bitmask, customizer, equalFunc, stack)
 var _baseIsEqualDeep = baseIsEqualDeep$1;
 
 var baseIsEqualDeep = _baseIsEqualDeep;
-var isObject$8 = isObject_1;
 var isObjectLike$7 = isObjectLike_1;
 
 /**
@@ -6043,7 +6176,7 @@ function baseIsEqual$1(value, other, bitmask, customizer, stack) {
   if (value === other) {
     return true;
   }
-  if (value == null || other == null || !isObject$8(value) && !isObjectLike$7(other)) {
+  if (value == null || other == null || !isObjectLike$7(value) && !isObjectLike$7(other)) {
     return value !== value && other !== other;
   }
   return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual$1, stack);
@@ -6108,7 +6241,7 @@ function baseIsMatch$1(object, source, matchData, customizer) {
 
 var _baseIsMatch = baseIsMatch$1;
 
-var isObject$9 = isObject_1;
+var isObject$8 = isObject_1;
 
 /**
  * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
@@ -6119,7 +6252,7 @@ var isObject$9 = isObject_1;
  *  equality comparisons, else `false`.
  */
 function isStrictComparable$1(value) {
-  return value === value && !isObject$9(value);
+  return value === value && !isObject$8(value);
 }
 
 var _isStrictComparable = isStrictComparable$1;
@@ -6845,7 +6978,7 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 var assignValue$2 = _assignValue;
 var castPath$3 = _castPath;
 var isIndex$4 = _isIndex;
-var isObject$10 = isObject_1;
+var isObject$9 = isObject_1;
 var toKey$5 = _toKey;
 
 /**
@@ -6859,7 +6992,7 @@ var toKey$5 = _toKey;
  * @returns {Object} Returns `object`.
  */
 function baseSet$1(object, path, value, customizer) {
-  if (!isObject$10(object)) {
+  if (!isObject$9(object)) {
     return object;
   }
   path = castPath$3(path, object);
@@ -6877,7 +7010,7 @@ function baseSet$1(object, path, value, customizer) {
       var objValue = nested[key];
       newValue = customizer ? customizer(objValue, key, nested) : undefined;
       if (newValue === undefined) {
-        newValue = isObject$10(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
+        newValue = isObject$9(objValue) ? objValue : isIndex$4(path[index + 1]) ? [] : {};
       }
     }
     assignValue$2(nested, key, newValue);
@@ -7006,7 +7139,7 @@ function baseIndexOf$1(array, value, fromIndex) {
 var _baseIndexOf = baseIndexOf$1;
 
 var baseGetTag$7 = _baseGetTag;
-var isArray$12 = isArray_1;
+var isArray$13 = isArray_1;
 var isObjectLike$8 = isObjectLike_1;
 
 /** `Object#toString` result references. */
@@ -7030,12 +7163,12 @@ var stringTag$2 = '[object String]';
  * // => false
  */
 function isString$1(value) {
-    return typeof value == 'string' || !isArray$12(value) && isObjectLike$8(value) && baseGetTag$7(value) == stringTag$2;
+    return typeof value == 'string' || !isArray$13(value) && isObjectLike$8(value) && baseGetTag$7(value) == stringTag$2;
 }
 
 var isString_1 = isString$1;
 
-var isObject$11 = isObject_1;
+var isObject$10 = isObject_1;
 var isSymbol$4 = isSymbol_1;
 
 /** Used as references for various `Number` constants. */
@@ -7086,9 +7219,9 @@ function toNumber$1(value) {
   if (isSymbol$4(value)) {
     return NAN;
   }
-  if (isObject$11(value)) {
+  if (isObject$10(value)) {
     var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-    value = isObject$11(other) ? other + '' : other;
+    value = isObject$10(other) ? other + '' : other;
   }
   if (typeof value != 'string') {
     return value === 0 ? value : +value;
@@ -7346,49 +7479,8 @@ function baseAssignIn$1(object, source) {
 
 var _baseAssignIn = baseAssignIn$1;
 
-/**
- * This method returns a new empty array.
- *
- * @static
- * @memberOf _
- * @since 4.13.0
- * @category Util
- * @returns {Array} Returns the new empty array.
- * @example
- *
- * var arrays = _.times(2, _.stubArray);
- *
- * console.log(arrays);
- * // => [[], []]
- *
- * console.log(arrays[0] === arrays[1]);
- * // => false
- */
-function stubArray$1() {
-  return [];
-}
-
-var stubArray_1 = stubArray$1;
-
-var overArg$3 = _overArg;
-var stubArray = stubArray_1;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeGetSymbols = Object.getOwnPropertySymbols;
-
-/**
- * Creates an array of the own enumerable symbols of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of symbols.
- */
-var getSymbols$1 = nativeGetSymbols ? overArg$3(nativeGetSymbols, Object) : stubArray;
-
-var _getSymbols = getSymbols$1;
-
 var copyObject$4 = _copyObject;
-var getSymbols = _getSymbols;
+var getSymbols$2 = _getSymbols;
 
 /**
  * Copies own symbols of `source` to `object`.
@@ -7399,35 +7491,14 @@ var getSymbols = _getSymbols;
  * @returns {Object} Returns `object`.
  */
 function copySymbols$1(source, object) {
-  return copyObject$4(source, getSymbols(source), object);
+  return copyObject$4(source, getSymbols$2(source), object);
 }
 
 var _copySymbols = copySymbols$1;
 
-/**
- * Appends the elements of `values` to `array`.
- *
- * @private
- * @param {Array} array The array to modify.
- * @param {Array} values The values to append.
- * @returns {Array} Returns `array`.
- */
-function arrayPush$1(array, values) {
-  var index = -1,
-      length = values.length,
-      offset = array.length;
-
-  while (++index < length) {
-    array[offset + index] = values[index];
-  }
-  return array;
-}
-
-var _arrayPush = arrayPush$1;
-
-var arrayPush = _arrayPush;
+var arrayPush$2 = _arrayPush;
 var getPrototype$3 = _getPrototype;
-var getSymbols$2 = _getSymbols;
+var getSymbols$3 = _getSymbols;
 var stubArray$2 = stubArray_1;
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -7443,7 +7514,7 @@ var nativeGetSymbols$1 = Object.getOwnPropertySymbols;
 var getSymbolsIn$1 = !nativeGetSymbols$1 ? stubArray$2 : function (object) {
   var result = [];
   while (object) {
-    arrayPush(result, getSymbols$2(object));
+    arrayPush$2(result, getSymbols$3(object));
     object = getPrototype$3(object);
   }
   return result;
@@ -7468,44 +7539,6 @@ function copySymbolsIn$1(source, object) {
 
 var _copySymbolsIn = copySymbolsIn$1;
 
-var arrayPush$2 = _arrayPush;
-var isArray$14 = isArray_1;
-
-/**
- * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
- * `keysFunc` and `symbolsFunc` to get the enumerable property names and
- * symbols of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Function} keysFunc The function to get the keys of `object`.
- * @param {Function} symbolsFunc The function to get the symbols of `object`.
- * @returns {Array} Returns the array of property names and symbols.
- */
-function baseGetAllKeys$1(object, keysFunc, symbolsFunc) {
-  var result = keysFunc(object);
-  return isArray$14(object) ? result : arrayPush$2(result, symbolsFunc(object));
-}
-
-var _baseGetAllKeys = baseGetAllKeys$1;
-
-var baseGetAllKeys = _baseGetAllKeys;
-var getSymbols$3 = _getSymbols;
-var keys$7 = keys_1;
-
-/**
- * Creates an array of own enumerable property names and symbols of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @returns {Array} Returns the array of property names and symbols.
- */
-function getAllKeys$1(object) {
-  return baseGetAllKeys(object, keys$7, getSymbols$3);
-}
-
-var _getAllKeys = getAllKeys$1;
-
 var baseGetAllKeys$2 = _baseGetAllKeys;
 var getSymbolsIn$2 = _getSymbolsIn;
 var keysIn$5 = keysIn_1;
@@ -7525,10 +7558,10 @@ function getAllKeysIn$1(object) {
 var _getAllKeysIn = getAllKeysIn$1;
 
 /** Used for built-in method references. */
-var objectProto$16 = Object.prototype;
+var objectProto$17 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$14 = objectProto$16.hasOwnProperty;
+var hasOwnProperty$14 = objectProto$17.hasOwnProperty;
 
 /**
  * Initializes an array clone.
@@ -7800,15 +7833,15 @@ var cloneBuffer$1 = _cloneBuffer;
 var copyArray$2 = _copyArray;
 var copySymbols = _copySymbols;
 var copySymbolsIn = _copySymbolsIn;
-var getAllKeys = _getAllKeys;
+var getAllKeys$2 = _getAllKeys;
 var getAllKeysIn = _getAllKeysIn;
 var getTag$3 = _getTag;
 var initCloneArray = _initCloneArray;
 var initCloneByTag = _initCloneByTag;
 var initCloneObject$2 = _initCloneObject;
-var isArray$13 = isArray_1;
-var isBuffer$5 = isBuffer_1;
-var isObject$12 = isObject_1;
+var isArray$14 = isArray_1;
+var isBuffer$4 = isBuffer_1;
+var isObject$11 = isObject_1;
 var keys$5 = keys_1;
 
 /** Used to compose bitmasks for cloning. */
@@ -7878,10 +7911,10 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
   if (result !== undefined) {
     return result;
   }
-  if (!isObject$12(value)) {
+  if (!isObject$11(value)) {
     return value;
   }
-  var isArr = isArray$13(value);
+  var isArr = isArray$14(value);
   if (isArr) {
     result = initCloneArray(value);
     if (!isDeep) {
@@ -7891,7 +7924,7 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
     var tag = getTag$3(value),
         isFunc = tag == funcTag$2 || tag == genTag$1;
 
-    if (isBuffer$5(value)) {
+    if (isBuffer$4(value)) {
       return cloneBuffer$1(value, isDeep);
     }
     if (tag == objectTag$4 || tag == argsTag$3 || isFunc && !object) {
@@ -7914,7 +7947,7 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
   }
   stack.set(value, result);
 
-  var keysFunc = isFull ? isFlat ? getAllKeysIn : getAllKeys : isFlat ? keysIn : keys$5;
+  var keysFunc = isFull ? isFlat ? getAllKeysIn : getAllKeys$2 : isFlat ? keysIn : keys$5;
 
   var props = isArr ? undefined : keysFunc(value);
   arrayEach(props || value, function (subValue, key) {
@@ -7929,43 +7962,6 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
 }
 
 var _baseClone = baseClone$1;
-
-var baseClone = _baseClone;
-
-/** Used to compose bitmasks for cloning. */
-var CLONE_SYMBOLS_FLAG = 4;
-
-/**
- * Creates a shallow clone of `value`.
- *
- * **Note:** This method is loosely based on the
- * [structured clone algorithm](https://mdn.io/Structured_clone_algorithm)
- * and supports cloning arrays, array buffers, booleans, date objects, maps,
- * numbers, `Object` objects, regexes, sets, strings, symbols, and typed
- * arrays. The own enumerable properties of `arguments` objects are cloned
- * as plain objects. An empty object is returned for uncloneable values such
- * as error objects, functions, DOM nodes, and WeakMaps.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to clone.
- * @returns {*} Returns the cloned value.
- * @see _.cloneDeep
- * @example
- *
- * var objects = [{ 'a': 1 }, { 'b': 2 }];
- *
- * var shallow = _.clone(objects);
- * console.log(shallow[0] === objects[0]);
- * // => true
- */
-function clone$1(value) {
-  return baseClone(value, CLONE_SYMBOLS_FLAG);
-}
-
-var clone_1 = clone$1;
 
 var identity$4 = identity_1;
 
@@ -8497,6 +8493,23 @@ function baseUnset$1(object, path) {
 
 var _baseUnset = baseUnset$1;
 
+var isPlainObject$2 = isPlainObject_1;
+
+/**
+ * Used by `_.omit` to customize its `_.cloneDeep` use to only clone plain
+ * objects.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @param {string} key The key of the property to inspect.
+ * @returns {*} Returns the uncloned value or `undefined` to defer cloning to `_.cloneDeep`.
+ */
+function customOmitClone$1(value) {
+  return isPlainObject$2(value) ? undefined : value;
+}
+
+var _customOmitClone = customOmitClone$1;
+
 var _Symbol$7 = _Symbol$1;
 var isArguments$5 = isArguments_1;
 var isArray$16 = isArray_1;
@@ -8601,6 +8614,7 @@ var baseClone$2 = _baseClone;
 var baseUnset = _baseUnset;
 var castPath$4 = _castPath;
 var copyObject$6 = _copyObject;
+var customOmitClone = _customOmitClone;
 var flatRest = _flatRest;
 var getAllKeysIn$2 = _getAllKeysIn;
 
@@ -8642,7 +8656,7 @@ var omit = flatRest(function (object, paths) {
   });
   copyObject$6(object, getAllKeysIn$2(object), result);
   if (isDeep) {
-    result = baseClone$2(result, CLONE_DEEP_FLAG$3 | CLONE_FLAT_FLAG$1 | CLONE_SYMBOLS_FLAG$2);
+    result = baseClone$2(result, CLONE_DEEP_FLAG$3 | CLONE_FLAT_FLAG$1 | CLONE_SYMBOLS_FLAG$2, customOmitClone);
   }
   var length = paths.length;
   while (length--) {
@@ -8768,7 +8782,7 @@ var baseIsEqual$3 = _baseIsEqual;
  * date objects, error objects, maps, numbers, `Object` objects, regexes,
  * sets, strings, symbols, and typed arrays. `Object` objects are compared
  * by their own, not inherited, enumerable properties. Functions and DOM
- * nodes are **not** supported.
+ * nodes are compared by strict equality, i.e. `===`.
  *
  * @static
  * @memberOf _
@@ -9050,17 +9064,17 @@ var ASSERTION_OPS = ['eq', 'ne', 'exists', 'contains', 'gt', 'gte', 'lt', 'lte',
 var runAssertion = function runAssertion(resultNode, assertion) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  var result = {
+  var result = _extends({}, assertion, {
     pass: false,
-    message: '',
+    msg: '',
     details: ''
-  };
+  });
 
   try {
     var validate = options.validate;
 
 
-    var targetPath = buildPathSelector([assertion.location, assertion.target]);
+    var targetPath = buildPathSelector([assertion.target]);
     var value = get_1(resultNode, targetPath);
 
     try {
@@ -9132,7 +9146,6 @@ var runAssertion = function runAssertion(resultNode, assertion) {
           }
 
           var validationResult = validate(value, expected);
-
           if (!validationResult) {
             throw new Error('Unknown validation error');
           }
@@ -9158,13 +9171,13 @@ var runAssertion = function runAssertion(resultNode, assertion) {
       result.pass = true;
     } catch (e) {
       result.pass = false;
-      result.message = e.message;
+      result.msg = e.message;
     }
 
     return result;
   } catch (err) {
     result.pass = false;
-    result.message = err.message;
+    result.msg = err.message;
 
     return result;
   }
@@ -9173,80 +9186,19 @@ var runAssertion = function runAssertion(resultNode, assertion) {
 var runAssertions = function runAssertions(resultNode, assertions) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  assertions = assertions || [];
-
-  forEach_1(assertions, function (a) {
-    a.result = runAssertion(resultNode, a, options);
-  });
-
-  return assertions;
-};
-
-var SOURCE_REGEX = new RegExp(/^root|state|status|result|input|response/);
-var ROOT_REGEX = new RegExp(/^root\./);
-
-var runTransform = function runTransform(rootNode, resultNode, transform) {
-  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-  try {
-    var sourceLocation = transform.sourceLocation;
-    var useRootSource = sourceLocation.match(ROOT_REGEX);
-    if (useRootSource) {
-      sourceLocation = sourceLocation.replace(ROOT_REGEX, '');
-    }
-    var sourcePath = buildPathSelector([sourceLocation, transform.sourcePath]);
-    if (!sourcePath.match(SOURCE_REGEX)) {
-      return;
-    }
-
-    var targetLocation = transform.targetLocation;
-    var useRootTarget = targetLocation.match(ROOT_REGEX);
-    if (useRootTarget) {
-      targetLocation = targetLocation.replace(ROOT_REGEX, '');
-    }
-    var targetPath = buildPathSelector([targetLocation, transform.targetPath]);
-    if (!targetPath.match(SOURCE_REGEX)) {
-      return;
-    }
-
-    var sourceNode = useRootSource ? rootNode : resultNode;
-    var targetNode = useRootTarget ? rootNode : resultNode;
-
-    var value = get_1(sourceNode, sourcePath);
-
-    set_1(targetNode, targetPath, value);
-  } catch (e) {
-    console.warn('transforms#runTransform', e, resultNode, transform);
+  var results = [];
+  if (assertions) {
+    forEach_1(assertions, function (a) {
+      results.push(runAssertion(resultNode, a, options));
+    });
   }
-};
 
-var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
-  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-  transforms = transforms || [];
-
-  forEach_1(transforms, function (a) {
-    runTransform(rootNode, resultNode, a, options);
-  });
-};
-
-var patchAuthorization = function patchAuthorization(node, options) {
-  var authNode = get_1(node, 'input.authorization');
-
-  // Run Authorization & Patch
-  if (!isEmpty_1(authNode)) {
-    var authPatch = generateAuthPatch(authNode, get_1(node, 'input.request'), options);
-    if (!isEmpty_1(authPatch)) {
-      var input = get_1(node, 'input') || {};
-      merge_1(input, authPatch);
-      set_1(node, 'input', input);
-    }
-  }
+  return results;
 };
 
 var runScript = function runScript(script, root) {
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var input = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
   var output = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
   var logger = arguments[6];
@@ -9275,7 +9227,7 @@ var runScript = function runScript(script, root) {
   };
 
   try {
-    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + script + '\n        }\n      }\n    ');
+    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n      ' + script + '\n    ');
   } catch (e) {
     if (e.message === 'SKIP') {
       result.status = 'skipped';
@@ -9304,14 +9256,24 @@ var runScript = function runScript(script, root) {
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
  */
-var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
+var runLogic = function runLogic(result, node, logicPath, options) {
   if (!node) {
     return {};
   }
 
-  // Init Logs
-  var logs = get_1(node, 'result.logs') || [];
+  // Replace variables before script
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
+  var logic = get_1(node, logicPath);
+  if (!logic) {
+    console.log("No logic so return!");
+    // Patch Authorization
+    // patchAuthorization(node, options);
+    return node;
+  }
 
+  // Init Logs
+  var logs = get_1(result, 'logs') || [];
   // Init Options
   options = options || {};
   options.logger = {
@@ -9323,27 +9285,18 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
       var cleanMessages = messages.map(function (m) {
         return safeStringify(m);
       });
-
+      print(cleanMessages);
       logs.push({
         type: type,
-        context: [logicPath].concat(context || []).join('.'),
-        messages: cleanMessages
+        source: [logicPath].concat(context || []).join('.'),
+        msg: cleanMessages
       });
     }
   };
 
-  // Replace variables before script
-  node = replaceNodeVariables(node);
-
-  var logic = get_1(node, logicPath);
-  if (!logic) {
-    // Patch Authorization
-    patchAuthorization(node, options);
-    return node;
-  }
-
   // Run Transforms
-  runTransforms(rootResultNode, node, logic.transforms, options);
+  // TODO: Add back
+  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -9352,41 +9305,45 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!isEmpty_1(script)) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
-      var state = clone_1(get_1(node, 'state') || {});
-      var resultOutput = get_1(rootResultNode, 'output');
-      scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
-      set_1(node, 'state', state);
+      // const state = cloneDeep(get(node, 'state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      // set(node, 'state', state);
     } else {
-      var _input = get_1(node, 'result.input') || {};
-      var output = get_1(node, 'result.output') || {};
-      var _state = clone_1(get_1(node, 'result.state') || {});
-      var _resultOutput = get_1(rootResultNode, 'output');
-      scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
-      set_1(node, 'result.state', _state);
+      var _input = get_1(result, 'input') || {};
+      var output = get_1(result, 'output') || {};
+      // const state = cloneDeep(get(node, 'result.state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      // scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
+      // set(node, 'result.state', state);
     }
 
-    if (includes_1(['skipped', 'stopped'], scriptResult.status)) {
-      node.status = scriptResult.status;
-      return node;
-    }
+    // if (includes(['skipped', 'stopped'], scriptResult.status)) {
+    //   result.status = scriptResult.status;
+    //   return node;
+    // }
   }
 
   // Patch Authorization
-  patchAuthorization(node, options);
+  // patchAuthorization(node, options);
 
   // Replace variables after script
-  node = replaceNodeVariables(node);
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
 
   // Run Assertions
-  var assertions = runAssertions(node, logic.assertions, options);
+  var n = node;
+  if (logicPath === 'after') {
+    n = result;
+  }
+  var assertions = runAssertions(n, logic.assertions, options);
 
   // Add Test Assertions
   if (!isEmpty_1(tests)) {
     for (var key in tests) {
       var pass = tests[key];
       assertions.push({
-        location: logicPath + ' script',
-        target: '',
+        target: logicPath + '.script',
         op: 'tests',
         expected: '',
         result: {
@@ -9398,24 +9355,38 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   }
 
   // Set Assertions
-  set_1(node, logicPath + '.assertions', assertions);
+  set_1(result, logicPath + '.assertions', assertions);
 
   // Set Logs
-  set_1(node, 'result.logs', logs);
+  set_1(result, 'logs', logs);
 
   return node;
 };
 
-// export const runNode = (node, options) => {
-//   node = runLogic(node, 'before', options);
-//   options.invoke(node);
-//   node = runLogic(node, 'after', options);
+var runNode = function runNode(node, options) {
+  if (!node) {
+    return {};
+  }
 
-//   return node;
-// }
+  var result = {
+    'status': 'running'
+  };
+
+  runLogic(result, node, 'before', options);
+  if (node.input && isFunction_1(node.input.invoke)) {
+    result.input = node.input;
+    result.output = node.input.invoke(_$cenario.session);
+    $.steps[node.id] = result;
+  }
+  runLogic(result, node, 'after', options);
+  result.status = 'completed';
+
+  return node;
+};
 
 var index = _extends({
   generateAuthPatch: generateAuthPatch,
+  runNode: runNode,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
 }, VariableHelpers, JSONHelpers, QueryHelpers);

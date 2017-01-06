@@ -30,8 +30,9 @@ const ASSERTION_OPS = [
 
 export const runAssertion = (resultNode, assertion, options = {}) => {
   const result = {
+    ...assertion,
     pass: false,
-    message: '',
+    msg: '',
     details: '',
   };
 
@@ -40,7 +41,7 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
       validate,
     } = options;
 
-    const targetPath = buildPathSelector([assertion.location, assertion.target]);
+    const targetPath = buildPathSelector([assertion.target]);
     const value = get(resultNode, targetPath);
 
     try {
@@ -113,7 +114,6 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
           }
 
           const validationResult = validate(value, expected);
-
           if (!validationResult) {
             throw new Error('Unknown validation error');
           }
@@ -139,24 +139,25 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
       result.pass = true;
     } catch (e) {
       result.pass = false;
-      result.message = e.message;
+      result.msg = e.message;
     }
 
     return result;
   } catch (err) {
     result.pass = false;
-    result.message = err.message;
+    result.msg = err.message;
 
     return result;
   }
 };
 
 export const runAssertions = (resultNode, assertions, options = {}) => {
-  assertions = assertions || [];
+  const results = [];
+  if (assertions) {
+    forEach(assertions, (a) => {
+      results.push(runAssertion(resultNode, a, options));
+    });
+  }
 
-  forEach(assertions, (a) => {
-    a.result = runAssertion(resultNode, a, options);
-  });
-
-  return assertions;
+  return results;
 };

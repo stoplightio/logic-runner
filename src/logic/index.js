@@ -26,7 +26,7 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-export const runScript = (script, root, state = {}, tests = [], input = {}, output = {}, logger) => {
+export const runScript = (script, root, state = {}, tests = {}, input = {}, output = {}, logger) => {
   // additional functions available to scripts
   const Base64 = _Base64;
   const {safeStringify, safeParse} = JSONHelpers;
@@ -64,12 +64,7 @@ export const runScript = (script, root, state = {}, tests = [], input = {}, outp
           logger.log('error', 'script', _.values(arguments));
         }
       }
-
-      with (input) {
-        with (output) {
-          ${script}
-        }
-      }
+      ${script}
     `);
   } catch (e) {
     if (e.message === 'SKIP') {
@@ -99,14 +94,24 @@ export const runScript = (script, root, state = {}, tests = [], input = {}, outp
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
  */
-export const runLogic = (rootResultNode, node, logicPath, options) => {
+export const runLogic = (result, node, logicPath, options) => {
   if (!node) {
     return {};
   }
 
-  // Init Logs
-  const logs = get(node, 'result.logs') || [];
+  // Replace variables before script
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
+  const logic = get(node, logicPath);
+  if (!logic) {
+    console.log("No logic so return!")
+    // Patch Authorization
+    // patchAuthorization(node, options);
+    return node;
+  }
 
+  // Init Logs
+  const logs = get(result, 'logs') || [];
   // Init Options
   options = options || {};
   options.logger = {
@@ -116,27 +121,18 @@ export const runLogic = (rootResultNode, node, logicPath, options) => {
       }
 
       const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m));
-
+      print(cleanMessages);
       logs.push({
         type,
-        context: [logicPath].concat(context || []).join('.'),
-        messages: cleanMessages,
+        source: [logicPath].concat(context || []).join('.'),
+        msg: cleanMessages,
       });
     },
   };
 
-  // Replace variables before script
-  node = Variables.replaceNodeVariables(node);
-
-  const logic = get(node, logicPath);
-  if (!logic) {
-    // Patch Authorization
-    patchAuthorization(node, options);
-    return node;
-  }
-
   // Run Transforms
-  Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
+  // TODO: Add back
+  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
 
   // Run Script
   const tests = {};
@@ -145,41 +141,45 @@ export const runLogic = (rootResultNode, node, logicPath, options) => {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
-      const state = cloneDeep(get(node, 'state') || {});
-      const resultOutput = get(rootResultNode, 'output');
-      scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
-      set(node, 'state', state);
+      // const state = cloneDeep(get(node, 'state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      // set(node, 'state', state);
     } else {
-      const input = get(node, 'result.input') || {};
-      const output = get(node, 'result.output') || {};
-      const state = cloneDeep(get(node, 'result.state') || {});
-      const resultOutput = get(rootResultNode, 'output');
-      scriptResult = runScript(script, resultOutput, state, tests, input, output, options.logger);
-      set(node, 'result.state', state);
+      const input = get(result, 'input') || {};
+      const output = get(result, 'output') || {};
+      // const state = cloneDeep(get(node, 'result.state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      // scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
+      // set(node, 'result.state', state);
     }
 
-    if (includes(['skipped', 'stopped'], scriptResult.status)) {
-      node.status = scriptResult.status;
-      return node;
-    }
+    // if (includes(['skipped', 'stopped'], scriptResult.status)) {
+    //   result.status = scriptResult.status;
+    //   return node;
+    // }
   }
 
   // Patch Authorization
-  patchAuthorization(node, options);
+  // patchAuthorization(node, options);
 
   // Replace variables after script
-  node = Variables.replaceNodeVariables(node);
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
 
   // Run Assertions
-  const assertions = Assertions.runAssertions(node, logic.assertions, options);
+  let n = node;
+  if (logicPath === 'after') {
+    n = result;
+  }
+  const assertions = Assertions.runAssertions(n, logic.assertions, options);
 
   // Add Test Assertions
   if (!isEmpty(tests)) {
     for (const key in tests) {
       const pass = tests[key];
       assertions.push({
-        location: `${logicPath} script`,
-        target: '',
+        target: `${logicPath}.script`,
         op: 'tests',
         expected: '',
         result: {
@@ -191,18 +191,10 @@ export const runLogic = (rootResultNode, node, logicPath, options) => {
   }
 
   // Set Assertions
-  set(node, `${logicPath}.assertions`, assertions);
+  set(result, `${logicPath}.assertions`, assertions);
 
   // Set Logs
-  set(node, 'result.logs', logs);
+  set(result, 'logs', logs);
 
   return node;
 };
-
-// export const runNode = (node, options) => {
-//   node = runLogic(node, 'before', options);
-//   options.invoke(node);
-//   node = runLogic(node, 'after', options);
-
-//   return node;
-// }

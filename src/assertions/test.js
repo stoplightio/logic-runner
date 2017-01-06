@@ -25,14 +25,12 @@ test('assertions > runAssertions > runs an assertion', (t) => {
 
   const assertions = [
     {
-      location: 'output.response',
-      target: 'body.foo',
+      target: 'output.response.body.foo',
       op: 'eq',
       expected: 5,
     },
     {
-      location: 'output.response',
-      target: 'body.foo',
+      target: 'output.response.body.foo',
       op: 'lt',
       expected: 4,
     },

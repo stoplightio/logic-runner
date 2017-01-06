@@ -14,7 +14,7 @@ var stringify = _interopDefault(require('json-stringify-safe'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
-var cloneDeep = _interopDefault(require('lodash/clone'));
+var lodash_clone = require('lodash/clone');
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var uniq = _interopDefault(require('lodash/uniq'));
@@ -27,6 +27,7 @@ var gt = _interopDefault(require('lodash/gt'));
 var gte = _interopDefault(require('lodash/gte'));
 var lt = _interopDefault(require('lodash/lt'));
 var lte = _interopDefault(require('lodash/lte'));
+var isFunction = _interopDefault(require('lodash/isFunction'));
 
 var Base64 = {
   _keyStr: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
@@ -533,17 +534,17 @@ var ASSERTION_OPS = ['eq', 'ne', 'exists', 'contains', 'gt', 'gte', 'lt', 'lte',
 var runAssertion = function runAssertion(resultNode, assertion) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  var result = {
+  var result = _extends({}, assertion, {
     pass: false,
-    message: '',
+    msg: '',
     details: ''
-  };
+  });
 
   try {
     var validate = options.validate;
 
 
-    var targetPath = buildPathSelector([assertion.location, assertion.target]);
+    var targetPath = buildPathSelector([assertion.target]);
     var value = get(resultNode, targetPath);
 
     try {
@@ -615,7 +616,6 @@ var runAssertion = function runAssertion(resultNode, assertion) {
           }
 
           var validationResult = validate(value, expected);
-
           if (!validationResult) {
             throw new Error('Unknown validation error');
           }
@@ -641,13 +641,13 @@ var runAssertion = function runAssertion(resultNode, assertion) {
       result.pass = true;
     } catch (e) {
       result.pass = false;
-      result.message = e.message;
+      result.msg = e.message;
     }
 
     return result;
   } catch (err) {
     result.pass = false;
-    result.message = err.message;
+    result.msg = err.message;
 
     return result;
   }
@@ -656,80 +656,19 @@ var runAssertion = function runAssertion(resultNode, assertion) {
 var runAssertions = function runAssertions(resultNode, assertions) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  assertions = assertions || [];
-
-  forEach(assertions, function (a) {
-    a.result = runAssertion(resultNode, a, options);
-  });
-
-  return assertions;
-};
-
-var SOURCE_REGEX = new RegExp(/^root|state|status|result|input|response/);
-var ROOT_REGEX = new RegExp(/^root\./);
-
-var runTransform = function runTransform(rootNode, resultNode, transform) {
-  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-  try {
-    var sourceLocation = transform.sourceLocation;
-    var useRootSource = sourceLocation.match(ROOT_REGEX);
-    if (useRootSource) {
-      sourceLocation = sourceLocation.replace(ROOT_REGEX, '');
-    }
-    var sourcePath = buildPathSelector([sourceLocation, transform.sourcePath]);
-    if (!sourcePath.match(SOURCE_REGEX)) {
-      return;
-    }
-
-    var targetLocation = transform.targetLocation;
-    var useRootTarget = targetLocation.match(ROOT_REGEX);
-    if (useRootTarget) {
-      targetLocation = targetLocation.replace(ROOT_REGEX, '');
-    }
-    var targetPath = buildPathSelector([targetLocation, transform.targetPath]);
-    if (!targetPath.match(SOURCE_REGEX)) {
-      return;
-    }
-
-    var sourceNode = useRootSource ? rootNode : resultNode;
-    var targetNode = useRootTarget ? rootNode : resultNode;
-
-    var value = get(sourceNode, sourcePath);
-
-    set(targetNode, targetPath, value);
-  } catch (e) {
-    console.warn('transforms#runTransform', e, resultNode, transform);
+  var results = [];
+  if (assertions) {
+    forEach(assertions, function (a) {
+      results.push(runAssertion(resultNode, a, options));
+    });
   }
-};
 
-var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
-  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-  transforms = transforms || [];
-
-  forEach(transforms, function (a) {
-    runTransform(rootNode, resultNode, a, options);
-  });
-};
-
-var patchAuthorization = function patchAuthorization(node, options) {
-  var authNode = get(node, 'input.authorization');
-
-  // Run Authorization & Patch
-  if (!isEmpty(authNode)) {
-    var authPatch = generateAuthPatch(authNode, get(node, 'input.request'), options);
-    if (!isEmpty(authPatch)) {
-      var input = get(node, 'input') || {};
-      merge(input, authPatch);
-      set(node, 'input', input);
-    }
-  }
+  return results;
 };
 
 var runScript = function runScript(script, root) {
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var input = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
   var output = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
   var logger = arguments[6];
@@ -758,7 +697,7 @@ var runScript = function runScript(script, root) {
   };
 
   try {
-    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n\n      with (input) {\n        with (output) {\n          ' + script + '\n        }\n      }\n    ');
+    eval('\n      if (logger) {\n        console.debug = function() {\n          logger.log(\'debug\', \'script\', _.values(arguments));\n        }\n        console.log = console.info = function() {\n          logger.log(\'info\', \'script\', _.values(arguments));\n        }\n        console.warn = function() {\n          logger.log(\'warn\', \'script\', _.values(arguments));\n        }\n        console.error = function() {\n          logger.log(\'error\', \'script\', _.values(arguments));\n        }\n      }\n      ' + script + '\n    ');
   } catch (e) {
     if (e.message === 'SKIP') {
       result.status = 'skipped';
@@ -787,14 +726,24 @@ var runScript = function runScript(script, root) {
  * @param {Object} options
  * @param {function(object, object)} options.validate - An optional validation function, takes the value as the first argument, and the schema as the second.
  */
-var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
+var runLogic = function runLogic(result, node, logicPath, options) {
   if (!node) {
     return {};
   }
 
-  // Init Logs
-  var logs = get(node, 'result.logs') || [];
+  // Replace variables before script
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
+  var logic = get(node, logicPath);
+  if (!logic) {
+    console.log("No logic so return!");
+    // Patch Authorization
+    // patchAuthorization(node, options);
+    return node;
+  }
 
+  // Init Logs
+  var logs = get(result, 'logs') || [];
   // Init Options
   options = options || {};
   options.logger = {
@@ -806,27 +755,18 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
       var cleanMessages = messages.map(function (m) {
         return safeStringify(m);
       });
-
+      print(cleanMessages);
       logs.push({
         type: type,
-        context: [logicPath].concat(context || []).join('.'),
-        messages: cleanMessages
+        source: [logicPath].concat(context || []).join('.'),
+        msg: cleanMessages
       });
     }
   };
 
-  // Replace variables before script
-  node = replaceNodeVariables(node);
-
-  var logic = get(node, logicPath);
-  if (!logic) {
-    // Patch Authorization
-    patchAuthorization(node, options);
-    return node;
-  }
-
   // Run Transforms
-  runTransforms(rootResultNode, node, logic.transforms, options);
+  // TODO: Add back
+  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -835,41 +775,45 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
-      var state = cloneDeep(get(node, 'state') || {});
-      var resultOutput = get(rootResultNode, 'output');
-      scriptResult = runScript(script, resultOutput, state, tests, input, {}, options.logger);
-      set(node, 'state', state);
+      // const state = cloneDeep(get(node, 'state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      // set(node, 'state', state);
     } else {
-      var _input = get(node, 'result.input') || {};
-      var output = get(node, 'result.output') || {};
-      var _state = cloneDeep(get(node, 'result.state') || {});
-      var _resultOutput = get(rootResultNode, 'output');
-      scriptResult = runScript(script, _resultOutput, _state, tests, _input, output, options.logger);
-      set(node, 'result.state', _state);
+      var _input = get(result, 'input') || {};
+      var output = get(result, 'output') || {};
+      // const state = cloneDeep(get(node, 'result.state') || {});
+      // const resultOutput = get(rootResultNode, 'output') || {};
+      // scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
+      // set(node, 'result.state', state);
     }
 
-    if (includes(['skipped', 'stopped'], scriptResult.status)) {
-      node.status = scriptResult.status;
-      return node;
-    }
+    // if (includes(['skipped', 'stopped'], scriptResult.status)) {
+    //   result.status = scriptResult.status;
+    //   return node;
+    // }
   }
 
   // Patch Authorization
-  patchAuthorization(node, options);
+  // patchAuthorization(node, options);
 
   // Replace variables after script
-  node = replaceNodeVariables(node);
+  // TOOD: Add back
+  // node = Variables.replaceNodeVariables(node);
 
   // Run Assertions
-  var assertions = runAssertions(node, logic.assertions, options);
+  var n = node;
+  if (logicPath === 'after') {
+    n = result;
+  }
+  var assertions = runAssertions(n, logic.assertions, options);
 
   // Add Test Assertions
   if (!isEmpty(tests)) {
     for (var key in tests) {
       var pass = tests[key];
       assertions.push({
-        location: logicPath + ' script',
-        target: '',
+        target: logicPath + '.script',
         op: 'tests',
         expected: '',
         result: {
@@ -881,24 +825,38 @@ var runLogic = function runLogic(rootResultNode, node, logicPath, options) {
   }
 
   // Set Assertions
-  set(node, logicPath + '.assertions', assertions);
+  set(result, logicPath + '.assertions', assertions);
 
   // Set Logs
-  set(node, 'result.logs', logs);
+  set(result, 'logs', logs);
 
   return node;
 };
 
-// export const runNode = (node, options) => {
-//   node = runLogic(node, 'before', options);
-//   options.invoke(node);
-//   node = runLogic(node, 'after', options);
+var runNode = function runNode(node, options) {
+  if (!node) {
+    return {};
+  }
 
-//   return node;
-// }
+  var result = {
+    'status': 'running'
+  };
+
+  runLogic(result, node, 'before', options);
+  if (node.input && isFunction(node.input.invoke)) {
+    result.input = node.input;
+    result.output = node.input.invoke(_$cenario.session);
+    $.steps[node.id] = result;
+  }
+  runLogic(result, node, 'after', options);
+  result.status = 'completed';
+
+  return node;
+};
 
 var index = _extends({
   generateAuthPatch: generateAuthPatch,
+  runNode: runNode,
   runLogic: runLogic,
   buildPathSelector: buildPathSelector
 }, VariableHelpers, JSONHelpers, QueryHelpers);

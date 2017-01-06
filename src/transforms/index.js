@@ -9,22 +9,22 @@ const ROOT_REGEX = new RegExp(/^root\./);
 
 export const runTransform = (rootNode, resultNode, transform, options = {}) => {
   try {
-    let sourceLocation = transform.sourceLocation;
-    const useRootSource = sourceLocation.match(ROOT_REGEX);
+    let source = transform.source;
+    const useRootSource = source.match(ROOT_REGEX);
     if (useRootSource) {
-      sourceLocation = sourceLocation.replace(ROOT_REGEX, '');
+      source = source.replace(ROOT_REGEX, '');
     }
-    const sourcePath = buildPathSelector([sourceLocation, transform.sourcePath]);
+    const sourcePath = buildPathSelector([source]);
     if (!sourcePath.match(SOURCE_REGEX)) {
       return;
     }
 
-    let targetLocation = transform.targetLocation;
-    const useRootTarget = targetLocation.match(ROOT_REGEX);
+    let target = transform.target;
+    const useRootTarget = target.match(ROOT_REGEX);
     if (useRootTarget) {
-      targetLocation = targetLocation.replace(ROOT_REGEX, '');
+      target = target.replace(ROOT_REGEX, '');
     }
-    const targetPath = buildPathSelector([targetLocation, transform.targetPath]);
+    const targetPath = buildPathSelector([target]);
     if (!targetPath.match(SOURCE_REGEX)) {
       return;
     }

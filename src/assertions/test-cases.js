@@ -26,8 +26,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'eq',
         expected: 'bar',
       },
@@ -47,8 +46,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'eq',
         expected: 'bar',
       },
@@ -71,8 +69,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'ne',
         expected: 'bar2',
       },
@@ -92,8 +89,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'ne',
         expected: 'bar',
       },
@@ -116,8 +112,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'exists',
       },
       expected(result) {
@@ -136,8 +131,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.bar',
+        target: 'output.response.body.bar',
         op: 'exists',
       },
       expected(result) {
@@ -156,8 +150,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'exists',
         expected: false,
       },
@@ -180,8 +173,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'contains',
         expected: 'my',
       },
@@ -201,8 +193,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'contains',
         expected: 'my',
       },
@@ -222,8 +213,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.bar',
+        target: 'output.response.body.bar',
         op: 'contains',
         expected: 'my',
       },
@@ -246,8 +236,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gt',
         expected: 3,
       },
@@ -267,8 +256,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gt',
         expected: 5,
       },
@@ -288,8 +276,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gt',
         expected: 5,
       },
@@ -312,8 +299,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gte',
         expected: 5,
       },
@@ -333,8 +319,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gte',
         expected: 6,
       },
@@ -354,8 +339,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'gte',
         expected: 5,
       },
@@ -378,8 +362,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lt',
         expected: 6,
       },
@@ -399,8 +382,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lt',
         expected: 5,
       },
@@ -420,8 +402,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lt',
         expected: 5,
       },
@@ -444,8 +425,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lte',
         expected: 5,
       },
@@ -465,8 +445,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lte',
         expected: 4,
       },
@@ -486,8 +465,7 @@ const buildCases = () => {
         },
       },
       assertion: {
-        location: 'output.response',
-        target: 'body.foo',
+        target: 'output.response.body.foo',
         op: 'lte',
         expected: 5,
       },
@@ -512,8 +490,7 @@ const buildCases = () => {
       name: 'validate.pass > validate errors correctly if schema is bad',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.pass',
       },
       options: {
@@ -527,8 +504,7 @@ const buildCases = () => {
       name: 'validate.pass > handles pass',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.pass',
         expected: {type: 'object'},
       },
@@ -545,8 +521,7 @@ const buildCases = () => {
       name: 'validate.pass > handles fail',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.pass',
         expected: {type: 'object'},
       },
@@ -568,8 +543,7 @@ const buildCases = () => {
       name: 'validate.contract > handles pass',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.contract',
         expected: {type: 'object'},
       },
@@ -589,8 +563,7 @@ const buildCases = () => {
       name: 'validate > handles pass',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate',
         expected: {type: 'object'},
       },
@@ -620,8 +593,7 @@ const buildCases = () => {
       name: 'validate.fail > handles pass',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.fail',
         expected: {type: 'object'},
       },
@@ -640,8 +612,7 @@ const buildCases = () => {
       name: 'validate.fail > handles fail',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'validate.fail',
         expected: {type: 'object'},
       },
@@ -661,8 +632,7 @@ const buildCases = () => {
       name: 'unknown op throws error',
       resultNode: {},
       assertion: {
-        location: 'output.response',
-        target: 'body',
+        target: 'output.response.body',
         op: 'foo',
       },
       expected(result) {
