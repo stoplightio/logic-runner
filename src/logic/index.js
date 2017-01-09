@@ -150,14 +150,14 @@ export const runLogic = (result, node, logicPath, options) => {
       const output = get(result, 'output') || {};
       // const state = cloneDeep(get(node, 'result.state') || {});
       // const resultOutput = get(rootResultNode, 'output') || {};
-      // scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
+      scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
       // set(node, 'result.state', state);
     }
 
-    // if (includes(['skipped', 'stopped'], scriptResult.status)) {
-    //   result.status = scriptResult.status;
-    //   return node;
-    // }
+    if (includes(['skipped', 'stopped'], scriptResult.status)) {
+      result.status = scriptResult.status;
+      return node;
+    }
   }
 
   // Patch Authorization
