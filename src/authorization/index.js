@@ -155,7 +155,7 @@ export const generateAuthPatch = (authNode, request, options) => {
     return patch;
   }
 
-  const details = authNode[authNode.type];
+  const details = authNode;
   if (isEmpty(details)) {
     return patch;
   }

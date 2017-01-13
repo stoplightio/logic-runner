@@ -6950,7 +6950,7 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
     return patch;
   }
 
-  var details = authNode[authNode.type];
+  var details = authNode;
   if (isEmpty_1(details)) {
     return patch;
   }
@@ -8736,6 +8736,7 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
 
     node = replaceVariables(node, $);
 
+    // TODO: Add test case for making sure before and after transforms/scripts don't get
     if (before) {
       node.before.assertions = before.assertions;
       node.before.transforms = before.transforms;
@@ -9211,6 +9212,20 @@ var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
   });
 };
 
+var patchAuthorization = function patchAuthorization(node, options) {
+  var authNode = get_1(node, 'input.auth');
+
+  // Run Authorization & Patch
+  if (!isEmpty_1(authNode)) {
+    var authPatch = generateAuthPatch(authNode, get_1(node, 'input'), options);
+    if (!isEmpty_1(authPatch)) {
+      var input = get_1(node, 'input') || {};
+      merge_1(input, authPatch);
+      set_1(node, 'input', input);
+    }
+  }
+};
+
 var runScript = function runScript(script, root) {
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
@@ -9275,12 +9290,13 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   if (!node) {
     return {};
   }
+  // TODO: Order Transforms, script, replace/parse variables, assertions
 
   node = replaceNodeVariables(node);
   var logic = get_1(node, logicPath);
   if (!logic) {
     // Patch Authorization
-    // patchAuthorization(node, options);
+    patchAuthorization(node, options);
     return node;
   }
 
@@ -9307,7 +9323,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   };
 
   // Run Transforms
-  runTransforms($, node, logic.transforms, options);
+  runTransforms($, logicPath === 'before' ? node : result, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -9334,7 +9350,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   }
 
   // Patch Authorization
-  // patchAuthorization(node, options);
+  patchAuthorization(node, options);
 
   // Replace variables after script
   node = replaceNodeVariables(node);

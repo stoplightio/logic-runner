@@ -13,11 +13,11 @@ import * as JSONHelpers from '../utils/json';
 import _Base64 from '../utils/base64';
 
 const patchAuthorization = (node, options) => {
-  const authNode = get(node, 'input.authorization');
+  const authNode = get(node, 'input.auth');
 
   // Run Authorization & Patch
   if (!isEmpty(authNode)) {
-    const authPatch = Authorization.generateAuthPatch(authNode, get(node, 'input.request'), options);
+    const authPatch = Authorization.generateAuthPatch(authNode, get(node, 'input'), options);
     if (!isEmpty(authPatch)) {
       const input = get(node, 'input') || {};
       merge(input, authPatch);
@@ -98,12 +98,13 @@ export const runLogic = (result, node, logicPath, options) => {
   if (!node) {
     return {};
   }
+  // TODO: Order Transforms, script, replace/parse variables, assertions
 
   node = Variables.replaceNodeVariables(node);
   const logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
-    // patchAuthorization(node, options);
+    patchAuthorization(node, options);
     return node;
   }
 
@@ -128,7 +129,7 @@ export const runLogic = (result, node, logicPath, options) => {
   };
 
   // Run Transforms
-  Transforms.runTransforms($, node, logic.transforms, options);
+  Transforms.runTransforms($, logicPath === 'before' ? node:result, logic.transforms, options);
 
   // Run Script
   const tests = {};
@@ -155,7 +156,7 @@ export const runLogic = (result, node, logicPath, options) => {
   }
 
   // Patch Authorization
-  // patchAuthorization(node, options);
+  patchAuthorization(node, options);
 
   // Replace variables after script
   node = Variables.replaceNodeVariables(node);
