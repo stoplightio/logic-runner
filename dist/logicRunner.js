@@ -8260,6 +8260,50 @@ function trim(string, chars, guard) {
 
 var trim_1 = trim;
 
+var baseToString$3 = _baseToString;
+var castSlice$2 = _castSlice;
+var charsStartIndex$2 = _charsStartIndex;
+var stringToArray$2 = _stringToArray;
+var toString$4 = toString_1;
+
+/** Used to match leading and trailing whitespace. */
+var reTrimStart = /^\s+/;
+
+/**
+ * Removes leading whitespace or specified characters from `string`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category String
+ * @param {string} [string=''] The string to trim.
+ * @param {string} [chars=whitespace] The characters to trim.
+ * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
+ * @returns {string} Returns the trimmed string.
+ * @example
+ *
+ * _.trimStart('  abc  ');
+ * // => 'abc  '
+ *
+ * _.trimStart('-_-abc-_-', '_-');
+ * // => 'abc-_-'
+ */
+function trimStart(string, chars, guard) {
+  string = toString$4(string);
+  if (string && (guard || chars === undefined)) {
+    return string.replace(reTrimStart, '');
+  }
+  if (!string || !(chars = baseToString$3(chars))) {
+    return string;
+  }
+  var strSymbols = stringToArray$2(string),
+      start = charsStartIndex$2(strSymbols, stringToArray$2(chars));
+
+  return castSlice$2(strSymbols, start).join('');
+}
+
+var trimStart_1 = trimStart;
+
 var baseIndexOf$4 = _baseIndexOf;
 
 /**
@@ -8348,91 +8392,6 @@ var setToArray$3 = _setToArray;
 
 /** Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE$1 = 200;
-
-/**
- * The base implementation of `_.uniqBy` without support for iteratee shorthands.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {Function} [iteratee] The iteratee invoked per element.
- * @param {Function} [comparator] The comparator invoked per element.
- * @returns {Array} Returns the new duplicate free array.
- */
-function baseUniq$1(array, iteratee, comparator) {
-  var index = -1,
-      includes = arrayIncludes,
-      length = array.length,
-      isCommon = true,
-      result = [],
-      seen = result;
-
-  if (comparator) {
-    isCommon = false;
-    includes = arrayIncludesWith;
-  } else if (length >= LARGE_ARRAY_SIZE$1) {
-    var set = iteratee ? null : createSet(array);
-    if (set) {
-      return setToArray$3(set);
-    }
-    isCommon = false;
-    includes = cacheHas$2;
-    seen = new SetCache$2();
-  } else {
-    seen = iteratee ? [] : result;
-  }
-  outer: while (++index < length) {
-    var value = array[index],
-        computed = iteratee ? iteratee(value) : value;
-
-    value = comparator || value !== 0 ? value : 0;
-    if (isCommon && computed === computed) {
-      var seenIndex = seen.length;
-      while (seenIndex--) {
-        if (seen[seenIndex] === computed) {
-          continue outer;
-        }
-      }
-      if (iteratee) {
-        seen.push(computed);
-      }
-      result.push(value);
-    } else if (!includes(seen, computed, comparator)) {
-      if (seen !== result) {
-        seen.push(computed);
-      }
-      result.push(value);
-    }
-  }
-  return result;
-}
-
-var _baseUniq = baseUniq$1;
-
-var baseUniq = _baseUniq;
-
-/**
- * Creates a duplicate-free version of an array, using
- * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * for equality comparisons, in which only the first occurrence of each element
- * is kept. The order of result values is determined by the order they occur
- * in the array.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Array
- * @param {Array} array The array to inspect.
- * @returns {Array} Returns the new duplicate free array.
- * @example
- *
- * _.uniq([2, 1, 2]);
- * // => [2, 1]
- */
-function uniq(array) {
-  return array && array.length ? baseUniq(array) : [];
-}
-
-var uniq_1 = uniq;
 
 /**
  * Gets the last element of `array`.
@@ -8665,9 +8624,7 @@ var omit = flatRest(function (object, paths) {
   return result;
 });
 
-var omit_1 = omit;
-
-var toString$4 = toString_1;
+var toString$5 = toString_1;
 
 /**
  * Used to match `RegExp`
@@ -8692,39 +8649,30 @@ var reHasRegExpChar = RegExp(reRegExpChar$1.source);
  * // => '\[lodash\]\(https://lodash\.com/\)'
  */
 function escapeRegExp(string) {
-  string = toString$4(string);
+  string = toString$5(string);
   return string && reHasRegExpChar.test(string) ? string.replace(reRegExpChar$1, '\\$&') : string;
 }
 
 var escapeRegExp_1 = escapeRegExp;
 
 var extractVariables = function extractVariables(target) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-      _ref$strip = _ref.strip,
-      strip = _ref$strip === undefined ? false : _ref$strip,
-      _ref$required = _ref.required,
-      required = _ref$required === undefined ? false : _ref$required;
-
   var toProcess = safeStringify(target);
-  var matches = void 0;
-  if (required) {
-    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
-  } else {
-    matches = uniq_1(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
-  }
-
-  if (strip) {
-    for (var i in matches) {
-      matches[i] = trim_1(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+  var matches = [];
+  var reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g);
+  while (true) {
+    var match = reg.exec(toProcess);
+    if (!match || isEmpty_1(match)) {
+      console.log(safeStringify(matches));
+      return matches;
     }
-  }
 
-  return matches;
+    matches.push(match[0]);
+  }
 };
 
 var replaceVariables = function replaceVariables(target, variables) {
   var parsedVariables = safeParse(variables);
-
+  console.log("variables", safeStringify(variables));
   if (isEmpty_1(target) || isEmpty_1(parsedVariables)) {
     return target;
   }
@@ -8732,9 +8680,11 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trim_1(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+    var variable = trimStart_1(trim_1(match, '{} '), '$.'); //.replace(/%3C|%3E/g, '');
 
+    console.log('variable', variable);
     var value = get_1(parsedVariables, variable);
+    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp_1(match), 'g'), value);
@@ -8748,22 +8698,12 @@ var replaceVariables = function replaceVariables(target, variables) {
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
-  var steps = node.steps;
-  var children = node.children;
-  var functions = node.functions;
-
-  var newNode = replaceVariables(omit_1(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    newNode.steps = steps;
+  try {
+    return replaceVariables(node, $);
+  } catch (e) {
+    console.log('error parsing variables:', e);
+    return node;
   }
-  if (children) {
-    newNode.children = children;
-  }
-  if (functions) {
-    newNode.functions = functions;
-  }
-
-  return newNode;
 };
 
 var VariableHelpers = Object.freeze({
@@ -9262,8 +9202,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   }
 
   // Replace variables before script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
+  $.ctx.foo = 400;
+  // console.log('foo set', $.ctx.foo);
+  node = replaceNodeVariables(node);
+  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   var logic = get_1(node, logicPath);
   if (!logic) {
     console.log("No logic so return!");
@@ -9368,6 +9311,7 @@ var runNode = function runNode(node, options) {
     return {};
   }
 
+  // TODO: Figure out Scenario Results
   var result = {
     'status': 'running'
   };
@@ -9375,7 +9319,7 @@ var runNode = function runNode(node, options) {
   runLogic(result, node, 'before', options);
   if (node.input && isFunction_1(node.input.invoke)) {
     result.input = node.input;
-    result.output = node.input.invoke(_$cenario.session);
+    // result.output = node.input.invoke(_$cenario.session);
     $.steps[node.id] = result;
   }
   runLogic(result, node, 'after', options);

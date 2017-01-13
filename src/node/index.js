@@ -8,6 +8,7 @@ export const runNode = (node, options) => {
     return {};
   }
 
+  // TODO: Figure out Scenario Results
   const result = {
     'status': 'running',
   };
@@ -15,7 +16,7 @@ export const runNode = (node, options) => {
   Logic.runLogic(result, node, 'before', options);
   if (node.input && isFunction(node.input.invoke)) {
     result.input = node.input;
-    result.output = node.input.invoke(_$cenario.session);
+    // result.output = node.input.invoke(_$cenario.session);
     $.steps[node.id] = result;
   }
   Logic.runLogic(result, node, 'after', options);

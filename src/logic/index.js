@@ -100,8 +100,11 @@ export const runLogic = (result, node, logicPath, options) => {
   }
 
   // Replace variables before script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
+  $.ctx.foo = 400;
+  // console.log('foo set', $.ctx.foo);
+  node = Variables.replaceNodeVariables(node);
+  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   const logic = get(node, logicPath);
   if (!logic) {
     console.log("No logic so return!")

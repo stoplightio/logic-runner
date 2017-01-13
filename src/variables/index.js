@@ -1,6 +1,7 @@
 import isEmpty from 'lodash/isEmpty';
 import forEach from 'lodash/forEach';
 import trim from 'lodash/trim';
+import trimStart from 'lodash/trimStart';
 import get from 'lodash/get';
 import uniq from 'lodash/uniq';
 import omit from 'lodash/omit';
@@ -8,27 +9,24 @@ import escapeRegExp from 'lodash/escapeRegExp';
 
 import {safeParse, safeStringify} from '../utils/json';
 
-export const extractVariables = (target, {strip = false, required = false} = {}) => {
+export const extractVariables = (target) => {
   const toProcess = safeStringify(target);
-  let matches;
-  if (required) {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
-  } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
-  }
-
-  if (strip) {
-    for (const i in matches) {
-      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+  const matches = [];
+  const reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g)
+  while (true) {
+    var match = reg.exec(toProcess);
+    if (!match || isEmpty(match)) {
+      console.log(safeStringify(matches));
+      return matches;
     }
-  }
 
-  return matches;
+    matches.push(match[0]);
+  }
 };
 
 export const replaceVariables = (target, variables) => {
   const parsedVariables = safeParse(variables);
-
+  console.log("variables", safeStringify(variables));
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;
   }
@@ -36,9 +34,11 @@ export const replaceVariables = (target, variables) => {
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+    const variable = trimStart(trim(match, '{} '), '$.');
 
+    console.log('variable', variable);
     const value = get(parsedVariables, variable);
+    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
@@ -52,20 +52,10 @@ export const replaceVariables = (target, variables) => {
 };
 
 export const replaceNodeVariables = (node) => {
-  const steps = node.steps;
-  const children = node.children;
-  const functions = node.functions;
-
-  const newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    newNode.steps = steps;
+  try {
+    return replaceVariables(node, $);
+  } catch(e) {
+    console.log('error parsing variables:', e);
+    return node;
   }
-  if (children) {
-    newNode.children = children;
-  }
-  if (functions) {
-    newNode.functions = functions;
-  }
-
-  return newNode;
 };

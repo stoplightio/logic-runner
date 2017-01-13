@@ -17,8 +17,9 @@ var includes = _interopDefault(require('lodash/includes'));
 var lodash_clone = require('lodash/clone');
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
-var uniq = _interopDefault(require('lodash/uniq'));
-var omit = _interopDefault(require('lodash/omit'));
+var trimStart = _interopDefault(require('lodash/trimStart'));
+var lodash_uniq = require('lodash/uniq');
+var lodash_omit = require('lodash/omit');
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -439,32 +440,23 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 };
 
 var extractVariables = function extractVariables(target) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-      _ref$strip = _ref.strip,
-      strip = _ref$strip === undefined ? false : _ref$strip,
-      _ref$required = _ref.required,
-      required = _ref$required === undefined ? false : _ref$required;
-
   var toProcess = safeStringify(target);
-  var matches = void 0;
-  if (required) {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>/gm)) || [];
-  } else {
-    matches = uniq(toProcess.match(/<<!([\[\]\.\w- ]+)>>|<<([\[\]\.\w- ]+)>>|\{([\[\]\.\w- ]+)\}|%3C%3C([[\[\]\.\w- ]+)%3E%3E|\\<\\<([[\[\]\.\w- ]+)\\>\\>/gm)) || [];
-  }
-
-  if (strip) {
-    for (var i in matches) {
-      matches[i] = trim(matches[i], '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+  var matches = [];
+  var reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g);
+  while (true) {
+    var match = reg.exec(toProcess);
+    if (!match || isEmpty(match)) {
+      console.log(safeStringify(matches));
+      return matches;
     }
-  }
 
-  return matches;
+    matches.push(match[0]);
+  }
 };
 
 var replaceVariables = function replaceVariables(target, variables) {
   var parsedVariables = safeParse(variables);
-
+  console.log("variables", safeStringify(variables));
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;
   }
@@ -472,9 +464,11 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trim(match, '<!>{}\\<\\>').replace(/%3C|%3E/g, '');
+    var variable = trimStart(trim(match, '{} '), '$.'); //.replace(/%3C|%3E/g, '');
 
+    console.log('variable', variable);
     var value = get(parsedVariables, variable);
+    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
@@ -488,22 +482,12 @@ var replaceVariables = function replaceVariables(target, variables) {
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
-  var steps = node.steps;
-  var children = node.children;
-  var functions = node.functions;
-
-  var newNode = replaceVariables(omit(node, 'steps', 'children', 'functions'), node.state);
-  if (steps) {
-    newNode.steps = steps;
+  try {
+    return replaceVariables(node, $);
+  } catch (e) {
+    console.log('error parsing variables:', e);
+    return node;
   }
-  if (children) {
-    newNode.children = children;
-  }
-  if (functions) {
-    newNode.functions = functions;
-  }
-
-  return newNode;
 };
 
 var VariableHelpers = Object.freeze({
@@ -732,8 +716,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   }
 
   // Replace variables before script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
+  $.ctx.foo = 400;
+  // console.log('foo set', $.ctx.foo);
+  node = replaceNodeVariables(node);
+  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   var logic = get(node, logicPath);
   if (!logic) {
     console.log("No logic so return!");
@@ -838,6 +825,7 @@ var runNode = function runNode(node, options) {
     return {};
   }
 
+  // TODO: Figure out Scenario Results
   var result = {
     'status': 'running'
   };
@@ -845,7 +833,7 @@ var runNode = function runNode(node, options) {
   runLogic(result, node, 'before', options);
   if (node.input && isFunction(node.input.invoke)) {
     result.input = node.input;
-    result.output = node.input.invoke(_$cenario.session);
+    // result.output = node.input.invoke(_$cenario.session);
     $.steps[node.id] = result;
   }
   runLogic(result, node, 'after', options);
