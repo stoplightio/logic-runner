@@ -7,19 +7,18 @@ export const runNode = (node, options) => {
   if (!node) {
     return {};
   }
-
+  // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   const result = {
     'status': 'running',
   };
 
-  Logic.runLogic(result, node, 'before', options);
+  $.steps[node.id] = result;
+  result.input = Logic.runLogic(result, node, 'before', options).input;
   if (node.input && isFunction(node.input.invoke)) {
-    result.input = node.input;
-    // result.output = node.input.invoke(_$cenario.session);
-    $.steps[node.id] = result;
+    result.output = node.input.invoke(_$cenario.session);
   }
-  Logic.runLogic(result, node, 'after', options);
+  Logic.runLogic(result, node, 'after', options)
   result.status = 'completed';
 
   return node;

@@ -6,6 +6,7 @@ import get from 'lodash/get';
 import uniq from 'lodash/uniq';
 import omit from 'lodash/omit';
 import escapeRegExp from 'lodash/escapeRegExp';
+import clone from 'lodash/clone';
 
 import {safeParse, safeStringify} from '../utils/json';
 
@@ -16,17 +17,15 @@ export const extractVariables = (target) => {
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
-      console.log(safeStringify(matches));
       return matches;
     }
 
-    matches.push(match[0]);
+    matches.push(match[1] || match[2]);
   }
 };
 
 export const replaceVariables = (target, variables) => {
   const parsedVariables = safeParse(variables);
-  console.log("variables", safeStringify(variables));
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;
   }
@@ -34,11 +33,8 @@ export const replaceVariables = (target, variables) => {
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trimStart(trim(match, '{} '), '$.');
-
-    console.log('variable', variable);
+    const variable = trimStart(trim(match), '$.');
     const value = get(parsedVariables, variable);
-    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
@@ -53,7 +49,22 @@ export const replaceVariables = (target, variables) => {
 
 export const replaceNodeVariables = (node) => {
   try {
-    return replaceVariables(node, $);
+    const before = clone(node.before);
+    const after = clone(node.after);
+
+    node = replaceVariables(node, $);
+
+    if (before) {
+      node.before.assertions = before.assertions;
+      node.before.transforms = before.transforms;
+    }
+
+    if (after) {
+      node.after.assertions = after.assertions;
+      node.after.transforms = after.transforms;
+    }
+
+    return node;
   } catch(e) {
     console.log('error parsing variables:', e);
     return node;

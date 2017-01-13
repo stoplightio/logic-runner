@@ -14,7 +14,7 @@ var stringify = _interopDefault(require('json-stringify-safe'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
-var lodash_clone = require('lodash/clone');
+var clone = _interopDefault(require('lodash/clone'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
@@ -446,17 +446,15 @@ var extractVariables = function extractVariables(target) {
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
-      console.log(safeStringify(matches));
       return matches;
     }
 
-    matches.push(match[0]);
+    matches.push(match[1] || match[2]);
   }
 };
 
 var replaceVariables = function replaceVariables(target, variables) {
   var parsedVariables = safeParse(variables);
-  console.log("variables", safeStringify(variables));
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;
   }
@@ -464,11 +462,8 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trimStart(trim(match, '{} '), '$.'); //.replace(/%3C|%3E/g, '');
-
-    console.log('variable', variable);
+    var variable = trimStart(trim(match), '$.');
     var value = get(parsedVariables, variable);
-    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
@@ -483,7 +478,22 @@ var replaceVariables = function replaceVariables(target, variables) {
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
   try {
-    return replaceVariables(node, $);
+    var before = clone(node.before);
+    var after = clone(node.after);
+
+    node = replaceVariables(node, $);
+
+    if (before) {
+      node.before.assertions = before.assertions;
+      node.before.transforms = before.transforms;
+    }
+
+    if (after) {
+      node.after.assertions = after.assertions;
+      node.after.transforms = after.transforms;
+    }
+
+    return node;
   } catch (e) {
     console.log('error parsing variables:', e);
     return node;
@@ -650,6 +660,34 @@ var runAssertions = function runAssertions(resultNode, assertions) {
   return results;
 };
 
+var runTransform = function runTransform(rootNode, resultNode, transform) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+  try {
+    var sourcePath = transform.source;
+    var targetPath = transform.target;
+
+    var sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    var targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+
+    var value = get(sourceNode, trimStart(sourcePath, '$.'));
+
+    set(targetNode, trimStart(targetPath, '$.'), value);
+  } catch (e) {
+    console.warn('transforms#runTransform', e, resultNode, transform);
+  }
+};
+
+var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+  transforms = transforms || [];
+
+  forEach(transforms, function (a) {
+    runTransform(rootNode, resultNode, a, options);
+  });
+};
+
 var runScript = function runScript(script, root) {
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
@@ -715,15 +753,9 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
 
-  // Replace variables before script
-  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
-  $.ctx.foo = 400;
-  // console.log('foo set', $.ctx.foo);
   node = replaceNodeVariables(node);
-  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   var logic = get(node, logicPath);
   if (!logic) {
-    console.log("No logic so return!");
     // Patch Authorization
     // patchAuthorization(node, options);
     return node;
@@ -752,8 +784,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   };
 
   // Run Transforms
-  // TODO: Add back
-  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
+  runTransforms($, node, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -763,13 +794,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       var _input = get(result, 'input') || {};
       var output = get(result, 'output') || {};
-      // const state = cloneDeep(get(node, 'result.state') || {});
       // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, _input, output, options.logger);
       // set(node, 'result.state', state);
@@ -785,8 +814,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   // patchAuthorization(node, options);
 
   // Replace variables after script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  node = replaceNodeVariables(node);
 
   // Run Assertions
   var n = node;
@@ -824,17 +852,16 @@ var runNode = function runNode(node, options) {
   if (!node) {
     return {};
   }
-
+  // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   var result = {
     'status': 'running'
   };
 
-  runLogic(result, node, 'before', options);
+  $.steps[node.id] = result;
+  result.input = runLogic(result, node, 'before', options).input;
   if (node.input && isFunction(node.input.invoke)) {
-    result.input = node.input;
-    // result.output = node.input.invoke(_$cenario.session);
-    $.steps[node.id] = result;
+    result.output = node.input.invoke(_$cenario.session);
   }
   runLogic(result, node, 'after', options);
   result.status = 'completed';

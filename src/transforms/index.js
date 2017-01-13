@@ -1,40 +1,19 @@
 import get from 'lodash/get';
 import set from 'lodash/set';
 import forEach from 'lodash/forEach';
-
-import {buildPathSelector} from '../utils/strings';
-
-const SOURCE_REGEX = new RegExp(/^root|state|status|result|input|response/);
-const ROOT_REGEX = new RegExp(/^root\./);
+import trimStart from 'lodash/trimStart';
 
 export const runTransform = (rootNode, resultNode, transform, options = {}) => {
   try {
-    let source = transform.source;
-    const useRootSource = source.match(ROOT_REGEX);
-    if (useRootSource) {
-      source = source.replace(ROOT_REGEX, '');
-    }
-    const sourcePath = buildPathSelector([source]);
-    if (!sourcePath.match(SOURCE_REGEX)) {
-      return;
-    }
+    const sourcePath = transform.source;
+    const targetPath = transform.target;
 
-    let target = transform.target;
-    const useRootTarget = target.match(ROOT_REGEX);
-    if (useRootTarget) {
-      target = target.replace(ROOT_REGEX, '');
-    }
-    const targetPath = buildPathSelector([target]);
-    if (!targetPath.match(SOURCE_REGEX)) {
-      return;
-    }
+    const sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    const targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
 
-    const sourceNode = useRootSource ? rootNode : resultNode;
-    const targetNode = useRootTarget ? rootNode : resultNode;
+    const value = get(sourceNode, trimStart(sourcePath, '$.'));
 
-    const value = get(sourceNode, sourcePath);
-
-    set(targetNode, targetPath, value);
+    set(targetNode, trimStart(targetPath, '$.'), value);
   } catch (e) {
     console.warn('transforms#runTransform', e, resultNode, transform);
   }

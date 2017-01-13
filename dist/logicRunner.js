@@ -7963,6 +7963,43 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
 
 var _baseClone = baseClone$1;
 
+var baseClone = _baseClone;
+
+/** Used to compose bitmasks for cloning. */
+var CLONE_SYMBOLS_FLAG = 4;
+
+/**
+ * Creates a shallow clone of `value`.
+ *
+ * **Note:** This method is loosely based on the
+ * [structured clone algorithm](https://mdn.io/Structured_clone_algorithm)
+ * and supports cloning arrays, array buffers, booleans, date objects, maps,
+ * numbers, `Object` objects, regexes, sets, strings, symbols, and typed
+ * arrays. The own enumerable properties of `arguments` objects are cloned
+ * as plain objects. An empty object is returned for uncloneable values such
+ * as error objects, functions, DOM nodes, and WeakMaps.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to clone.
+ * @returns {*} Returns the cloned value.
+ * @see _.cloneDeep
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var shallow = _.clone(objects);
+ * console.log(shallow[0] === objects[0]);
+ * // => true
+ */
+function clone$1(value) {
+  return baseClone(value, CLONE_SYMBOLS_FLAG);
+}
+
+var clone_1 = clone$1;
+
 var identity$4 = identity_1;
 
 /**
@@ -8662,17 +8699,15 @@ var extractVariables = function extractVariables(target) {
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty_1(match)) {
-      console.log(safeStringify(matches));
       return matches;
     }
 
-    matches.push(match[0]);
+    matches.push(match[1] || match[2]);
   }
 };
 
 var replaceVariables = function replaceVariables(target, variables) {
   var parsedVariables = safeParse(variables);
-  console.log("variables", safeStringify(variables));
   if (isEmpty_1(target) || isEmpty_1(parsedVariables)) {
     return target;
   }
@@ -8680,11 +8715,8 @@ var replaceVariables = function replaceVariables(target, variables) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trimStart_1(trim_1(match, '{} '), '$.'); //.replace(/%3C|%3E/g, '');
-
-    console.log('variable', variable);
+    var variable = trimStart_1(trim_1(match), '$.');
     var value = get_1(parsedVariables, variable);
-    console.log("value is", value);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp_1(match), 'g'), value);
@@ -8699,7 +8731,22 @@ var replaceVariables = function replaceVariables(target, variables) {
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
   try {
-    return replaceVariables(node, $);
+    var before = clone_1(node.before);
+    var after = clone_1(node.after);
+
+    node = replaceVariables(node, $);
+
+    if (before) {
+      node.before.assertions = before.assertions;
+      node.before.transforms = before.transforms;
+    }
+
+    if (after) {
+      node.after.assertions = after.assertions;
+      node.after.transforms = after.transforms;
+    }
+
+    return node;
   } catch (e) {
     console.log('error parsing variables:', e);
     return node;
@@ -9136,6 +9183,34 @@ var runAssertions = function runAssertions(resultNode, assertions) {
   return results;
 };
 
+var runTransform = function runTransform(rootNode, resultNode, transform) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+  try {
+    var sourcePath = transform.source;
+    var targetPath = transform.target;
+
+    var sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    var targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+
+    var value = get_1(sourceNode, trimStart_1(sourcePath, '$.'));
+
+    set_1(targetNode, trimStart_1(targetPath, '$.'), value);
+  } catch (e) {
+    console.warn('transforms#runTransform', e, resultNode, transform);
+  }
+};
+
+var runTransforms = function runTransforms(rootNode, resultNode, transforms) {
+  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+  transforms = transforms || [];
+
+  forEach_1(transforms, function (a) {
+    runTransform(rootNode, resultNode, a, options);
+  });
+};
+
 var runScript = function runScript(script, root) {
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
@@ -9201,15 +9276,9 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
 
-  // Replace variables before script
-  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
-  $.ctx.foo = 400;
-  // console.log('foo set', $.ctx.foo);
   node = replaceNodeVariables(node);
-  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   var logic = get_1(node, logicPath);
   if (!logic) {
-    console.log("No logic so return!");
     // Patch Authorization
     // patchAuthorization(node, options);
     return node;
@@ -9238,8 +9307,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   };
 
   // Run Transforms
-  // TODO: Add back
-  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
+  runTransforms($, node, logic.transforms, options);
 
   // Run Script
   var tests = {};
@@ -9249,13 +9317,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       var _input = get_1(result, 'input') || {};
       var output = get_1(result, 'output') || {};
-      // const state = cloneDeep(get(node, 'result.state') || {});
       // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, _input, output, options.logger);
       // set(node, 'result.state', state);
@@ -9271,8 +9337,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   // patchAuthorization(node, options);
 
   // Replace variables after script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  node = replaceNodeVariables(node);
 
   // Run Assertions
   var n = node;
@@ -9310,17 +9375,16 @@ var runNode = function runNode(node, options) {
   if (!node) {
     return {};
   }
-
+  // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   var result = {
     'status': 'running'
   };
 
-  runLogic(result, node, 'before', options);
+  $.steps[node.id] = result;
+  result.input = runLogic(result, node, 'before', options).input;
   if (node.input && isFunction_1(node.input.invoke)) {
-    result.input = node.input;
-    // result.output = node.input.invoke(_$cenario.session);
-    $.steps[node.id] = result;
+    result.output = node.input.invoke(_$cenario.session);
   }
   runLogic(result, node, 'after', options);
   result.status = 'completed';

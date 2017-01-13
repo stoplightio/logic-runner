@@ -99,15 +99,9 @@ export const runLogic = (result, node, logicPath, options) => {
     return {};
   }
 
-  // Replace variables before script
-  // console.log('Node before replace', JSONHelpers.safeStringify(node, 2));
-  $.ctx.foo = 400;
-  // console.log('foo set', $.ctx.foo);
   node = Variables.replaceNodeVariables(node);
-  // console.log('Node after replace', JSONHelpers.safeStringify(node, 2));
   const logic = get(node, logicPath);
   if (!logic) {
-    console.log("No logic so return!")
     // Patch Authorization
     // patchAuthorization(node, options);
     return node;
@@ -134,8 +128,7 @@ export const runLogic = (result, node, logicPath, options) => {
   };
 
   // Run Transforms
-  // TODO: Add back
-  // Transforms.runTransforms(rootResultNode, node, logic.transforms, options);
+  Transforms.runTransforms($, node, logic.transforms, options);
 
   // Run Script
   const tests = {};
@@ -145,13 +138,11 @@ export const runLogic = (result, node, logicPath, options) => {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       const input = get(result, 'input') || {};
       const output = get(result, 'output') || {};
-      // const state = cloneDeep(get(node, 'result.state') || {});
       // const resultOutput = get(rootResultNode, 'output') || {};
       scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
       // set(node, 'result.state', state);
@@ -167,8 +158,7 @@ export const runLogic = (result, node, logicPath, options) => {
   // patchAuthorization(node, options);
 
   // Replace variables after script
-  // TOOD: Add back
-  // node = Variables.replaceNodeVariables(node);
+  node = Variables.replaceNodeVariables(node);
 
   // Run Assertions
   let n = node;
