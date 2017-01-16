@@ -75,10 +75,8 @@ test('transforms > runTransform > handles a undefined target', (t) => {
   };
 
   const resultNode = {
-    response: {
-      body: {
-        foo: 5,
-      },
+    body: {
+      foo: 5,
     },
   };
 
@@ -88,7 +86,7 @@ test('transforms > runTransform > handles a undefined target', (t) => {
   };
 
   Transforms.runTransform(rootNode, resultNode, transform);
-  t.is(resultNode.ctx, {});
+  t.is(rootNode.ctx.foo, undefined);
 });
 
 test('transforms > runTransforms > handles several transforms', (t) => {
@@ -116,6 +114,6 @@ test('transforms > runTransforms > handles several transforms', (t) => {
   ];
 
   Transforms.runTransforms(rootNode, resultNode, transforms);
-  t.is(resultNode.state.boo, 5);
-  t.is(resultNode.state.boo2, 5);
+  t.is(rootNode.ctx.boo, 5);
+  t.is(rootNode.ctx.boo2, 5);
 });

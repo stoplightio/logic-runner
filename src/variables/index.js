@@ -1,5 +1,4 @@
 import isEmpty from 'lodash/isEmpty';
-import isUndefined from 'lodash/isUndefined'
 import forEach from 'lodash/forEach';
 import trim from 'lodash/trim';
 import trimStart from 'lodash/trimStart';
@@ -8,20 +7,21 @@ import uniq from 'lodash/uniq';
 import omit from 'lodash/omit';
 import escapeRegExp from 'lodash/escapeRegExp';
 import clone from 'lodash/clone';
+import replace from 'lodash/replace';
 
-import {safeParse, safeStringify} from '../utils/json';
+import { safeParse, safeStringify } from '../utils/json';
 
 export const extractVariables = (target) => {
   const toProcess = safeStringify(target);
   const matches = [];
-  const reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g)
+  const reg = new RegExp(/\{(\$\.[\[\]\.\w- ']+)\}|(\$\.[\[\]\.\w- ']+)"/g)
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
       return matches;
     }
 
-    matches.push(match[1] || match[2]);
+    matches.push(match[2] || match[0]);
   }
 };
 
@@ -34,12 +34,13 @@ export const replaceVariables = (target, variables = {}) => {
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
-    const variable = trimStart(trim(match), '$.');
+    const variable = trimStart(trim(match, '{}'), '$.');
     const value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
       } else {
+        match = replace(match, '{$.', '{\\$\\.');
         toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), value);
       }
     }
@@ -49,25 +50,20 @@ export const replaceVariables = (target, variables = {}) => {
 };
 
 export const replaceNodeVariables = (node) => {
-  try {
-    const before = clone(node.before);
-    const after = clone(node.after);
+  const before = clone(node.before);
+  const after = clone(node.after);
 
-    node = replaceVariables(node, $);
+  node = replaceVariables(node, $);
 
-    if (before) {
-      node.before.assertions = before.assertions;
-      node.before.transforms = before.transforms;
-    }
-
-    if (after) {
-      node.after.assertions = after.assertions;
-      node.after.transforms = after.transforms;
-    }
-
-    return node;
-  } catch(e) {
-    console.log('error parsing variables:', e);
-    return node;
+  if (before) {
+    node.before.assertions = before.assertions;
+    node.before.transforms = before.transforms;
   }
+
+  if (after) {
+    node.after.assertions = after.assertions;
+    node.after.transforms = after.transforms;
+  }
+
+  return node;
 };

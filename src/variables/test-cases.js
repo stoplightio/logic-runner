@@ -161,7 +161,7 @@ const buildCases = () => {
         bar: false,
       },
       expected(result) {
-        return result.foo === '{doesNotExist}';
+        return result.foo === '{$.doesNotExist}';
       },
     },
     {
