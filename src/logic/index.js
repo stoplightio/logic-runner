@@ -3,6 +3,7 @@ import set from 'lodash/set';
 import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
 import includes from 'lodash/includes';
+import forEach from 'lodash/forEach';
 import cloneDeep from 'lodash/clone';
 
 import * as Variables from '../variables/index';
@@ -138,15 +139,13 @@ export const runLogic = (result, node, logicPath, options) => {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
-      // const state = cloneDeep(get(node, 'state') || {});
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
-      // set(node, 'state', state);
     } else {
       const input = get(result, 'input') || {};
       const output = get(result, 'output') || {};
-      // const resultOutput = get(rootResultNode, 'output') || {};
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, input, output, options.logger);
-      // set(node, 'result.state', state);
     }
 
     if (includes(['skipped', 'stopped'], scriptResult.status)) {
@@ -186,6 +185,15 @@ export const runLogic = (result, node, logicPath, options) => {
 
   // Set Assertions
   set(result, `${logicPath}.assertions`, assertions);
+
+  // Set fail/pass count
+  forEach(assertions, (a) => {
+    if (a.pass) {
+      result.passCount += 1;
+    } else {
+      result.failCount += 1;
+    }
+  });
 
   // Set Logs
   set(result, 'logs', logs);

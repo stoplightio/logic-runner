@@ -14,8 +14,8 @@ var stringify = _interopDefault(require('json-stringify-safe'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
-var clone = _interopDefault(require('lodash/clone'));
 var forEach = _interopDefault(require('lodash/forEach'));
+var clone = _interopDefault(require('lodash/clone'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
 var lodash_uniq = require('lodash/uniq');
@@ -807,15 +807,13 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
-      // const state = cloneDeep(get(node, 'state') || {});
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
-      // set(node, 'state', state);
     } else {
       var _input = get(result, 'input') || {};
       var output = get(result, 'output') || {};
-      // const resultOutput = get(rootResultNode, 'output') || {};
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, _input, output, options.logger);
-      // set(node, 'result.state', state);
     }
 
     if (includes(['skipped', 'stopped'], scriptResult.status)) {
@@ -856,6 +854,15 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   // Set Assertions
   set(result, logicPath + '.assertions', assertions);
 
+  // Set fail/pass count
+  forEach(assertions, function (a) {
+    if (a.pass) {
+      result.passCount += 1;
+    } else {
+      result.failCount += 1;
+    }
+  });
+
   // Set Logs
   set(result, 'logs', logs);
 
@@ -869,7 +876,9 @@ var runNode = function runNode(node, options) {
   // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   var result = {
-    'status': 'running'
+    status: 'running',
+    failCount: 0,
+    passCount: 0
   };
 
   $.steps[node.id] = result;
@@ -879,6 +888,10 @@ var runNode = function runNode(node, options) {
   }
   runLogic(result, node, 'after', options);
   result.status = 'completed';
+
+  // Update scenario result pass/fail count.
+  $.passCount += result.passCount;
+  $.failCount += result.failCount;
 
   return node;
 };

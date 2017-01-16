@@ -10,7 +10,9 @@ export const runNode = (node, options) => {
   // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   const result = {
-    'status': 'running',
+    status: 'running',
+    failCount: 0,
+    passCount: 0,
   };
 
   $.steps[node.id] = result;
@@ -20,6 +22,10 @@ export const runNode = (node, options) => {
   }
   Logic.runLogic(result, node, 'after', options)
   result.status = 'completed';
+
+  // Update scenario result pass/fail count.
+  $.passCount += result.passCount;
+  $.failCount += result.failCount;
 
   return node;
 }

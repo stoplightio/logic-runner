@@ -7443,6 +7443,63 @@ function arrayEach$1(array, iteratee) {
 
 var _arrayEach = arrayEach$1;
 
+var identity$4 = identity_1;
+
+/**
+ * Casts `value` to `identity` if it's not a function.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {Function} Returns cast function.
+ */
+function castFunction$1(value) {
+  return typeof value == 'function' ? value : identity$4;
+}
+
+var _castFunction = castFunction$1;
+
+var arrayEach = _arrayEach;
+var baseEach$2 = _baseEach;
+var castFunction = _castFunction;
+var isArray$14 = isArray_1;
+
+/**
+ * Iterates over elements of `collection` and invokes `iteratee` for each element.
+ * The iteratee is invoked with three arguments: (value, index|key, collection).
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * **Note:** As with other "Collections" methods, objects with a "length"
+ * property are iterated like arrays. To avoid this behavior use `_.forIn`
+ * or `_.forOwn` for object iteration.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @alias each
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Array|Object} Returns `collection`.
+ * @see _.forEachRight
+ * @example
+ *
+ * _.forEach([1, 2], function(value) {
+ *   console.log(value);
+ * });
+ * // => Logs `1` then `2`.
+ *
+ * _.forEach({ 'a': 1, 'b': 2 }, function(value, key) {
+ *   console.log(key);
+ * });
+ * // => Logs 'a' then 'b' (iteration order is not guaranteed).
+ */
+function forEach(collection, iteratee) {
+  var func = isArray$14(collection) ? arrayEach : baseEach$2;
+  return func(collection, castFunction(iteratee));
+}
+
+var forEach_1 = forEach;
+
 var copyObject$2 = _copyObject;
 var keys$6 = keys_1;
 
@@ -7825,7 +7882,7 @@ function initCloneByTag$1(object, tag, cloneFunc, isDeep) {
 var _initCloneByTag = initCloneByTag$1;
 
 var Stack$4 = _Stack;
-var arrayEach = _arrayEach;
+var arrayEach$2 = _arrayEach;
 var assignValue$3 = _assignValue;
 var baseAssign = _baseAssign;
 var baseAssignIn = _baseAssignIn;
@@ -7839,7 +7896,7 @@ var getTag$3 = _getTag;
 var initCloneArray = _initCloneArray;
 var initCloneByTag = _initCloneByTag;
 var initCloneObject$2 = _initCloneObject;
-var isArray$14 = isArray_1;
+var isArray$15 = isArray_1;
 var isBuffer$4 = isBuffer_1;
 var isObject$11 = isObject_1;
 var keys$5 = keys_1;
@@ -7914,7 +7971,7 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
   if (!isObject$11(value)) {
     return value;
   }
-  var isArr = isArray$14(value);
+  var isArr = isArray$15(value);
   if (isArr) {
     result = initCloneArray(value);
     if (!isDeep) {
@@ -7950,7 +8007,7 @@ function baseClone$1(value, bitmask, customizer, key, object, stack) {
   var keysFunc = isFull ? isFlat ? getAllKeysIn : getAllKeys$2 : isFlat ? keysIn : keys$5;
 
   var props = isArr ? undefined : keysFunc(value);
-  arrayEach(props || value, function (subValue, key) {
+  arrayEach$2(props || value, function (subValue, key) {
     if (props) {
       key = subValue;
       subValue = value[key];
@@ -7999,63 +8056,6 @@ function clone$1(value) {
 }
 
 var clone_1 = clone$1;
-
-var identity$4 = identity_1;
-
-/**
- * Casts `value` to `identity` if it's not a function.
- *
- * @private
- * @param {*} value The value to inspect.
- * @returns {Function} Returns cast function.
- */
-function castFunction$1(value) {
-  return typeof value == 'function' ? value : identity$4;
-}
-
-var _castFunction = castFunction$1;
-
-var arrayEach$2 = _arrayEach;
-var baseEach$2 = _baseEach;
-var castFunction = _castFunction;
-var isArray$15 = isArray_1;
-
-/**
- * Iterates over elements of `collection` and invokes `iteratee` for each element.
- * The iteratee is invoked with three arguments: (value, index|key, collection).
- * Iteratee functions may exit iteration early by explicitly returning `false`.
- *
- * **Note:** As with other "Collections" methods, objects with a "length"
- * property are iterated like arrays. To avoid this behavior use `_.forIn`
- * or `_.forOwn` for object iteration.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @alias each
- * @category Collection
- * @param {Array|Object} collection The collection to iterate over.
- * @param {Function} [iteratee=_.identity] The function invoked per iteration.
- * @returns {Array|Object} Returns `collection`.
- * @see _.forEachRight
- * @example
- *
- * _.forEach([1, 2], function(value) {
- *   console.log(value);
- * });
- * // => Logs `1` then `2`.
- *
- * _.forEach({ 'a': 1, 'b': 2 }, function(value, key) {
- *   console.log(key);
- * });
- * // => Logs 'a' then 'b' (iteration order is not guaranteed).
- */
-function forEach(collection, iteratee) {
-  var func = isArray$15(collection) ? arrayEach$2 : baseEach$2;
-  return func(collection, castFunction(iteratee));
-}
-
-var forEach_1 = forEach;
 
 /**
  * The base implementation of `_.slice` without an iteratee call guard.
@@ -9359,15 +9359,13 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   if (!isEmpty_1(script)) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
-      // const state = cloneDeep(get(node, 'state') || {});
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
-      // set(node, 'state', state);
     } else {
       var _input = get_1(result, 'input') || {};
       var output = get_1(result, 'output') || {};
-      // const resultOutput = get(rootResultNode, 'output') || {};
+      // TODO: Figure out CTX and Env
       scriptResult = runScript(script, $.response || {}, {}, tests, _input, output, options.logger);
-      // set(node, 'result.state', state);
     }
 
     if (includes_1(['skipped', 'stopped'], scriptResult.status)) {
@@ -9408,6 +9406,15 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   // Set Assertions
   set_1(result, logicPath + '.assertions', assertions);
 
+  // Set fail/pass count
+  forEach_1(assertions, function (a) {
+    if (a.pass) {
+      result.passCount += 1;
+    } else {
+      result.failCount += 1;
+    }
+  });
+
   // Set Logs
   set_1(result, 'logs', logs);
 
@@ -9421,7 +9428,9 @@ var runNode = function runNode(node, options) {
   // TODO: handle setting state and ctx on step results so we can see the changes.
   // TODO: Figure out Scenario Results
   var result = {
-    'status': 'running'
+    status: 'running',
+    failCount: 0,
+    passCount: 0
   };
 
   $.steps[node.id] = result;
@@ -9431,6 +9440,10 @@ var runNode = function runNode(node, options) {
   }
   runLogic(result, node, 'after', options);
   result.status = 'completed';
+
+  // Update scenario result pass/fail count.
+  $.passCount += result.passCount;
+  $.failCount += result.failCount;
 
   return node;
 };
