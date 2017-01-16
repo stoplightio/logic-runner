@@ -56,12 +56,12 @@ export const replaceNodeVariables = (node) => {
   node = replaceVariables(node, $);
 
   if (before) {
-    node.before.assertions = before.assertions;
+    node.before.script = before.script;
     node.before.transforms = before.transforms;
   }
 
   if (after) {
-    node.after.assertions = after.assertions;
+    node.after.script = after.script;
     node.after.transforms = after.transforms;
   }
 

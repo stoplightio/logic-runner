@@ -2,6 +2,13 @@ import test from 'ava';
 import * as Variables from '.';
 import cases from './test-cases';
 
+test.before(t => {
+  global.$ = {
+    foo: 'bar',
+    bar: 'dog',
+  };
+});
+
 test('variables > replaceVariables > handles undefined input', (t) => {
   const result = Variables.replaceVariables();
   t.deepEqual(result, undefined);
@@ -29,26 +36,26 @@ const newNode = () => {
       name: '{$.foo}',
     },
     before: {
-      script: '{$}'
+      script: '{$.foo}',
+      transforms: '{$.foo}',
     },
     after: {
-      script: '{$}'
+      script: '{$.foo}',
+      transforms: '{$.foo}',
     }
   };
 };
 
-test('variables > replaceVariables > replaces variables', (t) => {
+test('variables > replaceNodeVariables > replaces variables', (t) => {
   let node = newNode();
-  node = Variables.replaceVariables(node, {
-    foo: 'bar',
-  });
+  node = Variables.replaceNodeVariables(node);
   t.is(node.input.name, 'bar');
   t.is(node.steps[0].name, 'bar');
   t.is(node.children[0].name, 'bar');
   t.is(node.functions[0].name, 'bar');
 });
 
-test('variables > replaceVariables > replaces nested variables', (t) => {
+test('variables > replaceNodeVariables > replaces nested variables', (t) => {
   let node = {
     input: {
       body: {
@@ -57,20 +64,20 @@ test('variables > replaceVariables > replaces nested variables', (t) => {
     },
   };
 
-  node = Variables.replaceVariables(node, {
-    bar: 'dog',
-  });
+  node = Variables.replaceNodeVariables(node);
   t.is(node.input.body.foo, 'dog');
 });
 
-test('variables > replaceNodeVariables > skips before logic', (t) => {
+test('variables > replaceNodeVariables > skips before logic for scripting and transforms', (t) => {
   let node = newNode();
   node = Variables.replaceNodeVariables(node);
-  t.is(node.before.script, '{$}');
+  t.is(node.before.script, '{$.foo}');
+  t.is(node.before.transforms, '{$.foo}');
 });
 
-test('variables > replaceNodeVariables > skips after logic', (t) => {
+test('variables > replaceNodeVariables > skips after logic for scripting and transforms', (t) => {
   let node = newNode();
   node = Variables.replaceNodeVariables(node);
-  t.is(node.after.script, '{$}');
+  t.is(node.after.script, '{$.foo}');
+  t.is(node.after.transforms, '{$.foo}');
 });

@@ -1,6 +1,10 @@
 import test from 'ava';
 import * as Logic from '.';
 
+test.beforeEach(t => {
+  global.$ = {};
+});
+
 test('logic > runLogic > handles undefined node', (t) => {
   const result = Logic.runLogic({}, );
   t.deepEqual(result, {});
@@ -120,8 +124,11 @@ test('logic > runLogic > runs after transforms', (t) => {
 });
 
 test('logic > runLogic > runs after root transforms', (t) => {
-  // TODO: Figure out how to expose the $ object.
-  let $ = {};
+  $ = {
+    response: {
+      body: {},
+    },
+  };
   let node = {
     after: {
       transforms: [
@@ -146,11 +153,16 @@ test('logic > runLogic > runs after root transforms', (t) => {
 });
 
 test('logic > runLogic > replaces variables before script is run', (t) => {
+  $ = {
+    ctx: {
+      bar: 'dog',
+    },
+  };
   let node = {
+    before: {},
     input: {
       body: {
-        foo: '{input.body.bar}',
-        bar: 'dog',
+        foo: '{$.ctx.bar}',
       },
     },
   };
@@ -160,22 +172,24 @@ test('logic > runLogic > replaces variables before script is run', (t) => {
 });
 
 test('logic > runLogic > replaces variables after script is run', (t) => {
+  $ = {
+    ctx: {
+      bar: 'dog',
+      valueWithVar: '{$.ctx.dogName}',
+      dogName: 'bart',
+    }
+  }
   let node = {
     input: {
       body: {
-        foo: '{state.bar}',
+        foo: '{$.ctx.bar}',
       },
     },
     before: {
       transforms: [{
-        source: 'state.valueWithVar',
+        source: '$.ctx.valueWithVar',
         target: 'input.body.dog',
       }],
-    },
-    state: {
-      bar: 'dog',
-      valueWithVar: '{state.dogName}',
-      dogName: 'bart',
     },
   };
 
