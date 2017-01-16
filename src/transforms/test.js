@@ -3,148 +3,119 @@ import * as Transforms from '.';
 
 test('transforms > runTransform > handles a simple transform', (t) => {
   const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
+    output: {
+      body: {
+        foo: 5,
       },
     },
   };
 
   const transform = {
-    sourceLocation: 'result.output',
-    sourcePath: 'response.body.foo',
-    targetLocation: 'state',
-    targetPath: 'foo',
+    source: 'output.body.foo',
+    target: 'output.headers.foo',
   };
 
   Transforms.runTransform({}, resultNode, transform);
-  t.is(resultNode.state.foo, 5);
+  t.is(resultNode.output.headers.foo, 5);
 });
 
 test('transforms > runTransform > handles setting on root', (t) => {
   const rootNode = {
-    result: {
-      state: {},
-      output: {},
+    response: {
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: {},
+      status: 200,
     },
   };
 
   const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
+    output: {
+      body: {
+        foo: 5,
       },
     },
   };
 
   const transform = {
-    sourceLocation: 'result.output',
-    sourcePath: 'response.body',
-    targetLocation: 'root.result.output',
-    targetPath: 'response.body',
+    source: 'output.body',
+    target: '$.response.body',
   };
 
   Transforms.runTransform(rootNode, resultNode, transform);
-  t.is(rootNode.result.output.response.body.foo, 5);
+  t.is(rootNode.response.body.foo, 5);
 });
 
 test('transforms > runTransform > handles getting from root', (t) => {
   const rootNode = {
-    result: {
-      state: {
-        foo: 'bar',
-      },
-      output: {},
+    ctx: {
+      foo: 'bar',
     },
   };
 
   const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {},
-        },
-      },
+    output: {
+      body: {},
     },
   };
 
   const transform = {
-    sourceLocation: 'root.result.state',
-    sourcePath: 'foo',
-    targetLocation: 'result.output',
-    targetPath: 'response.body.foo',
+    source: '$.ctx.foo',
+    target: 'output.body.foo',
   };
 
   Transforms.runTransform(rootNode, resultNode, transform);
-  t.is(resultNode.result.output.response.body.foo, 'bar');
+  t.is(resultNode.output.body.foo, 'bar');
 });
 
 test('transforms > runTransform > handles a undefined target', (t) => {
+  const rootNode = {
+    ctx: {},
+  };
+
   const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
+    response: {
+      body: {
+        foo: 5,
       },
     },
   };
 
   const transform = {
-    sourceLocation: 'result.output',
-    sourcePath: 'response.body.foo',
-    targetLocation: 'state',
-    targetPath: 'boo',
+    source: 'output.body.foo',
+    target: '$.ctx.foo',
   };
 
-  Transforms.runTransform({}, resultNode, transform);
-  t.is(resultNode.state.foo, undefined);
+  Transforms.runTransform(rootNode, resultNode, transform);
+  t.is(resultNode.ctx, {});
 });
 
 test('transforms > runTransforms > handles several transforms', (t) => {
+  const rootNode = {
+    ctx: {},
+  };
+
   const resultNode = {
-    result: {
-      state: {},
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
+    output: {
+      body: {
+        foo: 5,
       },
     },
   };
 
   const transforms = [
     {
-      sourceLocation: 'result.output',
-      sourcePath: 'response.body.foo',
-      targetLocation: 'state',
-      targetPath: 'boo',
+      source: 'output.body.foo',
+      target: '$.ctx.boo',
     },
     {
-      sourceLocation: 'result.output',
-      sourcePath: 'response.body.foo',
-      targetLocation: 'state',
-      targetPath: 'boo2',
+      source: 'output.body.foo',
+      target: '$.ctx.boo2',
     },
   ];
 
-  Transforms.runTransforms({}, resultNode, transforms);
+  Transforms.runTransforms(rootNode, resultNode, transforms);
   t.is(resultNode.state.boo, 5);
   t.is(resultNode.state.boo2, 5);
 });

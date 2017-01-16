@@ -99,14 +99,14 @@ export const runLogic = (result, node, logicPath, options) => {
     return {};
   }
   // TODO: Order Transforms, script, replace/parse variables, assertions
-
-  node = Variables.replaceNodeVariables(node);
   const logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
     patchAuthorization(node, options);
     return node;
   }
+
+  node = Variables.replaceNodeVariables(node);
 
   // Init Logs
   const logs = get(result, 'logs') || [];
@@ -139,13 +139,13 @@ export const runLogic = (result, node, logicPath, options) => {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       const input = get(result, 'input') || {};
       const output = get(result, 'output') || {};
       // const resultOutput = get(rootResultNode, 'output') || {};
-      scriptResult = runScript(script, $.response, {}, tests, input, output, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, input, output, options.logger);
       // set(node, 'result.state', state);
     }
 

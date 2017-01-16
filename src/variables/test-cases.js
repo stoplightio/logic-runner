@@ -3,7 +3,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles simple variable',
       target: {
-        foo: '<<bar>>',
+        foo: '{$.bar}',
       },
       variables: {
         bar: 'cat',
@@ -15,7 +15,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles curly brackets',
       target: {
-        foo: '{bar}',
+        foo: '{$.bar}',
       },
       variables: {
         bar: 'cat',
@@ -27,7 +27,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles nested curly brackets',
       target: {
-        foo: '{bar.name}',
+        foo: '{$.bar.name}',
       },
       variables: {
         bar: {
@@ -65,7 +65,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > does not replace curly deep javascript',
       target: {
-        foo: '{foo: {"bar": 123, "cat": {test}}}',
+        foo: '{foo: {"bar": 123, "cat": {$.test}}}',
       },
       variables: {
         test: 123,
@@ -77,19 +77,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles nested stringified json',
       target: {
-        foo: '{"foo": "<<bar>>"}',
-      },
-      variables: {
-        bar: 'cat',
-      },
-      expected(result) {
-        return result.foo === '{"foo": "cat"}';
-      },
-    },
-    {
-      name: 'replaceVariables > handles urlencoded carets',
-      target: {
-        foo: '{"foo": "%3C%3Cbar%3E%3E"}',
+        foo: '{"foo": "{$.bar}"}',
       },
       variables: {
         bar: 'cat',
@@ -101,21 +89,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles path selectors',
       target: {
-        foo: '<<bar.name>>',
-      },
-      variables: {
-        bar: {
-          name: 'cat',
-        },
-      },
-      expected(result) {
-        return result.foo === 'cat';
-      },
-    },
-    {
-      name: 'replaceVariables > handles path selectors when required',
-      target: {
-        foo: '<<!bar.name>>',
+        foo: '{$.bar.name}',
       },
       variables: {
         bar: {
@@ -129,7 +103,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles path selectors with arrays',
       target: {
-        foo: '<<bar[0].name>>',
+        foo: '{$.bar[0].name}',
       },
       variables: {
         bar: [
@@ -145,7 +119,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles solo non-string variables',
       target: {
-        foo: '<<bar>>',
+        foo: '{$.bar}',
       },
       variables: {
         bar: 5,
@@ -157,7 +131,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles embedded non-string variables',
       target: {
-        foo: '{"url": "http://example.com/<<bar>>"}',
+        foo: '{"url": "http://example.com/{$.bar}"}',
       },
       variables: {
         bar: 5,
@@ -169,19 +143,7 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles falsey',
       target: {
-        foo: '<<bar>>',
-      },
-      variables: {
-        bar: false,
-      },
-      expected(result) {
-        return result.foo === false;
-      },
-    },
-    {
-      name: 'replaceVariables > handles required',
-      target: {
-        foo: '<<!bar>>',
+        foo: '{$.bar}',
       },
       variables: {
         bar: false,
@@ -193,19 +155,19 @@ const buildCases = () => {
     {
       name: 'replaceVariables > handles variables that do not exist',
       target: {
-        foo: '<<!doesNotExist>>',
+        foo: '{$.doesNotExist}',
       },
       variables: {
         bar: false,
       },
       expected(result) {
-        return result.foo === '<<!doesNotExist>>';
+        return result.foo === '{doesNotExist}';
       },
     },
     {
       name: 'replaceVariables > handles stringified variables',
       target: {
-        foo: '<<bar>>',
+        foo: '{$.bar}',
       },
       variables: JSON.stringify({
         bar: false,
@@ -226,7 +188,7 @@ const buildCases = () => {
     },
     {
       name: 'replaceVariables > replaces multiple occurrences',
-      target: '<<foo>>is<<foo>>',
+      target: '{$.foo}is{$.foo}',
       variables: JSON.stringify({
         foo: 'cat',
       }),
@@ -236,7 +198,7 @@ const buildCases = () => {
     },
     {
       name: 'replaceVariables > replaces variables that end in 3',
-      target: 'foo is <<bar3>>',
+      target: 'foo is {$.bar3}',
       variables: JSON.stringify({
         bar3: 'cat',
       }),
@@ -246,7 +208,7 @@ const buildCases = () => {
     },
     {
       name: 'replaceVariables > handles variable values with a space',
-      target: '<<foo>> are <<bar>>',
+      target: '{$.foo} are {$.bar}',
       variables: JSON.stringify({
         foo: 'dogs',
         bar: 'better than cats',

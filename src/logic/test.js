@@ -19,23 +19,19 @@ test('logic > runLogic > handles undefined logic', (t) => {
 test('logic > runLogic > runs before assertions', (t) => {
   let node = {
     input: {
-      request: {
-        body: {
-          foo: 5,
-        },
-      },
+      body: {
+        foo: 5,
+      }
     },
     before: {
       assertions: [
         {
-          location: 'input.request',
-          target: 'body.foo',
+          target: 'input.body.foo',
           op: 'eq',
           expected: 5,
         },
         {
-          location: 'input.request',
-          target: 'body.foo',
+          target: 'input.body.foo',
           op: 'lt',
           expected: 4,
         },
@@ -43,32 +39,22 @@ test('logic > runLogic > runs before assertions', (t) => {
     },
   };
 
-  node = Logic.runLogic({}, node, 'before');
-  t.is(node.before.assertions[0].result.pass, true);
-  t.is(node.before.assertions[1].result.pass, false);
+  let result = {};
+  Logic.runLogic(result, node, 'before');
+  t.is(result.before.assertions[0].pass, true);
+  t.is(result.before.assertions[1].pass, false);
 });
 test('logic > runLogic > runs after assertions', (t) => {
   let node = {
-    result: {
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
-      },
-    },
     after: {
       assertions: [
         {
-          location: 'result.output.response',
-          target: 'body.foo',
+          target: 'output.body.foo',
           op: 'eq',
           expected: 5,
         },
         {
-          location: 'result.output.response',
-          target: 'body.foo',
+          target: 'output.body.foo',
           op: 'lt',
           expected: 4,
         },
@@ -76,139 +62,126 @@ test('logic > runLogic > runs after assertions', (t) => {
     },
   };
 
-  node = Logic.runLogic({}, node, 'after');
-  t.is(node.after.assertions[0].result.pass, true);
-  t.is(node.after.assertions[1].result.pass, false);
+  let result = {
+    input: {},
+    output: {
+      body: {
+        foo: 5,
+      },
+    },
+  };
+
+  Logic.runLogic(result, node, 'after');
+  t.is(result.after.assertions[0].pass, true);
+  t.is(result.after.assertions[1].pass, false);
 });
 
 test('logic > runLogic > runs before transforms', (t) => {
   let node = {
     input: {
-      request: {
-        body: {
-          foo: 5,
-        },
+      body: {
+        foo: 5,
       },
     },
     before: {
       transforms: [
         {
-          sourceLocation: 'input.request.body',
-          sourcePath: 'foo',
-          targetLocation: 'state',
-          targetPath: 'boo2',
+          source: 'input.body.foo',
+          target: 'input.method',
         },
       ],
     },
   };
 
   node = Logic.runLogic({}, node, 'before');
-  t.is(node.state.boo2, 5);
+  t.is(node.input.method, 5);
 });
 test('logic > runLogic > runs after transforms', (t) => {
   let node = {
-    result: {
-      output: {
-        response: {
-          body: {
-            foo: 5,
-          },
-        },
-      },
-    },
     after: {
       transforms: [
         {
-          sourceLocation: 'result.output',
-          sourcePath: 'response.body.foo',
-          targetLocation: 'result.state',
-          targetPath: 'boo2',
+          source: 'output.body.foo',
+          target: 'output.headers.boo2',
         },
       ],
     },
   };
 
-  node = Logic.runLogic({}, node, 'after');
-  t.is(node.result.state.boo2, 5);
+  let result = {
+    output: {
+      body: {
+        foo: 5,
+      },
+    },
+  };
+  Logic.runLogic(result, node, 'after');
+  t.is(result.output.headers.boo2, 5);
 });
 
 test('logic > runLogic > runs after root transforms', (t) => {
+  // TODO: Figure out how to expose the $ object.
+  let $ = {};
   let node = {
-    result: {
-      output: {
-        response: {
-          body: {
-            car: 'nissan',
-          },
-        },
-      },
-    },
     after: {
       transforms: [
         {
-          sourceLocation: 'result.output',
-          sourcePath: 'response.body.car',
-          targetLocation: 'root.output',
-          targetPath: 'response.body.foo',
+          source: 'output.body.car',
+          target: '$.response.body.foo',
         },
       ],
     },
   };
 
-  const rootResult = {
+  let result = {
     output: {
-      response: {},
+      body: {
+        car: 'nissan',
+      },
     },
   };
 
-  node = Logic.runLogic(rootResult, node, 'after');
-  t.is(rootResult.output.response.body.foo, 'nissan');
+  Logic.runLogic(result, node, 'after');
+  t.is($.response.body.foo, 'nissan');
 });
 
 test('logic > runLogic > replaces variables before script is run', (t) => {
   let node = {
     input: {
-      request: {
-        body: {
-          foo: '<<bar>>',
-        },
+      body: {
+        foo: '{input.body.bar}',
+        bar: 'dog',
       },
-    },
-    state: {
-      bar: 'dog',
     },
   };
 
   node = Logic.runLogic({}, node, 'before');
-  t.is(node.input.request.body.foo, 'dog');
+  t.is(node.input.body.foo, 'dog');
 });
 
 test('logic > runLogic > replaces variables after script is run', (t) => {
   let node = {
     input: {
-      request: {
-        body: {
-          foo: '<<bar>>',
-        },
+      body: {
+        foo: '{state.bar}',
       },
     },
     before: {
       transforms: [{
-        sourceLocation: 'state',
-        sourcePath: 'valueWithVar',
-        targetLocation: 'input.request',
-        targetPath: 'body.dog',
+        source: 'state.valueWithVar',
+        target: 'input.body.dog',
       }],
     },
     state: {
       bar: 'dog',
-      valueWithVar: '<<dogName>>',
+      valueWithVar: '{state.dogName}',
       dogName: 'bart',
     },
   };
 
+
   node = Logic.runLogic({}, node, 'before');
-  t.is(node.input.request.body.dog, 'bart');
+  t.is(node.input.body.dog, 'bart');
 });
 
 // TODO: Can't run script tests right now because of strict mode

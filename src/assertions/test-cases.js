@@ -18,15 +18,13 @@ const buildCases = () => {
       name: 'eq > handles pass',
       resultNode: {
         output: {
-          response: {
-            body: {
+          body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'eq',
         expected: 'bar',
       },
@@ -38,15 +36,13 @@ const buildCases = () => {
       name: 'eq > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar2',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'eq',
         expected: 'bar',
       },
@@ -61,15 +57,13 @@ const buildCases = () => {
       name: 'ne > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'ne',
         expected: 'bar2',
       },
@@ -81,15 +75,13 @@ const buildCases = () => {
       name: 'ne > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'ne',
         expected: 'bar',
       },
@@ -104,15 +96,13 @@ const buildCases = () => {
       name: 'exists > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'exists',
       },
       expected(result) {
@@ -123,15 +113,13 @@ const buildCases = () => {
       name: 'exists > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.bar',
+        target: 'output.body.bar',
         op: 'exists',
       },
       expected(result) {
@@ -142,15 +130,13 @@ const buildCases = () => {
       name: 'exists > handles checking non-existence',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'exists',
         expected: false,
       },
@@ -165,15 +151,13 @@ const buildCases = () => {
       name: 'contains > handles pass with string',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'my string',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'contains',
         expected: 'my',
       },
@@ -185,15 +169,13 @@ const buildCases = () => {
       name: 'contains > handles pass with array',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: ['my', 'string'],
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'contains',
         expected: 'my',
       },
@@ -205,15 +187,13 @@ const buildCases = () => {
       name: 'contains > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'bar',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.bar',
+        target: 'output.body.bar',
         op: 'contains',
         expected: 'my',
       },
@@ -228,15 +208,13 @@ const buildCases = () => {
       name: 'gt > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gt',
         expected: 3,
       },
@@ -248,15 +226,13 @@ const buildCases = () => {
       name: 'gt > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gt',
         expected: 5,
       },
@@ -268,15 +244,13 @@ const buildCases = () => {
       name: 'gt > handles non numeric',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'foo',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gt',
         expected: 5,
       },
@@ -291,15 +265,13 @@ const buildCases = () => {
       name: 'gte > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gte',
         expected: 5,
       },
@@ -311,15 +283,13 @@ const buildCases = () => {
       name: 'gte > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gte',
         expected: 6,
       },
@@ -331,15 +301,13 @@ const buildCases = () => {
       name: 'gte > handles non numeric',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'foo',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'gte',
         expected: 5,
       },
@@ -354,15 +322,13 @@ const buildCases = () => {
       name: 'lt > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lt',
         expected: 6,
       },
@@ -374,15 +340,13 @@ const buildCases = () => {
       name: 'lt > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lt',
         expected: 5,
       },
@@ -394,15 +358,13 @@ const buildCases = () => {
       name: 'lt > handles non numeric',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'foo',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lt',
         expected: 5,
       },
@@ -417,15 +379,13 @@ const buildCases = () => {
       name: 'lte > handles pass',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lte',
         expected: 5,
       },
@@ -437,15 +397,13 @@ const buildCases = () => {
       name: 'lte > handles fail',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 5,
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lte',
         expected: 4,
       },
@@ -457,15 +415,13 @@ const buildCases = () => {
       name: 'lte > handles non numeric',
       resultNode: {
         output: {
-          response: {
             body: {
               foo: 'foo',
-            },
           },
         },
       },
       assertion: {
-        target: 'output.response.body.foo',
+        target: 'output.body.foo',
         op: 'lte',
         expected: 5,
       },
@@ -490,7 +446,7 @@ const buildCases = () => {
       name: 'validate.pass > validate errors correctly if schema is bad',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.pass',
       },
       options: {
@@ -504,7 +460,7 @@ const buildCases = () => {
       name: 'validate.pass > handles pass',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.pass',
         expected: {type: 'object'},
       },
@@ -521,7 +477,7 @@ const buildCases = () => {
       name: 'validate.pass > handles fail',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.pass',
         expected: {type: 'object'},
       },
@@ -543,7 +499,7 @@ const buildCases = () => {
       name: 'validate.contract > handles pass',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.contract',
         expected: {type: 'object'},
       },
@@ -563,7 +519,7 @@ const buildCases = () => {
       name: 'validate > handles pass',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate',
         expected: {type: 'object'},
       },
@@ -593,7 +549,7 @@ const buildCases = () => {
       name: 'validate.fail > handles pass',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.fail',
         expected: {type: 'object'},
       },
@@ -612,7 +568,7 @@ const buildCases = () => {
       name: 'validate.fail > handles fail',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'validate.fail',
         expected: {type: 'object'},
       },
@@ -632,7 +588,7 @@ const buildCases = () => {
       name: 'unknown op throws error',
       resultNode: {},
       assertion: {
-        target: 'output.response.body',
+        target: 'output.body',
         op: 'foo',
       },
       expected(result) {

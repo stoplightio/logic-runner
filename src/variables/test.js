@@ -9,7 +9,7 @@ test('variables > replaceVariables > handles undefined input', (t) => {
 
 for (const c of cases) {
   test(`variables > ${c.name}`, (t) => {
-    const result = Variables.replaceVariables(c.target, c.variables, c.options);
+    const result = Variables.replaceVariables(c.target, c.variables);
     t.true(c.expected(result));
   });
 }
@@ -17,61 +17,60 @@ for (const c of cases) {
 const newNode = () => {
   return {
     steps: [{
-      name: '<<foo>>',
+      name: '{$.foo}',
     }],
     children: [{
-      name: '<<foo>>',
+      name: '{$.foo}',
     }],
     functions: [{
-      name: '<<foo>>',
+      name: '{$.foo}',
     }],
     input: {
-      name: '<<foo>>',
+      name: '{$.foo}',
     },
-    state: {
-      foo: 'bar',
+    before: {
+      script: '{$}'
     },
+    after: {
+      script: '{$}'
+    }
   };
 };
 
-test('variables > replaceNodeVariables > replaces variables', (t) => {
+test('variables > replaceVariables > replaces variables', (t) => {
   let node = newNode();
-  node = Variables.replaceNodeVariables(node);
+  node = Variables.replaceVariables(node, {
+    foo: 'bar',
+  });
   t.is(node.input.name, 'bar');
+  t.is(node.steps[0].name, 'bar');
+  t.is(node.children[0].name, 'bar');
+  t.is(node.functions[0].name, 'bar');
 });
 
-test('variables > replaceNodeVariables > replaces nested variables', (t) => {
+test('variables > replaceVariables > replaces nested variables', (t) => {
   let node = {
     input: {
-      request: {
-        body: {
-          foo: '<<bar>>',
-        },
+      body: {
+        foo: '{$.bar}',
       },
-    },
-    state: {
-      bar: 'dog',
     },
   };
 
-  node = Variables.replaceNodeVariables(node);
-  t.is(node.input.request.body.foo, 'dog');
+  node = Variables.replaceVariables(node, {
+    bar: 'dog',
+  });
+  t.is(node.input.body.foo, 'dog');
 });
 
-test('variables > replaceNodeVariables > skips steps', (t) => {
+test('variables > replaceNodeVariables > skips before logic', (t) => {
   let node = newNode();
   node = Variables.replaceNodeVariables(node);
-  t.is(node.steps[0].name, '<<foo>>');
+  t.is(node.before.script, '{$}');
 });
 
-test('variables > replaceNodeVariables > skips functions', (t) => {
+test('variables > replaceNodeVariables > skips after logic', (t) => {
   let node = newNode();
   node = Variables.replaceNodeVariables(node);
-  t.is(node.functions[0].name, '<<foo>>');
-});
-
-test('variables > replaceNodeVariables > skips children', (t) => {
-  let node = newNode();
-  node = Variables.replaceNodeVariables(node);
-  t.is(node.children[0].name, '<<foo>>');
+  t.is(node.after.script, '{$}');
 });

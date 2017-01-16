@@ -15,30 +15,28 @@ test('assertions > runAssertions > handles null assertions', (t) => {
 test('assertions > runAssertions > runs an assertion', (t) => {
   const resultNode = {
     output: {
-      response: {
-        body: {
-          foo: 5,
-        },
+      body: {
+        foo: 5,
       },
     },
   };
 
   const assertions = [
     {
-      target: 'output.response.body.foo',
+      target: 'output.body.foo',
       op: 'eq',
       expected: 5,
     },
     {
-      target: 'output.response.body.foo',
+      target: 'output.body.foo',
       op: 'lt',
       expected: 4,
     },
   ];
 
   const result = Assertions.runAssertions(resultNode, assertions);
-  t.is(result[0].result.pass, true);
-  t.is(result[1].result.pass, false);
+  t.is(result[0].pass, true);
+  t.is(result[1].pass, false);
 });
 
 for (const c of cases) {

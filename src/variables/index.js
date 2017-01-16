@@ -1,4 +1,5 @@
 import isEmpty from 'lodash/isEmpty';
+import isUndefined from 'lodash/isUndefined'
 import forEach from 'lodash/forEach';
 import trim from 'lodash/trim';
 import trimStart from 'lodash/trimStart';
@@ -13,7 +14,7 @@ import {safeParse, safeStringify} from '../utils/json';
 export const extractVariables = (target) => {
   const toProcess = safeStringify(target);
   const matches = [];
-  const reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g)
+  const reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g)
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
@@ -24,7 +25,7 @@ export const extractVariables = (target) => {
   }
 };
 
-export const replaceVariables = (target, variables) => {
+export const replaceVariables = (target, variables = {}) => {
   const parsedVariables = safeParse(variables);
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;

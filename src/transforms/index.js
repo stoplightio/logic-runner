@@ -9,7 +9,7 @@ export const runTransform = (rootNode, resultNode, transform, options = {}) => {
     const targetPath = transform.target;
 
     const sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
-    const targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    const targetNode = targetPath.charAt(0) === '$' ? rootNode : resultNode;
 
     const value = get(sourceNode, trimStart(sourcePath, '$.'));
 

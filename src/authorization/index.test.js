@@ -88,10 +88,8 @@ test('authorization > generateOAuth1 > do not overwrite existing query string pa
 test('authorization > generateAuthPatch:basicAuth > set authorization header', (t) => {
   const authNode = {
     type: 'basic',
-    basic: {
-      username: 'foo',
-      password: 'bar',
-    },
+    username: 'foo',
+    password: 'bar'
   };
   const request = {
     headers: {},
@@ -103,10 +101,8 @@ test('authorization > generateAuthPatch:basicAuth > set authorization header', (
 test('authorization > generateAuthPatch:basicAuth > do not overwrite existing authorization header', (t) => {
   const authNode = {
     type: 'basic',
-    basic: {
-      username: 'foo',
-      password: 'bar',
-    },
+    username: 'foo',
+    password: 'bar'
   };
   const request = {
     headers: {
