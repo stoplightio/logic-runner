@@ -15,6 +15,7 @@ var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var clone = _interopDefault(require('lodash/clone'));
+var isUndefined = _interopDefault(require('lodash/isUndefined'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
@@ -23,7 +24,6 @@ var lodash_omit = require('lodash/omit');
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
-var isUndefined = _interopDefault(require('lodash/isUndefined'));
 var gt = _interopDefault(require('lodash/gt'));
 var gte = _interopDefault(require('lodash/gte'));
 var lt = _interopDefault(require('lodash/lt'));
@@ -442,7 +442,7 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 var extractVariables = function extractVariables(target) {
   var toProcess = safeStringify(target);
   var matches = [];
-  var reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g);
+  var reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g);
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
@@ -453,7 +453,9 @@ var extractVariables = function extractVariables(target) {
   }
 };
 
-var replaceVariables = function replaceVariables(target, variables) {
+var replaceVariables = function replaceVariables(target) {
+  var variables = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
   var parsedVariables = safeParse(variables);
   if (isEmpty(target) || isEmpty(parsedVariables)) {
     return target;
@@ -483,7 +485,6 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
 
     node = replaceVariables(node, $);
 
-    // TODO: Add test case for making sure before and after transforms/scripts don't get
     if (before) {
       node.before.assertions = before.assertions;
       node.before.transforms = before.transforms;
@@ -669,7 +670,7 @@ var runTransform = function runTransform(rootNode, resultNode, transform) {
     var targetPath = transform.target;
 
     var sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
-    var targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    var targetNode = targetPath.charAt(0) === '$' ? rootNode : resultNode;
 
     var value = get(sourceNode, trimStart(sourcePath, '$.'));
 
@@ -768,14 +769,14 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
   // TODO: Order Transforms, script, replace/parse variables, assertions
-
-  node = replaceNodeVariables(node);
   var logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
     patchAuthorization(node, options);
     return node;
   }
+
+  node = replaceNodeVariables(node);
 
   // Init Logs
   var logs = get(result, 'logs') || [];
@@ -810,13 +811,13 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       var _input = get(result, 'input') || {};
       var output = get(result, 'output') || {};
       // const resultOutput = get(rootResultNode, 'output') || {};
-      scriptResult = runScript(script, $.response, {}, tests, _input, output, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, _input, output, options.logger);
       // set(node, 'result.state', state);
     }
 

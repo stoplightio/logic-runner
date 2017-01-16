@@ -8000,6 +8000,29 @@ function clone$1(value) {
 
 var clone_1 = clone$1;
 
+/**
+ * Checks if `value` is `undefined`.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `undefined`, else `false`.
+ * @example
+ *
+ * _.isUndefined(void 0);
+ * // => true
+ *
+ * _.isUndefined(null);
+ * // => false
+ */
+function isUndefined(value) {
+  return value === undefined;
+}
+
+var isUndefined_1 = isUndefined;
+
 var identity$4 = identity_1;
 
 /**
@@ -8695,7 +8718,7 @@ var escapeRegExp_1 = escapeRegExp;
 var extractVariables = function extractVariables(target) {
   var toProcess = safeStringify(target);
   var matches = [];
-  var reg = new RegExp(/\{(\$.[\[\]\.\w- ']+)\}|(\$.[\[\]\.\w- ']+)"/g);
+  var reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g);
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty_1(match)) {
@@ -8706,7 +8729,9 @@ var extractVariables = function extractVariables(target) {
   }
 };
 
-var replaceVariables = function replaceVariables(target, variables) {
+var replaceVariables = function replaceVariables(target) {
+  var variables = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
   var parsedVariables = safeParse(variables);
   if (isEmpty_1(target) || isEmpty_1(parsedVariables)) {
     return target;
@@ -8736,7 +8761,6 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
 
     node = replaceVariables(node, $);
 
-    // TODO: Add test case for making sure before and after transforms/scripts don't get
     if (before) {
       node.before.assertions = before.assertions;
       node.before.transforms = before.transforms;
@@ -8833,29 +8857,6 @@ function isNumber(value) {
 }
 
 var isNumber_1 = isNumber;
-
-/**
- * Checks if `value` is `undefined`.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is `undefined`, else `false`.
- * @example
- *
- * _.isUndefined(void 0);
- * // => true
- *
- * _.isUndefined(null);
- * // => false
- */
-function isUndefined(value) {
-  return value === undefined;
-}
-
-var isUndefined_1 = isUndefined;
 
 /**
  * The base implementation of `_.gt` which doesn't coerce arguments.
@@ -9192,7 +9193,7 @@ var runTransform = function runTransform(rootNode, resultNode, transform) {
     var targetPath = transform.target;
 
     var sourceNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
-    var targetNode = sourcePath.charAt(0) === '$' ? rootNode : resultNode;
+    var targetNode = targetPath.charAt(0) === '$' ? rootNode : resultNode;
 
     var value = get_1(sourceNode, trimStart_1(sourcePath, '$.'));
 
@@ -9291,14 +9292,14 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
   // TODO: Order Transforms, script, replace/parse variables, assertions
-
-  node = replaceNodeVariables(node);
   var logic = get_1(node, logicPath);
   if (!logic) {
     // Patch Authorization
     patchAuthorization(node, options);
     return node;
   }
+
+  node = replaceNodeVariables(node);
 
   // Init Logs
   var logs = get_1(result, 'logs') || [];
@@ -9333,13 +9334,13 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
       // const state = cloneDeep(get(node, 'state') || {});
-      scriptResult = runScript(script, $.response, {}, tests, input, {}, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
       // set(node, 'state', state);
     } else {
       var _input = get_1(result, 'input') || {};
       var output = get_1(result, 'output') || {};
       // const resultOutput = get(rootResultNode, 'output') || {};
-      scriptResult = runScript(script, $.response, {}, tests, _input, output, options.logger);
+      scriptResult = runScript(script, $.response || {}, {}, tests, _input, output, options.logger);
       // set(node, 'result.state', state);
     }
 
