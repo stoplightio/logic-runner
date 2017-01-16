@@ -16,7 +16,7 @@ export const extractVariables = (target) => {
   const matches = [];
   const reg = new RegExp(/\{(\$\.[\[\]\.\w- ']+)\}|(\$\.[\[\]\.\w- ']+)"/g)
   while (true) {
-    var match = reg.exec(toProcess);
+    const match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
       return matches;
     }

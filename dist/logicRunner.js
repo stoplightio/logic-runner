@@ -8000,29 +8000,6 @@ function clone$1(value) {
 
 var clone_1 = clone$1;
 
-/**
- * Checks if `value` is `undefined`.
- *
- * @static
- * @since 0.1.0
- * @memberOf _
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is `undefined`, else `false`.
- * @example
- *
- * _.isUndefined(void 0);
- * // => true
- *
- * _.isUndefined(null);
- * // => false
- */
-function isUndefined(value) {
-  return value === undefined;
-}
-
-var isUndefined_1 = isUndefined;
-
 var identity$4 = identity_1;
 
 /**
@@ -8715,17 +8692,47 @@ function escapeRegExp(string) {
 
 var escapeRegExp_1 = escapeRegExp;
 
+var toString$6 = toString_1;
+
+/**
+ * Replaces matches for `pattern` in `string` with `replacement`.
+ *
+ * **Note:** This method is based on
+ * [`String#replace`](https://mdn.io/String/replace).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category String
+ * @param {string} [string=''] The string to modify.
+ * @param {RegExp|string} pattern The pattern to replace.
+ * @param {Function|string} replacement The match replacement.
+ * @returns {string} Returns the modified string.
+ * @example
+ *
+ * _.replace('Hi Fred', 'Fred', 'Barney');
+ * // => 'Hi Barney'
+ */
+function replace$1() {
+  var args = arguments,
+      string = toString$6(args[0]);
+
+  return args.length < 3 ? string : string.replace(args[1], args[2]);
+}
+
+var replace_1 = replace$1;
+
 var extractVariables = function extractVariables(target) {
   var toProcess = safeStringify(target);
   var matches = [];
-  var reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g);
+  var reg = new RegExp(/\{(\$\.[\[\]\.\w- ']+)\}|(\$\.[\[\]\.\w- ']+)"/g);
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty_1(match)) {
       return matches;
     }
 
-    matches.push(match[1] || match[2]);
+    matches.push(match[2] || match[0]);
   }
 };
 
@@ -8740,12 +8747,13 @@ var replaceVariables = function replaceVariables(target) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trimStart_1(trim_1(match), '$.');
+    var variable = trimStart_1(trim_1(match, '{}'), '$.');
     var value = get_1(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp_1(match), 'g'), value);
       } else {
+        match = replace_1(match, '{$.', '{\\$\\.');
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
       }
     }
@@ -8755,27 +8763,22 @@ var replaceVariables = function replaceVariables(target) {
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
-  try {
-    var before = clone_1(node.before);
-    var after = clone_1(node.after);
+  var before = clone_1(node.before);
+  var after = clone_1(node.after);
 
-    node = replaceVariables(node, $);
+  node = replaceVariables(node, $);
 
-    if (before) {
-      node.before.assertions = before.assertions;
-      node.before.transforms = before.transforms;
-    }
-
-    if (after) {
-      node.after.assertions = after.assertions;
-      node.after.transforms = after.transforms;
-    }
-
-    return node;
-  } catch (e) {
-    console.log('error parsing variables:', e);
-    return node;
+  if (before) {
+    node.before.assertions = before.assertions;
+    node.before.transforms = before.transforms;
   }
+
+  if (after) {
+    node.after.assertions = after.assertions;
+    node.after.transforms = after.transforms;
+  }
+
+  return node;
 };
 
 var VariableHelpers = Object.freeze({
@@ -8857,6 +8860,29 @@ function isNumber(value) {
 }
 
 var isNumber_1 = isNumber;
+
+/**
+ * Checks if `value` is `undefined`.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `undefined`, else `false`.
+ * @example
+ *
+ * _.isUndefined(void 0);
+ * // => true
+ *
+ * _.isUndefined(null);
+ * // => false
+ */
+function isUndefined(value) {
+  return value === undefined;
+}
+
+var isUndefined_1 = isUndefined;
 
 /**
  * The base implementation of `_.gt` which doesn't coerce arguments.

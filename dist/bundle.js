@@ -15,15 +15,16 @@ var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var clone = _interopDefault(require('lodash/clone'));
-var isUndefined = _interopDefault(require('lodash/isUndefined'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
 var lodash_uniq = require('lodash/uniq');
 var lodash_omit = require('lodash/omit');
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
+var replace = _interopDefault(require('lodash/replace'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
+var isUndefined = _interopDefault(require('lodash/isUndefined'));
 var gt = _interopDefault(require('lodash/gt'));
 var gte = _interopDefault(require('lodash/gte'));
 var lt = _interopDefault(require('lodash/lt'));
@@ -442,14 +443,14 @@ var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
 var extractVariables = function extractVariables(target) {
   var toProcess = safeStringify(target);
   var matches = [];
-  var reg = new RegExp(/\{(\$[\[\]\.\w- ']+)\}|(\$[\[\]\.\w- ']+)"/g);
+  var reg = new RegExp(/\{(\$\.[\[\]\.\w- ']+)\}|(\$\.[\[\]\.\w- ']+)"/g);
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
       return matches;
     }
 
-    matches.push(match[1] || match[2]);
+    matches.push(match[2] || match[0]);
   }
 };
 
@@ -464,12 +465,13 @@ var replaceVariables = function replaceVariables(target) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach(matches, function (match) {
-    var variable = trimStart(trim(match), '$.');
+    var variable = trimStart(trim(match, '{}'), '$.');
     var value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
       } else {
+        match = replace(match, '{$.', '{\\$\\.');
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
       }
     }
@@ -479,27 +481,22 @@ var replaceVariables = function replaceVariables(target) {
 };
 
 var replaceNodeVariables = function replaceNodeVariables(node) {
-  try {
-    var before = clone(node.before);
-    var after = clone(node.after);
+  var before = clone(node.before);
+  var after = clone(node.after);
 
-    node = replaceVariables(node, $);
+  node = replaceVariables(node, $);
 
-    if (before) {
-      node.before.assertions = before.assertions;
-      node.before.transforms = before.transforms;
-    }
-
-    if (after) {
-      node.after.assertions = after.assertions;
-      node.after.transforms = after.transforms;
-    }
-
-    return node;
-  } catch (e) {
-    console.log('error parsing variables:', e);
-    return node;
+  if (before) {
+    node.before.assertions = before.assertions;
+    node.before.transforms = before.transforms;
   }
+
+  if (after) {
+    node.after.assertions = after.assertions;
+    node.after.transforms = after.transforms;
+  }
+
+  return node;
 };
 
 var VariableHelpers = Object.freeze({
