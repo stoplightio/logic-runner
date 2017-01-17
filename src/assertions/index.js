@@ -9,6 +9,8 @@ import gt from 'lodash/gt';
 import gte from 'lodash/gte';
 import lt from 'lodash/lt';
 import lte from 'lodash/lte';
+import trim from 'lodash/trim';
+import trimStart from 'lodash/trimStart';
 
 import {buildPathSelector} from '../utils/strings';
 import {safeParse, safeStringify} from '../utils/json';
@@ -41,8 +43,13 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
       validate,
     } = options;
 
-    const targetPath = buildPathSelector([assertion.target]);
-    const value = get(resultNode, targetPath);
+    const targetPath = trim(buildPathSelector([assertion.target]));
+    let value;
+    if (targetPath.charAt(0) === '$' ) {
+      value = get($, trimStart(targetPath, '$.'));
+    } else {
+      value = get(resultNode, targetPath);
+    }
 
     try {
       switch (assertion.op) {

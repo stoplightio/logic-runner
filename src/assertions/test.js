@@ -2,6 +2,10 @@ import test from 'ava';
 import * as Assertions from '.';
 import cases from './test-cases';
 
+test.beforeEach(t => {
+  global.$ = {};
+});
+
 test('assertions > runAssertions > handles undefined assertions', (t) => {
   const result = Assertions.runAssertions();
   t.deepEqual(result, []);

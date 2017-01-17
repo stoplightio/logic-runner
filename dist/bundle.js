@@ -541,8 +541,13 @@ var runAssertion = function runAssertion(resultNode, assertion) {
     var validate = options.validate;
 
 
-    var targetPath = buildPathSelector([assertion.target]);
-    var value = get(resultNode, targetPath);
+    var targetPath = trim(buildPathSelector([assertion.target]));
+    var value = void 0;
+    if (targetPath.charAt(0) === '$') {
+      value = get($, trimStart(targetPath, '$.'));
+    } else {
+      value = get(resultNode, targetPath);
+    }
 
     try {
       switch (assertion.op) {
