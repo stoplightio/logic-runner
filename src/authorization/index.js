@@ -6,8 +6,8 @@ import HmacSHA256 from 'crypto-js/hmac-sha256';
 import EncBASE64 from 'crypto-js/enc-base64';
 
 import Base64 from '../utils/base64';
-import {setQuery} from '../utils/query';
-import {safeStringify} from '../utils/json';
+import { setQuery } from '../utils/query';
+import { safeStringify } from '../utils/json';
 
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
 
@@ -18,10 +18,8 @@ export const generateBasicAuth = (username, password, options) => {
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
 
   return {
-    request: {
-      headers: {
-        Authorization: `Basic ${string}`,
-      },
+    headers: {
+      Authorization: `Basic ${string}`,
     },
   };
 };
@@ -53,7 +51,7 @@ const hashFunction = (method, encode, options) => {
 export const generateOAuth1 = (data, request, options) => {
   options = options || {};
 
-  const patch = {};
+  let patch = {};
   if (data.useHeader && has(request, 'headers.Authorization')) {
     return patch;
   }
@@ -96,15 +94,15 @@ export const generateOAuth1 = (data, request, options) => {
   if (data.useHeader) {
     // add to the header
     const headerPatch = oauth.toHeader(authPatch);
-    patch.request = {
+    patch = {
       headers: {
         Authorization: headerPatch.Authorization,
       },
     };
   } else {
     // add to the query string
-    patch.request = {
-      url: setQuery(request.url, authPatch, {preserve: true}),
+    patch = {
+      url: setQuery(request.url, authPatch, { preserve: true }),
     };
   }
 
@@ -114,7 +112,7 @@ export const generateOAuth1 = (data, request, options) => {
 export const generateAws = (data, request, options) => {
   options = options || {};
 
-  const patch = {};
+  let patch = {};
 
   if (!options.signAws) {
     console.warn('authorization/generateAws signAws function not supplied!');
@@ -140,7 +138,7 @@ export const generateAws = (data, request, options) => {
   });
 
   // add to the header
-  patch.request = {
+  patch = {
     headers,
   };
 

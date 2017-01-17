@@ -18,7 +18,7 @@ export const runNode = (node, options) => {
   $.steps[node.id] = result;
   result.input = Logic.runLogic(result, node, 'before', options).input;
   if (node.input && isFunction(node.input.invoke)) {
-    result.output = node.input.invoke(_$cenario.session);
+    result.output = node.input.invoke(_$cenario.session, result.input);
   }
   Logic.runLogic(result, node, 'after', options)
   result.status = 'completed';

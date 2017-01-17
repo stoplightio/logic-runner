@@ -6814,10 +6814,8 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
 
   return {
-    request: {
-      headers: {
-        Authorization: 'Basic ' + string
-      }
+    headers: {
+      Authorization: 'Basic ' + string
     }
   };
 };
@@ -6892,14 +6890,14 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
   if (data.useHeader) {
     // add to the header
     var headerPatch = oauth.toHeader(authPatch);
-    patch.request = {
+    patch = {
       headers: {
         Authorization: headerPatch.Authorization
       }
     };
   } else {
     // add to the query string
-    patch.request = {
+    patch = {
       url: setQuery(request.url, authPatch, { preserve: true })
     };
   }
@@ -6935,7 +6933,7 @@ var generateAws = function generateAws(data, request, options) {
   });
 
   // add to the header
-  patch.request = {
+  patch = {
     headers: headers
   };
 
@@ -8747,13 +8745,13 @@ var replaceVariables = function replaceVariables(target) {
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
-    var variable = trimStart_1(trim_1(match, '{}'), '$.');
+    var variable = trimStart_1(trim_1(match, '{} '), '$.');
     var value = get_1(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
         toProcess = toProcess.replace(new RegExp(escapeRegExp_1(match), 'g'), value);
       } else {
-        match = replace_1(match, '{$.', '{\\$\\.');
+        match = replace_1(match, '$.', '\\$\\.');
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), value);
       }
     }
@@ -8769,11 +8767,21 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
   node = replaceVariables(node, $);
 
   if (before) {
+    if (typeof before.assertions != 'undefined') {
+      forEach_1(before.assertions, function (a, i) {
+        node.before[i].target = a.target;
+      });
+    }
     node.before.script = before.script;
     node.before.transforms = before.transforms;
   }
 
   if (after) {
+    if (typeof after.assertions != 'undefined') {
+      forEach_1(after.assertions, function (a, i) {
+        node.after[i].target = a.target;
+      });
+    }
     node.after.script = after.script;
     node.after.transforms = after.transforms;
   }
@@ -9317,6 +9325,8 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   if (!node) {
     return {};
   }
+
+  node = replaceNodeVariables(node);
   // TODO: Order Transforms, script, replace/parse variables, assertions
   var logic = get_1(node, logicPath);
   if (!logic) {
@@ -9324,8 +9334,6 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     patchAuthorization(node, options);
     return node;
   }
-
-  node = replaceNodeVariables(node);
 
   // Init Logs
   var logs = get_1(result, 'logs') || [];
@@ -9436,7 +9444,7 @@ var runNode = function runNode(node, options) {
   $.steps[node.id] = result;
   result.input = runLogic(result, node, 'before', options).input;
   if (node.input && isFunction_1(node.input.invoke)) {
-    result.output = node.input.invoke(_$cenario.session);
+    result.output = node.input.invoke(_$cenario.session, result.input);
   }
   runLogic(result, node, 'after', options);
   result.status = 'completed';

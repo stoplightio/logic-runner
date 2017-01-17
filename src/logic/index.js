@@ -99,6 +99,8 @@ export const runLogic = (result, node, logicPath, options) => {
   if (!node) {
     return {};
   }
+
+  node = Variables.replaceNodeVariables(node);
   // TODO: Order Transforms, script, replace/parse variables, assertions
   const logic = get(node, logicPath);
   if (!logic) {
@@ -106,8 +108,6 @@ export const runLogic = (result, node, logicPath, options) => {
     patchAuthorization(node, options);
     return node;
   }
-
-  node = Variables.replaceNodeVariables(node);
 
   // Init Logs
   const logs = get(result, 'logs') || [];
