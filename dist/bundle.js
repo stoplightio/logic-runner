@@ -485,21 +485,17 @@ var replaceNodeVariables = function replaceNodeVariables(node) {
   node = replaceVariables(node, $);
 
   if (before) {
-    if (typeof before.assertions != 'undefined') {
-      forEach(before.assertions, function (a, i) {
-        node.before[i].target = a.target;
-      });
-    }
+    forEach(before.assertions, function (a, i) {
+      node.before.assertions[i].target = a.target;
+    });
     node.before.script = before.script;
     node.before.transforms = before.transforms;
   }
 
   if (after) {
-    if (typeof after.assertions != 'undefined') {
-      forEach(after.assertions, function (a, i) {
-        node.after[i].target = a.target;
-      });
-    }
+    forEach(after.assertions, function (a, i) {
+      node.after.assertions[i].target = a.target;
+    });
     node.after.script = after.script;
     node.after.transforms = after.transforms;
   }
