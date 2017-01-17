@@ -117,3 +117,31 @@ test('transforms > runTransforms > handles several transforms', (t) => {
   t.is(rootNode.ctx.boo, 5);
   t.is(rootNode.ctx.boo2, 5);
 });
+
+test('transforms > runTransforms > handle array', (t) => {
+  const rootNode = {
+    ctx: {
+      results: [
+        'step1',
+        'step2'
+      ]
+    },
+  };
+
+  const resultNode = {
+    output: {
+      body: {
+      },
+    },
+  };
+
+  const transforms = [
+    {
+      source: '$.ctx.results',
+      target: 'output.body.results',
+    },
+  ];
+
+  Transforms.runTransforms(rootNode, resultNode, transforms);
+  t.deepEqual(resultNode.output.body.results, ['step1', 'step2']);
+});

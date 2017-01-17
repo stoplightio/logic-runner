@@ -11,6 +11,12 @@ import replace from 'lodash/replace';
 
 import { safeParse, safeStringify } from '../utils/json';
 
+function compareVariableMatch(a,b) {
+  if (a.charAt(0) === '{' && b.charAt(0) !== '{') return -1;
+  if (a.charAt(0) !== '{' && b.charAt(0) === '{') return 1;
+  return 0;
+}
+
 export const extractVariables = (target) => {
   const toProcess = safeStringify(target);
   const matches = [];
@@ -18,10 +24,10 @@ export const extractVariables = (target) => {
   while (true) {
     const match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
-      return uniq(matches);
+      return uniq(matches).sort(compareVariableMatch);
     }
 
-    matches.push(match[2] || match[0]);
+    matches.push(match[1] ? match[0] : match[2]);
   }
 };
 
@@ -38,10 +44,10 @@ export const replaceVariables = (target, variables = {}) => {
     const value = get(parsedVariables, variable);
     if (typeof value !== 'undefined') {
       if (typeof value === 'string') {
-        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), value);
+        toProcess = toProcess.replace(new RegExp(escapeRegExp(match), 'g'), safeStringify(value));
       } else {
-        match = replace(match, '$.', '\\$\\.');
-        toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), value);
+        match = replace(match, '$.', '\\$\.');
+        toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), safeStringify(value));
       }
     }
   });

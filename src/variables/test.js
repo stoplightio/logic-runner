@@ -6,6 +6,13 @@ test.before(t => {
   global.$ = {
     foo: 'bar',
     bar: 'dog',
+    ctx: {
+      todoId: 1234,
+      results: [
+        'step1',
+        'step2',
+      ]
+    },
   };
 });
 
@@ -80,4 +87,32 @@ test('variables > replaceNodeVariables > skips after logic for scripting and tra
   node = Variables.replaceNodeVariables(node);
   t.is(node.after.script, '{$.foo}');
   t.is(node.after.transforms, '{$.foo}');
+});
+
+test('variables > replaceNodeVariables > replace for assertions', (t) => {
+  let node = {
+    after: {
+      assertions: [{
+          target: "$.ctx.todoId",
+          op: "eq",
+          expected: "{$.ctx.todoId}"
+        },
+      ],
+    }
+  };
+  node = Variables.replaceNodeVariables(node);
+  t.is(node.after.assertions[0].expected, 1234);
+});
+
+test('variables > replaceNodeVariables > replace array variable', (t) => {
+  let node = {
+    input: {
+      body: {
+        results: '{$.ctx.results}',
+      },
+    },
+  };
+
+  node = Variables.replaceNodeVariables(node);
+  t.deepEqual(node.input.body.results, ['step1', 'step2']);
 });
