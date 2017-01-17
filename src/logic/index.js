@@ -100,11 +100,11 @@ export const runLogic = (result, node, logicPath, options) => {
     return {};
   }
 
-  node = Variables.replaceNodeVariables(node);
   // TODO: Order Transforms, script, replace/parse variables, assertions
-  const logic = get(node, logicPath);
+  let logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
+    node = Variables.replaceNodeVariables(node);
     patchAuthorization(node, options);
     return node;
   }
@@ -131,7 +131,8 @@ export const runLogic = (result, node, logicPath, options) => {
 
   // Run Transforms
   Transforms.runTransforms($, logicPath === 'before' ? node:result, logic.transforms, options);
-
+  node = Variables.replaceNodeVariables(node);
+  logic = get(node, logicPath);
   // Run Script
   const tests = {};
   const script = logic.script;
@@ -159,6 +160,7 @@ export const runLogic = (result, node, logicPath, options) => {
 
   // Replace variables after script
   node = Variables.replaceNodeVariables(node);
+  logic = get(node, logicPath);
 
   // Run Assertions
   let n = node;

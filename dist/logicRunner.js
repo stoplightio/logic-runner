@@ -8429,6 +8429,91 @@ var setToArray$3 = _setToArray;
 var LARGE_ARRAY_SIZE$1 = 200;
 
 /**
+ * The base implementation of `_.uniqBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee] The iteratee invoked per element.
+ * @param {Function} [comparator] The comparator invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ */
+function baseUniq$1(array, iteratee, comparator) {
+  var index = -1,
+      includes = arrayIncludes,
+      length = array.length,
+      isCommon = true,
+      result = [],
+      seen = result;
+
+  if (comparator) {
+    isCommon = false;
+    includes = arrayIncludesWith;
+  } else if (length >= LARGE_ARRAY_SIZE$1) {
+    var set = iteratee ? null : createSet(array);
+    if (set) {
+      return setToArray$3(set);
+    }
+    isCommon = false;
+    includes = cacheHas$2;
+    seen = new SetCache$2();
+  } else {
+    seen = iteratee ? [] : result;
+  }
+  outer: while (++index < length) {
+    var value = array[index],
+        computed = iteratee ? iteratee(value) : value;
+
+    value = comparator || value !== 0 ? value : 0;
+    if (isCommon && computed === computed) {
+      var seenIndex = seen.length;
+      while (seenIndex--) {
+        if (seen[seenIndex] === computed) {
+          continue outer;
+        }
+      }
+      if (iteratee) {
+        seen.push(computed);
+      }
+      result.push(value);
+    } else if (!includes(seen, computed, comparator)) {
+      if (seen !== result) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+  }
+  return result;
+}
+
+var _baseUniq = baseUniq$1;
+
+var baseUniq = _baseUniq;
+
+/**
+ * Creates a duplicate-free version of an array, using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons, in which only the first occurrence of each element
+ * is kept. The order of result values is determined by the order they occur
+ * in the array.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @returns {Array} Returns the new duplicate free array.
+ * @example
+ *
+ * _.uniq([2, 1, 2]);
+ * // => [2, 1]
+ */
+function uniq(array) {
+  return array && array.length ? baseUniq(array) : [];
+}
+
+var uniq_1 = uniq;
+
+/**
  * Gets the last element of `array`.
  *
  * @static
@@ -8727,7 +8812,7 @@ var extractVariables = function extractVariables(target) {
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty_1(match)) {
-      return matches;
+      return uniq_1(matches);
     }
 
     matches.push(match[2] || match[0]);
@@ -9327,11 +9412,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
 
-  node = replaceNodeVariables(node);
   // TODO: Order Transforms, script, replace/parse variables, assertions
   var logic = get_1(node, logicPath);
   if (!logic) {
     // Patch Authorization
+    node = replaceNodeVariables(node);
     patchAuthorization(node, options);
     return node;
   }
@@ -9360,7 +9445,8 @@ var runLogic = function runLogic(result, node, logicPath, options) {
 
   // Run Transforms
   runTransforms($, logicPath === 'before' ? node : result, logic.transforms, options);
-
+  node = replaceNodeVariables(node);
+  logic = get_1(node, logicPath);
   // Run Script
   var tests = {};
   var script = logic.script;
@@ -9388,6 +9474,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
 
   // Replace variables after script
   node = replaceNodeVariables(node);
+  logic = get_1(node, logicPath);
 
   // Run Assertions
   var n = node;
@@ -9443,8 +9530,20 @@ var runNode = function runNode(node, options) {
   };
 
   $.steps[node.id] = result;
-  result.input = runLogic(result, node, 'before', options).input;
+
+  var invoke = void 0;
   if (node.input && isFunction_1(node.input.invoke)) {
+    invoke = node.input.invoke;
+  }
+
+  node = runLogic(result, node, 'before', options);
+
+  if (invoke) {
+    node.input.invoke = invoke;
+  }
+  result.input = node.input;
+
+  if (invoke) {
     result.output = node.input.invoke(_$cenario.session, result.input);
   }
   runLogic(result, node, 'after', options);

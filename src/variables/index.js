@@ -18,7 +18,7 @@ export const extractVariables = (target) => {
   while (true) {
     const match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
-      return matches;
+      return uniq(matches);
     }
 
     matches.push(match[2] || match[0]);

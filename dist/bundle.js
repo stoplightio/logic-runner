@@ -18,7 +18,7 @@ var forEach = _interopDefault(require('lodash/forEach'));
 var clone = _interopDefault(require('lodash/clone'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
-var lodash_uniq = require('lodash/uniq');
+var uniq = _interopDefault(require('lodash/uniq'));
 var lodash_omit = require('lodash/omit');
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
 var replace = _interopDefault(require('lodash/replace'));
@@ -445,7 +445,7 @@ var extractVariables = function extractVariables(target) {
   while (true) {
     var match = reg.exec(toProcess);
     if (!match || isEmpty(match)) {
-      return matches;
+      return uniq(matches);
     }
 
     matches.push(match[2] || match[0]);
@@ -775,11 +775,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
     return {};
   }
 
-  node = replaceNodeVariables(node);
   // TODO: Order Transforms, script, replace/parse variables, assertions
   var logic = get(node, logicPath);
   if (!logic) {
     // Patch Authorization
+    node = replaceNodeVariables(node);
     patchAuthorization(node, options);
     return node;
   }
@@ -808,7 +808,8 @@ var runLogic = function runLogic(result, node, logicPath, options) {
 
   // Run Transforms
   runTransforms($, logicPath === 'before' ? node : result, logic.transforms, options);
-
+  node = replaceNodeVariables(node);
+  logic = get(node, logicPath);
   // Run Script
   var tests = {};
   var script = logic.script;
@@ -836,6 +837,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
 
   // Replace variables after script
   node = replaceNodeVariables(node);
+  logic = get(node, logicPath);
 
   // Run Assertions
   var n = node;
@@ -891,8 +893,20 @@ var runNode = function runNode(node, options) {
   };
 
   $.steps[node.id] = result;
-  result.input = runLogic(result, node, 'before', options).input;
+
+  var invoke = void 0;
   if (node.input && isFunction(node.input.invoke)) {
+    invoke = node.input.invoke;
+  }
+
+  node = runLogic(result, node, 'before', options);
+
+  if (invoke) {
+    node.input.invoke = invoke;
+  }
+  result.input = node.input;
+
+  if (invoke) {
     result.output = node.input.invoke(_$cenario.session, result.input);
   }
   runLogic(result, node, 'after', options);
