@@ -89,7 +89,7 @@ test('variables > replaceNodeVariables > skips after logic for scripting and tra
   t.is(node.after.transforms, '{$.foo}');
 });
 
-test('variables > replaceNodeVariables > replace for assertions', (t) => {
+test('variables > replaceNodeVariables > replace more specific first', (t) => {
   let node = {
     after: {
       assertions: [{
