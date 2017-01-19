@@ -894,6 +894,8 @@ var runNode = function runNode(node, options) {
   // TODO: Figure out Scenario Results
   var result = {
     status: 'running',
+    name: node.name,
+    type: node.type,
     failCount: 0,
     passCount: 0
   };
@@ -905,6 +907,7 @@ var runNode = function runNode(node, options) {
     invoke = node.input.invoke;
   }
 
+  var start = Date.now();
   node = runLogic(result, node, 'before', options);
 
   if (invoke) {
@@ -916,8 +919,9 @@ var runNode = function runNode(node, options) {
     result.output = node.input.invoke(_$cenario.session, result.input);
   }
   runLogic(result, node, 'after', options);
-  result.status = 'completed';
 
+  result.status = 'completed';
+  result.time = Date.now() - start;
   // Update scenario result pass/fail count.
   $.passCount += result.passCount;
   $.failCount += result.failCount;
