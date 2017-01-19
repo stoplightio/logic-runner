@@ -4,7 +4,6 @@ import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
 import includes from 'lodash/includes';
 import forEach from 'lodash/forEach';
-import cloneDeep from 'lodash/clone';
 
 import * as Variables from '../variables/index';
 import * as Assertions from '../assertions/index';
@@ -120,7 +119,7 @@ export const runLogic = (result, node, logicPath, options) => {
       }
 
       const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m));
-      print(cleanMessages);
+      // print(cleanMessages);
       logs.push({
         type,
         source: [logicPath].concat(context || []).join('.'),

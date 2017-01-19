@@ -15,12 +15,12 @@ var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
 var includes = _interopDefault(require('lodash/includes'));
 var forEach = _interopDefault(require('lodash/forEach'));
-var clone = _interopDefault(require('lodash/clone'));
 var trim = _interopDefault(require('lodash/trim'));
 var trimStart = _interopDefault(require('lodash/trimStart'));
 var uniq = _interopDefault(require('lodash/uniq'));
 var lodash_omit = require('lodash/omit');
 var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
+var clone = _interopDefault(require('lodash/clone'));
 var replace = _interopDefault(require('lodash/replace'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
 var isNumber = _interopDefault(require('lodash/isNumber'));
@@ -803,7 +803,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
       var cleanMessages = messages.map(function (m) {
         return safeStringify(m);
       });
-      print(cleanMessages);
+      // print(cleanMessages);
       logs.push({
         type: type,
         source: [logicPath].concat(context || []).join('.'),
@@ -890,8 +890,7 @@ var runNode = function runNode(node, options) {
   if (!node) {
     return {};
   }
-  // TODO: handle setting state and ctx on step results so we can see the changes.
-  // TODO: Figure out Scenario Results
+
   var result = {
     status: 'running',
     name: node.name,
@@ -899,9 +898,9 @@ var runNode = function runNode(node, options) {
     failCount: 0,
     passCount: 0
   };
-
   $.steps[node.id] = result;
 
+  // TODO: Update how we do invoke, pass it in options so we don't have to copy it.
   var invoke = void 0;
   if (node.input && isFunction(node.input.invoke)) {
     invoke = node.input.invoke;
@@ -920,8 +919,12 @@ var runNode = function runNode(node, options) {
   }
   runLogic(result, node, 'after', options);
 
+  result.ctx = clone($.ctx);
+  result.env = clone($.env);
+
   result.status = 'completed';
   result.time = Date.now() - start;
+
   // Update scenario result pass/fail count.
   $.passCount += result.passCount;
   $.failCount += result.failCount;

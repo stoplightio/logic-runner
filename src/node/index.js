@@ -1,14 +1,13 @@
 import isFunction from 'lodash/isFunction';
+import clone from 'lodash/clone';
 
 import * as Logic from '../logic/index';
-import * as JSONHelpers from '../utils/json';
 
 export const runNode = (node, options) => {
   if (!node) {
     return {};
   }
-  // TODO: handle setting state and ctx on step results so we can see the changes.
-  // TODO: Figure out Scenario Results
+
   const result = {
     status: 'running',
     name: node.name,
@@ -16,9 +15,9 @@ export const runNode = (node, options) => {
     failCount: 0,
     passCount: 0,
   };
-
   $.steps[node.id] = result;
 
+  // TODO: Update how we do invoke, pass it in options so we don't have to copy it.
   let invoke;
   if (node.input && isFunction(node.input.invoke)) {
     invoke = node.input.invoke;
@@ -37,8 +36,12 @@ export const runNode = (node, options) => {
   }
   Logic.runLogic(result, node, 'after', options)
 
+  result.ctx = clone($.ctx);
+  result.env = clone($.env);
+
   result.status = 'completed';
   result.time = Date.now() - start;
+
   // Update scenario result pass/fail count.
   $.passCount += result.passCount;
   $.failCount += result.failCount;
