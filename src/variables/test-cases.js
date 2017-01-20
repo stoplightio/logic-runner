@@ -223,7 +223,9 @@ const buildCases = () => {
         foo: '{$.ctx.bar}',
       },
       variables: {
-        bar: 'cat',
+        ctx: {
+          bar: 'cat',
+        },
       },
       expected(result) {
         return result.foo === 'cat';
@@ -235,7 +237,9 @@ const buildCases = () => {
         foo: '{$.env.bar}',
       },
       variables: {
-        bar: 'cat',
+        env: {
+          bar: 'cat',
+        },
       },
       expected(result) {
         return result.foo === 'cat';
