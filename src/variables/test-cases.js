@@ -217,6 +217,30 @@ const buildCases = () => {
         return result === 'dogs are better than cats';
       },
     },
+    {
+      name: 'replaceVariables > handles ctx variable',
+      target: {
+        foo: '{$.ctx.bar}',
+      },
+      variables: {
+        bar: 'cat',
+      },
+      expected(result) {
+        return result.foo === 'cat';
+      },
+    },
+    {
+      name: 'replaceVariables > handles env variable',
+      target: {
+        foo: '{$.env.bar}',
+      },
+      variables: {
+        bar: 'cat',
+      },
+      expected(result) {
+        return result.foo === 'cat';
+      },
+    },
   ];
 };
 
