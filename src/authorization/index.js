@@ -16,7 +16,6 @@ export const generateBasicAuth = (username, password, options) => {
 
   let string = [username, password].join(':');
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
-
   return {
     headers: {
       Authorization: `Basic ${string}`,

@@ -14,6 +14,16 @@ test('authorization > generateBasicAuth > set correct authorization header', (t)
   t.deepEqual(result, expected);
 });
 
+test('authorization > generateBasicAuth > set correct authorization header for learning:learning', (t) => {
+  const result = Authorization.generateBasicAuth('learning', 'learning');
+  const expected = {
+    headers: {
+      Authorization: 'Basic bGVhcm5pbmc6bGVhcm5pbmc=',
+    },
+  };
+  t.deepEqual(result, expected);
+});
+
 const oauthData = () => {
   return {
     oauth: {

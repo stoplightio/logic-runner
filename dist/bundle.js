@@ -92,7 +92,7 @@ var Base64 = {
     return t;
   },
   _utf8_encode: function _utf8_encode(e) {
-    e = e.replace(/rn/g, "n");
+    e = e.replace(/n/g, "n");
     var t = "";
     for (var n = 0; n < e.length; n++) {
       var r = e.charCodeAt(n);
@@ -277,7 +277,6 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
 
   var string = [username, password].join(':');
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
-
   return {
     headers: {
       Authorization: 'Basic ' + string
