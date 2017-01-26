@@ -3731,7 +3731,7 @@ var Base64 = {
     return t;
   },
   _utf8_encode: function _utf8_encode(e) {
-    e = e.replace(/n/g, "n");
+    e = e.replace(/\r\n/g, '\n');
     var t = "";
     for (var n = 0; n < e.length; n++) {
       var r = e.charCodeAt(n);

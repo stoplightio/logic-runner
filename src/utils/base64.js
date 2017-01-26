@@ -54,7 +54,7 @@ const Base64 = {
     return t
   },
   _utf8_encode(e) {
-    e = e.replace(/n/g, "n");
+    e = e.replace(/\r\n/g,'\n');
     let t = "";
     for (let n = 0; n < e.length; n++) {
       let r = e.charCodeAt(n);
