@@ -914,7 +914,7 @@ var runNode = function runNode(node, options) {
   result.input = node.input;
 
   if (invoke) {
-    result.output = node.input.invoke(_$cenario.session, result.input);
+    result.output = node.input.invoke(_$cenario.session, result.input, $.env, $.ctx);
   }
   runLogic(result, node, 'after', options);
 
