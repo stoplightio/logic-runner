@@ -32,7 +32,7 @@ export const runNode = (node, options) => {
   result.input = node.input;
 
   if (invoke) {
-    result.output = node.input.invoke(_$cenario.session, result.input, $.env, $.ctx);
+    result.output = node.input.invoke(_$cenario.session, $.env, $.ctx);
   }
   Logic.runLogic(result, node, 'after', options);
 
