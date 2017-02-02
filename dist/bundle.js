@@ -341,7 +341,7 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
 
   var requestToAuthorize = {
     url: request.url,
-    method: request.method.toUpperCase(),
+    method: (request.method || 'get').toUpperCase(),
     data: request.body
   };
   var authPatch = oauth.authorize(requestToAuthorize, token);
@@ -384,13 +384,13 @@ var generateAws = function generateAws(data, request, options) {
   }
 
   var requestToAuthorize = _extends({}, request, {
-    method: request.method.toUpperCase(),
+    method: (request.method || 'get').toUpperCase(),
     body: safeStringify(request.body) || '',
     service: data.service,
     region: data.region
   });
 
-  var headers = options.signAws(requestToAuthorize, {
+  var newRequest = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken
@@ -398,13 +398,14 @@ var generateAws = function generateAws(data, request, options) {
 
   // add to the header
   patch = {
-    headers: headers
+    headers: newRequest.headers
   };
 
   return patch;
 };
 
 var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
+  console.log(authNode, request, options);
   options = options || {};
   var patch = {};
 

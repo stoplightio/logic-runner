@@ -81,7 +81,6 @@
     "lodash": "4.x.x"
   },
   "dependencies": {
-    "aws4": "1.5.x",
     "crypto-js": "3.x.x",
     "json-stringify-safe": "5.0.x",
     "oauth-1.0a": "2.x.x",

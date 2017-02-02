@@ -80,7 +80,7 @@ export const generateOAuth1 = (data, request, options) => {
 
   const requestToAuthorize = {
     url: request.url,
-    method: request.method.toUpperCase(),
+    method: (request.method || 'get').toUpperCase(),
     data: request.body,
   };
   const authPatch = oauth.authorize(requestToAuthorize, token);
@@ -124,13 +124,13 @@ export const generateAws = (data, request, options) => {
 
   const requestToAuthorize = {
     ...request,
-    method: request.method.toUpperCase(),
+    method: (request.method || 'get').toUpperCase(),
     body: safeStringify(request.body) || '',
     service: data.service,
     region: data.region,
   };
 
-  const headers = options.signAws(requestToAuthorize, {
+  const newRequest = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken,
@@ -138,13 +138,14 @@ export const generateAws = (data, request, options) => {
 
   // add to the header
   patch = {
-    headers,
+    headers: newRequest.headers,
   };
 
   return patch;
 };
 
 export const generateAuthPatch = (authNode, request, options) => {
+  console.log(authNode, request, options)
   options = options || {};
   let patch = {};
 
