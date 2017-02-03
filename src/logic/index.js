@@ -165,6 +165,20 @@ export const runLogic = (result, node, logicPath, options) => {
   let n = node;
   if (logicPath === 'after') {
     n = result;
+    if (logic.assertions) {
+      const {
+        findContract,
+      } = options;
+
+      // console.log('find contract?', !fin)
+      if (findContract) {
+        forEach(logic.assertions, (a) => {
+          if (a.op == 'validate.contract') {
+            a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+          }
+        });
+      }
+    }
   }
   const assertions = Assertions.runAssertions(n, logic.assertions, options);
 

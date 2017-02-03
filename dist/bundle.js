@@ -848,6 +848,22 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   var n = node;
   if (logicPath === 'after') {
     n = result;
+    if (logic.assertions) {
+      (function () {
+        var _options = options,
+            findContract = _options.findContract;
+
+        // console.log('find contract?', !fin)
+
+        if (findContract) {
+          forEach(logic.assertions, function (a) {
+            if (a.op == 'validate.contract') {
+              a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+            }
+          });
+        }
+      })();
+    }
   }
   var assertions = runAssertions(n, logic.assertions, options);
 
