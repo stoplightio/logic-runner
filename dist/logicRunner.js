@@ -6807,7 +6807,6 @@ var generateAws = function generateAws(data, request, options) {
 };
 
 var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
-  console.log(authNode, request, options);
   options = options || {};
   var patch = {};
 
