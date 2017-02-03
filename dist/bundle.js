@@ -13,6 +13,7 @@ var isArray = _interopDefault(require('lodash/isArray'));
 var stringify = _interopDefault(require('json-stringify-safe'));
 var get = _interopDefault(require('lodash/get'));
 var set = _interopDefault(require('lodash/set'));
+var isNumber = _interopDefault(require('lodash/isNumber'));
 var includes = _interopDefault(require('lodash/includes'));
 var forEach = _interopDefault(require('lodash/forEach'));
 var trim = _interopDefault(require('lodash/trim'));
@@ -23,7 +24,6 @@ var escapeRegExp = _interopDefault(require('lodash/escapeRegExp'));
 var clone = _interopDefault(require('lodash/clone'));
 var replace = _interopDefault(require('lodash/replace'));
 var isEqual = _interopDefault(require('lodash/isEqual'));
-var isNumber = _interopDefault(require('lodash/isNumber'));
 var isUndefined = _interopDefault(require('lodash/isUndefined'));
 var gt = _interopDefault(require('lodash/gt'));
 var gte = _interopDefault(require('lodash/gte'));
@@ -858,7 +858,9 @@ var runLogic = function runLogic(result, node, logicPath, options) {
         if (findContract) {
           forEach(logic.assertions, function (a) {
             if (a.op == 'validate.contract') {
-              a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+              if (!isNumber(a.expected)) {
+                a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+              }
             }
           });
         }

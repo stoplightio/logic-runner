@@ -7054,6 +7054,44 @@ function set$1(object, path, value) {
 
 var set_1 = set$1;
 
+var baseGetTag$7 = _baseGetTag;
+var isObjectLike$8 = isObjectLike_1;
+
+/** `Object#toString` result references. */
+var numberTag$2 = '[object Number]';
+
+/**
+ * Checks if `value` is classified as a `Number` primitive or object.
+ *
+ * **Note:** To exclude `Infinity`, `-Infinity`, and `NaN`, which are
+ * classified as numbers, use the `_.isFinite` method.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a number, else `false`.
+ * @example
+ *
+ * _.isNumber(3);
+ * // => true
+ *
+ * _.isNumber(Number.MIN_VALUE);
+ * // => true
+ *
+ * _.isNumber(Infinity);
+ * // => true
+ *
+ * _.isNumber('3');
+ * // => false
+ */
+function isNumber(value) {
+    return typeof value == 'number' || isObjectLike$8(value) && baseGetTag$7(value) == numberTag$2;
+}
+
+var isNumber_1 = isNumber;
+
 /**
  * The base implementation of `_.findIndex` and `_.findLastIndex` without
  * support for iteratee shorthands.
@@ -7135,9 +7173,9 @@ function baseIndexOf$1(array, value, fromIndex) {
 
 var _baseIndexOf = baseIndexOf$1;
 
-var baseGetTag$7 = _baseGetTag;
+var baseGetTag$8 = _baseGetTag;
 var isArray$13 = isArray_1;
-var isObjectLike$8 = isObjectLike_1;
+var isObjectLike$9 = isObjectLike_1;
 
 /** `Object#toString` result references. */
 var stringTag$2 = '[object String]';
@@ -7160,7 +7198,7 @@ var stringTag$2 = '[object String]';
  * // => false
  */
 function isString$1(value) {
-    return typeof value == 'string' || !isArray$13(value) && isObjectLike$8(value) && baseGetTag$7(value) == stringTag$2;
+    return typeof value == 'string' || !isArray$13(value) && isObjectLike$9(value) && baseGetTag$8(value) == stringTag$2;
 }
 
 var isString_1 = isString$1;
@@ -8267,7 +8305,7 @@ var cloneTypedArray$2 = _cloneTypedArray;
 var boolTag$3 = '[object Boolean]';
 var dateTag$3 = '[object Date]';
 var mapTag$5 = '[object Map]';
-var numberTag$3 = '[object Number]';
+var numberTag$4 = '[object Number]';
 var regexpTag$3 = '[object RegExp]';
 var setTag$5 = '[object Set]';
 var stringTag$4 = '[object String]';
@@ -8319,7 +8357,7 @@ function initCloneByTag$1(object, tag, cloneFunc, isDeep) {
     case mapTag$5:
       return cloneMap(object, isDeep, cloneFunc);
 
-    case numberTag$3:
+    case numberTag$4:
     case stringTag$4:
       return new Ctor(object);
 
@@ -8370,7 +8408,7 @@ var errorTag$2 = '[object Error]';
 var funcTag$2 = '[object Function]';
 var genTag$1 = '[object GeneratorFunction]';
 var mapTag$4 = '[object Map]';
-var numberTag$2 = '[object Number]';
+var numberTag$3 = '[object Number]';
 var objectTag$4 = '[object Object]';
 var regexpTag$2 = '[object RegExp]';
 var setTag$4 = '[object Set]';
@@ -8392,7 +8430,7 @@ var uint32Tag$1 = '[object Uint32Array]';
 
 /** Used to identify `toStringTag` values supported by `_.clone`. */
 var cloneableTags = {};
-cloneableTags[argsTag$3] = cloneableTags[arrayTag$2] = cloneableTags[arrayBufferTag$2] = cloneableTags[dataViewTag$3] = cloneableTags[boolTag$2] = cloneableTags[dateTag$2] = cloneableTags[float32Tag$1] = cloneableTags[float64Tag$1] = cloneableTags[int8Tag$1] = cloneableTags[int16Tag$1] = cloneableTags[int32Tag$1] = cloneableTags[mapTag$4] = cloneableTags[numberTag$2] = cloneableTags[objectTag$4] = cloneableTags[regexpTag$2] = cloneableTags[setTag$4] = cloneableTags[stringTag$3] = cloneableTags[symbolTag$2] = cloneableTags[uint8Tag$1] = cloneableTags[uint8ClampedTag$1] = cloneableTags[uint16Tag$1] = cloneableTags[uint32Tag$1] = true;
+cloneableTags[argsTag$3] = cloneableTags[arrayTag$2] = cloneableTags[arrayBufferTag$2] = cloneableTags[dataViewTag$3] = cloneableTags[boolTag$2] = cloneableTags[dateTag$2] = cloneableTags[float32Tag$1] = cloneableTags[float64Tag$1] = cloneableTags[int8Tag$1] = cloneableTags[int16Tag$1] = cloneableTags[int32Tag$1] = cloneableTags[mapTag$4] = cloneableTags[numberTag$3] = cloneableTags[objectTag$4] = cloneableTags[regexpTag$2] = cloneableTags[setTag$4] = cloneableTags[stringTag$3] = cloneableTags[symbolTag$2] = cloneableTags[uint8Tag$1] = cloneableTags[uint8ClampedTag$1] = cloneableTags[uint16Tag$1] = cloneableTags[uint32Tag$1] = true;
 cloneableTags[errorTag$2] = cloneableTags[funcTag$2] = cloneableTags[weakMapTag$2] = false;
 
 /**
@@ -8916,44 +8954,6 @@ function isEqual(value, other) {
 }
 
 var isEqual_1 = isEqual;
-
-var baseGetTag$8 = _baseGetTag;
-var isObjectLike$9 = isObjectLike_1;
-
-/** `Object#toString` result references. */
-var numberTag$4 = '[object Number]';
-
-/**
- * Checks if `value` is classified as a `Number` primitive or object.
- *
- * **Note:** To exclude `Infinity`, `-Infinity`, and `NaN`, which are
- * classified as numbers, use the `_.isFinite` method.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a number, else `false`.
- * @example
- *
- * _.isNumber(3);
- * // => true
- *
- * _.isNumber(Number.MIN_VALUE);
- * // => true
- *
- * _.isNumber(Infinity);
- * // => true
- *
- * _.isNumber('3');
- * // => false
- */
-function isNumber(value) {
-    return typeof value == 'number' || isObjectLike$9(value) && baseGetTag$8(value) == numberTag$4;
-}
-
-var isNumber_1 = isNumber;
 
 /**
  * Checks if `value` is `undefined`.
@@ -9495,7 +9495,9 @@ var runLogic = function runLogic(result, node, logicPath, options) {
         if (findContract) {
           forEach_1(logic.assertions, function (a) {
             if (a.op == 'validate.contract') {
-              a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+              if (!isNumber_1(a.expected)) {
+                a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+              }
             }
           });
         }

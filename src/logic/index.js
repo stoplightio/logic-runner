@@ -2,6 +2,7 @@ import get from 'lodash/get';
 import set from 'lodash/set';
 import merge from 'lodash/merge';
 import isEmpty from 'lodash/isEmpty';
+import isNumber from 'lodash/isNumber';
 import includes from 'lodash/includes';
 import forEach from 'lodash/forEach';
 
@@ -174,7 +175,9 @@ export const runLogic = (result, node, logicPath, options) => {
       if (findContract) {
         forEach(logic.assertions, (a) => {
           if (a.op == 'validate.contract') {
-            a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+            if (!isNumber(a.expected)) {
+              a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+            }
           }
         });
       }
