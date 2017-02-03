@@ -145,7 +145,6 @@ export const generateAws = (data, request, options) => {
 };
 
 export const generateAuthPatch = (authNode, request, options) => {
-  console.log(authNode, request, options)
   options = options || {};
   let patch = {};
 
