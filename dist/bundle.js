@@ -858,7 +858,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
         if (findContract) {
           forEach(logic.assertions, function (a) {
             if (a.op == 'validate.contract') {
-              if (!isNumber(a.expected)) {
+              if (isNumber(a.expected)) {
                 a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
               }
             }
