@@ -390,7 +390,7 @@ var generateAws = function generateAws(data, request, options) {
     region: data.region
   });
 
-  var newRequest = options.signAws(requestToAuthorize, {
+  var headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken
@@ -398,7 +398,7 @@ var generateAws = function generateAws(data, request, options) {
 
   // add to the header
   patch = {
-    headers: newRequest.headers
+    headers: headers
   };
 
   return patch;

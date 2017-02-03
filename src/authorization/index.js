@@ -130,7 +130,7 @@ export const generateAws = (data, request, options) => {
     region: data.region,
   };
 
-  const newRequest = options.signAws(requestToAuthorize, {
+  const headers = options.signAws(requestToAuthorize, {
     secretAccessKey: data.secretKey,
     accessKeyId: data.accessKey,
     sessionToken: data.sessionToken,
@@ -138,7 +138,7 @@ export const generateAws = (data, request, options) => {
 
   // add to the header
   patch = {
-    headers: newRequest.headers,
+    headers,
   };
 
   return patch;
