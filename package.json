@@ -1,6 +1,6 @@
 {
   "name": "@stoplight/logic-runner",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Utilities to run flow logic blocks, such as variable replacement, assertions, transforms, etc.",
   "repository": {
     "type": "git",
