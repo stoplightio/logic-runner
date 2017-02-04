@@ -193,10 +193,8 @@ export const runLogic = (result, node, logicPath, options) => {
         target: `${logicPath}.script`,
         op: 'tests',
         expected: '',
-        result: {
-          pass,
-          message: key,
-        },
+        pass: pass,
+        msg: key,
       });
     }
   }

@@ -877,10 +877,8 @@ var runLogic = function runLogic(result, node, logicPath, options) {
         target: logicPath + '.script',
         op: 'tests',
         expected: '',
-        result: {
-          pass: pass,
-          message: key
-        }
+        pass: pass,
+        msg: key
       });
     }
   }
