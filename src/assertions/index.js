@@ -115,7 +115,8 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
           }
 
           const expected = safeParse(assertion.expected);
-          if (!expected || isEmpty(expected)) {
+          if (!expected) {
+          //if (!expected || isEmpty(expected)) {
             throw new Error(`Cannot run ${assertion.op} assertion - JSON schema is null or empty. If using the 'Link to API design' feature,
               please make sure there is an endpoint that matches this request, with the appropriate status code, defined in your design.`);
           }
