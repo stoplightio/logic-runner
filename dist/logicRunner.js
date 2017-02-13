@@ -8870,6 +8870,7 @@ var replaceVariables = function replaceVariables(target) {
     return target;
   }
 
+  var processed = false;
   var toProcess = safeStringify(target);
   var matches = extractVariables(target);
   forEach_1(matches, function (match) {
@@ -8882,9 +8883,13 @@ var replaceVariables = function replaceVariables(target) {
         match = replace_1(match, '$.', '\\$\.');
         toProcess = toProcess.replace(new RegExp('"' + match + '"|' + match, 'g'), safeStringify(value));
       }
+      processed = true;
     }
   });
 
+  if (processed) {
+    toProcess = replaceVariables(toProcess, variables);
+  }
   return safeParse(toProcess, toProcess || target);
 };
 
@@ -9354,11 +9359,10 @@ var patchAuthorization = function patchAuthorization(node, options) {
 };
 
 var runScript = function runScript(script, root) {
-  var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var tests = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-  var input = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
-  var output = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
-  var logger = arguments[6];
+  var tests = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  var output = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+  var logger = arguments[5];
 
   // additional functions available to scripts
   var Base64$$1 = Base64;
@@ -9460,13 +9464,11 @@ var runLogic = function runLogic(result, node, logicPath, options) {
   if (!isEmpty_1(script)) {
     if (logicPath === 'before') {
       var input = get_1(node, 'input') || {};
-      // TODO: Figure out CTX and Env
-      scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
+      scriptResult = runScript(script, $.response || {}, tests, input, {}, options.logger);
     } else {
       var _input = get_1(result, 'input') || {};
       var output = get_1(result, 'output') || {};
-      // TODO: Figure out CTX and Env
-      scriptResult = runScript(script, $.response || {}, {}, tests, _input, output, options.logger);
+      scriptResult = runScript(script, $.response || {}, tests, _input, output, options.logger);
     }
 
     if (includes_1(['skipped', 'stopped'], scriptResult.status)) {
@@ -9568,8 +9570,9 @@ var runNode = function runNode(node, options) {
   result.input = node.input;
 
   if (invoke) {
-    result.output = node.input.invoke(_$cenario.session, $.env, $.ctx);
+    result.output = node.input.invoke($.session, $.env, $.ctx);
   }
+
   runLogic(result, node, 'after', options);
 
   result.ctx = clone_1($.ctx);

@@ -6,6 +6,7 @@ test.before(t => {
   global.$ = {
     foo: 'bar',
     bar: 'dog',
+    bear: 'foo',
     ctx: {
       todoId: 1234,
       results: [
@@ -52,6 +53,14 @@ const newNode = () => {
     }
   };
 };
+
+test('variables > replaceNodeVariables > replaces variables', (t) => {
+  let node = {
+    foo: '{$.{$.bear}}',
+  }
+  node = Variables.replaceNodeVariables(node);
+  t.is(node.foo, 'bar');
+});
 
 test('variables > replaceNodeVariables > replaces variables', (t) => {
   let node = newNode();

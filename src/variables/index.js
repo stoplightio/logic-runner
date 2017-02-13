@@ -37,6 +37,7 @@ export const replaceVariables = (target, variables = {}) => {
     return target;
   }
 
+  let processed = false;
   let toProcess = safeStringify(target);
   const matches = extractVariables(target);
   forEach(matches, (match) => {
@@ -49,9 +50,13 @@ export const replaceVariables = (target, variables = {}) => {
         match = replace(match, '$.', '\\$\.');
         toProcess = toProcess.replace(new RegExp(`"${match}"|${match}`, 'g'), safeStringify(value));
       }
+      processed = true;
     }
   });
 
+  if (processed) {
+    toProcess = replaceVariables(toProcess, variables);
+  }
   return safeParse(toProcess, toProcess || target);
 };
 

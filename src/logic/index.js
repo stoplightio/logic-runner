@@ -27,7 +27,7 @@ const patchAuthorization = (node, options) => {
   }
 };
 
-export const runScript = (script, root, state = {}, tests = {}, input = {}, output = {}, logger) => {
+export const runScript = (script, root, tests = {}, input = {}, output = {}, logger) => {
   // additional functions available to scripts
   const Base64 = _Base64;
   const {safeStringify, safeParse} = JSONHelpers;
@@ -108,7 +108,7 @@ export const runLogic = (result, node, logicPath, options) => {
     patchAuthorization(node, options);
     return node;
   }
-
+  
   // Init Logs
   const logs = get(result, 'logs') || [];
   // Init Options
@@ -140,13 +140,11 @@ export const runLogic = (result, node, logicPath, options) => {
   if (!isEmpty(script)) {
     if (logicPath === 'before') {
       const input = get(node, 'input') || {};
-      // TODO: Figure out CTX and Env
-      scriptResult = runScript(script, $.response || {}, {}, tests, input, {}, options.logger);
+      scriptResult = runScript(script, $.response || {}, tests, input, {}, options.logger);
     } else {
       const input = get(result, 'input') || {};
       const output = get(result, 'output') || {};
-      // TODO: Figure out CTX and Env
-      scriptResult = runScript(script, $.response || {}, {}, tests, input, output, options.logger);
+      scriptResult = runScript(script, $.response || {}, tests, input, output, options.logger);
     }
 
     if (includes(['skipped', 'stopped'], scriptResult.status)) {
