@@ -172,8 +172,8 @@ export const runLogic = (result, node, logicPath, options) => {
       // console.log('find contract?', !fin)
       if (findContract) {
         forEach(logic.assertions, (a) => {
-          if (a.op == 'validate.contract') {
-            if (isNumber(a.expected)) {
+          if (a.op == 'validate.contract' || a.op == 'validate.pass' || a.op == 'validate.fail') {
+            if (isNumber(JSONHelpers.safeParse(a.expected))) {
               a.expected = findContract($.session, n.input.method, n.input.url, a.expected);
             }
           }
