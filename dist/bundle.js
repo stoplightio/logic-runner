@@ -862,7 +862,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
           forEach(logic.assertions, function (a) {
             if (a.op == 'validate.contract') {
               if (isNumber(a.expected)) {
-                a.expected = findContract(_$cenario.session, n.input.method, n.input.url, a.expected);
+                a.expected = findContract($.session, n.input.method, n.input.url, a.expected);
               }
             }
           });
