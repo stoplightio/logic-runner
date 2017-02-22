@@ -911,7 +911,6 @@ var runNode = function runNode(node, options) {
 
   var result = {
     status: 'running',
-    name: node.name,
     type: node.type,
     failCount: 0,
     passCount: 0
@@ -938,6 +937,7 @@ var runNode = function runNode(node, options) {
 
   runLogic(result, node, 'after', options);
 
+  result.name = node.name;
   result.ctx = clone($.ctx);
   result.env = clone($.env);
 

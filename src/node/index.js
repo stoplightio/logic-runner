@@ -10,7 +10,6 @@ export const runNode = (node, options) => {
 
   const result = {
     status: 'running',
-    name: node.name,
     type: node.type,
     failCount: 0,
     passCount: 0,
@@ -37,6 +36,7 @@ export const runNode = (node, options) => {
 
   Logic.runLogic(result, node, 'after', options);
 
+  result.name = node.name;
   result.ctx = clone($.ctx);
   result.env = clone($.env);
 
