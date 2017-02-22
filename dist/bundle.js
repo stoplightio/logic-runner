@@ -807,7 +807,7 @@ var runLogic = function runLogic(result, node, logicPath, options) {
       var cleanMessages = messages.map(function (m) {
         return safeStringify(m);
       });
-      // print(cleanMessages);
+      print(cleanMessages);
       logs.push({
         type: type,
         source: [logicPath].concat(context || []).join('.'),

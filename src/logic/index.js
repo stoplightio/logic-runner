@@ -120,7 +120,7 @@ export const runLogic = (result, node, logicPath, options) => {
       }
 
       const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m));
-      // print(cleanMessages);
+      print(cleanMessages);
       logs.push({
         type,
         source: [logicPath].concat(context || []).join('.'),
