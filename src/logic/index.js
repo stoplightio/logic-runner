@@ -119,12 +119,11 @@ export const runLogic = (result, node, logicPath, options) => {
         console.warn('You cannot log with no messages.');
       }
 
-      const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m));
-      // print(cleanMessages);
+      const cleanMessages = messages.map(m => JSONHelpers.safeStringify(m, 2));
       logs.push({
         type,
         source: [logicPath].concat(context || []).join('.'),
-        msg: cleanMessages,
+        msg: cleanMessages.join(' '),
       });
     },
   };
