@@ -51,6 +51,14 @@ export const runAssertion = (resultNode, assertion, options = {}) => {
       value = get(resultNode, targetPath);
     }
 
+    if (assertion.expected) {
+      const expectedType = typeof assertion.expected;
+      const expected = safeParse(assertion.expected);
+      if (typeof expected === expectedType) {
+        assertion.expected = expected;
+      }
+    }
+
     try {
       switch (assertion.op) {
         case 'eq':

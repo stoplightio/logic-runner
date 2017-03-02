@@ -5,7 +5,7 @@ import stringify from 'json-stringify-safe';
 export const safeParse = (target, defaultValue) => {
   if (typeof target === 'string') {
     try {
-      return JSON.parse(target);
+      return JSON.parse(target.replace(/\'/g, '"'));
     } catch (e) {
       return defaultValue || {};
     }

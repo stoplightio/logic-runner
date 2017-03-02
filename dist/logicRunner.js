@@ -6735,7 +6735,7 @@ var stringify_1$2 = createCommonjsModule(function (module, exports) {
 var safeParse = function safeParse(target, defaultValue) {
   if (typeof target === 'string') {
     try {
-      return JSON.parse(target);
+      return JSON.parse(target.replace(/\'/g, '"'));
     } catch (e) {
       return defaultValue || {};
     }
@@ -9196,6 +9196,14 @@ var runAssertion = function runAssertion(resultNode, assertion) {
       value = get_1(resultNode, targetPath);
     }
 
+    if (assertion.expected) {
+      var expectedType = _typeof(assertion.expected);
+      var expected = safeParse(assertion.expected);
+      if ((typeof expected === 'undefined' ? 'undefined' : _typeof(expected)) === expectedType) {
+        assertion.expected = expected;
+      }
+    }
+
     try {
       switch (assertion.op) {
         case 'eq':
@@ -9259,13 +9267,13 @@ var runAssertion = function runAssertion(resultNode, assertion) {
             throw new Error('Cannot run ' + assertion.op + ' assertion - no validate function provided in options');
           }
 
-          var expected = safeParse(assertion.expected);
-          if (!expected) {
+          var _expected = safeParse(assertion.expected);
+          if (!_expected) {
             //if (!expected || isEmpty(expected)) {
             throw new Error('Cannot run ' + assertion.op + ' assertion - JSON schema is null or empty. If using the \'Link to API design\' feature,\n              please make sure there is an endpoint that matches this request, with the appropriate status code, defined in your design.');
           }
 
-          var validationResult = validate(value, expected);
+          var validationResult = validate(value, _expected);
           if (!validationResult) {
             throw new Error('Unknown validation error');
           }

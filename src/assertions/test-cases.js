@@ -50,6 +50,24 @@ const buildCases = () => {
         return !result.pass;
       },
     },
+    {
+      name: 'eq handles single quotes for a string',
+      resultNode: {
+        output: {
+          body: {
+            foo: '1',
+          },
+        },
+      },
+      assertion: {
+        target: 'output.body.foo',
+        op: 'eq',
+        expected: "'1'",
+      },
+      expected(result) {
+        return result.pass;
+      },
+    },
 
     // ne
 
