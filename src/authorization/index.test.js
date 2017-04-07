@@ -1,11 +1,13 @@
 import test from 'ava';
 import isEmpty from 'lodash/isEmpty';
-import size from 'lodash/size';
 import get from 'lodash/get';
 import * as Authorization from '.';
 
-test('authorization > generateBasicAuth > set correct authorization header', (t) => {
-  const result = Authorization.generateBasicAuth('foo', 'bar');
+test('generateBasicAuth > set correct authorization header', (t) => {
+  const result = Authorization.generateBasicAuth({
+    username: 'foo',
+    password: 'bar',
+  });
   const expected = {
     headers: {
       Authorization: 'Basic Zm9vOmJhcg==',
@@ -14,8 +16,11 @@ test('authorization > generateBasicAuth > set correct authorization header', (t)
   t.deepEqual(result, expected);
 });
 
-test('authorization > generateBasicAuth > set correct authorization header for learning:learning', (t) => {
-  const result = Authorization.generateBasicAuth('learning', 'learning');
+test('generateBasicAuth > set correct authorization header for learning:learning', (t) => {
+  const result = Authorization.generateBasicAuth({
+    username: 'learning',
+    password: 'learning',
+  });
   const expected = {
     headers: {
       Authorization: 'Basic bGVhcm5pbmc6bGVhcm5pbmc=',
@@ -41,7 +46,21 @@ const oauthData = () => {
     },
   };
 };
-test('authorization > generateOAuth1 > set correct query string', (t) => {
+const oauth2Data = () => {
+  return {
+    oauth: {
+      type: 'oauth2',
+      access_token: 't123',
+      useHeader: false,
+    },
+    request: {
+      method: 'get',
+      url: 'http://example.com',
+      body: {},
+    },
+  };
+};
+test('generateOAuth1 > set correct query string', (t) => {
   const data = oauthData();
   const result = Authorization.generateOAuth1(data.oauth, data.request);
   const url = result.url;
@@ -53,9 +72,9 @@ test('authorization > generateOAuth1 > set correct query string', (t) => {
   t.regex(url, /oauth_token=t123/);
   t.regex(url, /oauth_signature=/);
 });
-test('authorization > generateOAuth1 > support useHeader option, set correct header', (t) => {
+test('generateOAuth1 > support useHeader option, set correct header', (t) => {
   const data = oauthData();
-  const odata = Object.assign({}, data.oauth, { useHeader: true });
+  const odata = Object.assign({}, data.oauth, {useHeader: true});
   const result = Authorization.generateOAuth1(odata, data.request);
   const header = result.headers.Authorization;
   t.regex(header, /oauth_consumer_key="ck123"/);
@@ -66,9 +85,9 @@ test('authorization > generateOAuth1 > support useHeader option, set correct hea
   t.regex(header, /oauth_token="t123"/);
   t.regex(header, /oauth_signature=/);
 });
-test('authorization > generateOAuth1 > support useHeader option, do not overwrite existing header', (t) => {
+test('generateOAuth1 > support useHeader option, do not overwrite existing header', (t) => {
   const data = oauthData();
-  const odata = Object.assign({}, data.oauth, { useHeader: true });
+  const odata = Object.assign({}, data.oauth, {useHeader: true});
   const orequest = Object.assign({}, data.request, {
     headers: {
       Authorization: '',
@@ -77,7 +96,7 @@ test('authorization > generateOAuth1 > support useHeader option, do not overwrit
   const result = Authorization.generateOAuth1(odata, orequest);
   t.true(!result.headers);
 });
-test('authorization > generateOAuth1 > do not overwrite existing query string params', (t) => {
+test('generateOAuth1 > do not overwrite existing query string params', (t) => {
   const data = oauthData();
   const orequest = Object.assign({}, data.request, {
     url: 'http://example.com?oauth_consumer_key=myExistingParam&oauth_token=myToken',
@@ -93,7 +112,41 @@ test('authorization > generateOAuth1 > do not overwrite existing query string pa
   t.regex(url, /oauth_signature=/);
 });
 
-test('authorization > generateAuthPatch:basicAuth > set authorization header', (t) => {
+test('generateOAuth2 > set correct query string', (t) => {
+  const data = oauth2Data();
+  const result = Authorization.generateOAuth2(data.oauth, data.request);
+  const url = result.url;
+  t.regex(url, /access_token=t123/);
+});
+test('generateOAuth2 > support useHeader option, set correct header', (t) => {
+  const data = oauth2Data();
+  const odata = Object.assign({}, data.oauth, {useHeader: true});
+  const result = Authorization.generateOAuth2(odata, data.request);
+  const header = result.headers.Authorization;
+  t.regex(header, /Bearer t123/);
+});
+test('generateOAuth2 > support useHeader option, do not overwrite existing header', (t) => {
+  const data = oauth2Data();
+  const odata = Object.assign({}, data.oauth, {useHeader: true});
+  const orequest = Object.assign({}, data.request, {
+    headers: {
+      Authorization: '',
+    },
+  });
+  const result = Authorization.generateOAuth2(odata, orequest);
+  t.true(!result.headers);
+});
+test('generateOAuth2 > do not overwrite existing query string params', (t) => {
+  const data = oauth2Data();
+  const orequest = Object.assign({}, data.request, {
+    url: 'http://example.com?access_token=myToken',
+  });
+  const result = Authorization.generateOAuth2(data.oauth, orequest);
+  const url = result.url;
+  t.regex(url, /access_token=myToken/);
+});
+
+test('generateAuthPatch:basicAuth > set authorization header', (t) => {
   const authNode = {
     type: 'basic',
     username: 'foo',
@@ -106,7 +159,7 @@ test('authorization > generateAuthPatch:basicAuth > set authorization header', (
   t.pass(result.headers.hasOwnProperty('Authorization'));
 });
 
-test('authorization > generateAuthPatch:basicAuth > do not overwrite existing authorization header', (t) => {
+test('generateAuthPatch:basicAuth > do not overwrite existing authorization header', (t) => {
   const authNode = {
     type: 'basic',
     username: 'foo',
@@ -143,14 +196,14 @@ const signAwsMock = (requestToAuthorize, options) => {
     Authorization: '123',
   });
 };
-test('authorization > generateAws > set correct header', (t) => {
+test('generateAws > set correct header', (t) => {
   const data = awsData();
   const result = Authorization.generateAws(data.aws, data.request, {
     signAws: signAwsMock,
   });
   t.true(result.headers.Authorization ? true : false);
 });
-test('authorization > generateAws > preserves existing headers', (t) => {
+test('generateAws > preserves existing headers', (t) => {
   const data = awsData();
   data.request.headers = {
     foo: 'bar',

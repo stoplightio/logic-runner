@@ -270,13 +270,83 @@ var _extends = Object.assign || function (target) {
   return target;
 };
 
+var get$1 = function get$1(object, property, receiver) {
+  if (object === null) object = Function.prototype;
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent === null) {
+      return undefined;
+    } else {
+      return get$1(parent, property, receiver);
+    }
+  } else if ("value" in desc) {
+    return desc.value;
+  } else {
+    var getter = desc.get;
+
+    if (getter === undefined) {
+      return undefined;
+    }
+
+    return getter.call(receiver);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var set$1 = function set$1(object, property, value, receiver) {
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent !== null) {
+      set$1(parent, property, value, receiver);
+    }
+  } else if ("value" in desc && desc.writable) {
+    desc.value = value;
+  } else {
+    var setter = desc.set;
+
+    if (setter !== undefined) {
+      setter.call(receiver, value);
+    }
+  }
+
+  return value;
+};
+
 var AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
 
-var generateBasicAuth = function generateBasicAuth(username, password, options) {
-  options = options || {};
+var generateBasicAuth = function generateBasicAuth(_ref, request) {
+  var username = _ref.username,
+      password = _ref.password;
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+  if (has(request, 'headers.Authorization')) {
+    return {};
+  }
 
   var string = [username, password].join(':');
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
+
   return {
     headers: {
       Authorization: 'Basic ' + string
@@ -284,8 +354,8 @@ var generateBasicAuth = function generateBasicAuth(username, password, options) 
   };
 };
 
-var hashFunction = function hashFunction(method, encode, options) {
-  options = options || {};
+var hashFunction = function hashFunction(method, encode) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
   return function (base_string, key) {
     var hash = void 0;
@@ -308,8 +378,9 @@ var hashFunction = function hashFunction(method, encode, options) {
     return hash.toString();
   };
 };
-var generateOAuth1 = function generateOAuth1(data, request, options) {
-  options = options || {};
+
+var generateOAuth1 = function generateOAuth1(data, request) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
   var patch = {};
   if (data.useHeader && has(request, 'headers.Authorization')) {
@@ -369,8 +440,35 @@ var generateOAuth1 = function generateOAuth1(data, request, options) {
   return patch;
 };
 
-var generateAws = function generateAws(data, request, options) {
-  options = options || {};
+var generateOAuth2 = function generateOAuth2(data, request) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+  var patch = {};
+  if (data.useHeader && has(request, 'headers.Authorization')) {
+    return patch;
+  }
+
+  if (data.useHeader) {
+    // add to the header
+    patch = {
+      headers: {
+        Authorization: 'Bearer ' + data.access_token
+      }
+    };
+  } else {
+    // add to the query string
+    patch = {
+      url: setQuery(request.url, {
+        access_token: data.access_token
+      }, { preserve: true })
+    };
+  }
+
+  return patch;
+};
+
+var generateAws = function generateAws(data, request) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
   var patch = {};
 
@@ -404,31 +502,31 @@ var generateAws = function generateAws(data, request, options) {
   return patch;
 };
 
-var generateAuthPatch = function generateAuthPatch(authNode, request, options) {
-  options = options || {};
+var generateAuthPatch = function generateAuthPatch(authNode, request) {
+  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
   var patch = {};
 
-  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
+  if (!authNode || !AUTH_TYPES.includes(authNode.type)) {
     return patch;
   }
 
-  var details = authNode;
-  if (isEmpty(details)) {
+  if (isEmpty(authNode)) {
     return patch;
   }
 
   switch (authNode.type) {
     case 'basic':
-      if (!has(request, 'headers.Authorization')) {
-        patch = generateBasicAuth(details.username, details.password, options);
-      }
-
+      patch = generateBasicAuth(authNode, request, options);
       break;
     case 'oauth1':
-      patch = generateOAuth1(details, request, options);
+      patch = generateOAuth1(authNode, request, options);
+      break;
+    case 'oauth2':
+      patch = generateOAuth2(authNode, request, options);
       break;
     case 'aws':
-      patch = generateAws(details, request, options);
+      patch = generateAws(authNode, request, options);
       break;
     default:
       console.log(authNode.type + ' auth not implemented');

@@ -6,16 +6,19 @@ import HmacSHA256 from 'crypto-js/hmac-sha256';
 import EncBASE64 from 'crypto-js/enc-base64';
 
 import Base64 from '../utils/base64';
-import { setQuery } from '../utils/query';
-import { safeStringify } from '../utils/json';
+import {setQuery} from '../utils/query';
+import {safeStringify} from '../utils/json';
 
 const AUTH_TYPES = ['basic', 'digest', 'oauth1', 'oauth2', 'aws'];
 
-export const generateBasicAuth = (username, password, options) => {
-  options = options || {};
+export const generateBasicAuth = ({username, password}, request, options = {}) => {
+  if (has(request, 'headers.Authorization')) {
+    return {};
+  }
 
   let string = [username, password].join(':');
   string = Base64.encode(string); // Need to use custom base64 for golang vm.
+
   return {
     headers: {
       Authorization: `Basic ${string}`,
@@ -23,9 +26,7 @@ export const generateBasicAuth = (username, password, options) => {
   };
 };
 
-const hashFunction = (method, encode, options) => {
-  options = options || {};
-
+const hashFunction = (method, encode, options = {}) => {
   return (base_string, key) => {
     let hash;
 
@@ -47,9 +48,8 @@ const hashFunction = (method, encode, options) => {
     return hash.toString();
   };
 };
-export const generateOAuth1 = (data, request, options) => {
-  options = options || {};
 
+export const generateOAuth1 = (data, request, options = {}) => {
   let patch = {};
   if (data.useHeader && has(request, 'headers.Authorization')) {
     return patch;
@@ -101,16 +101,39 @@ export const generateOAuth1 = (data, request, options) => {
   } else {
     // add to the query string
     patch = {
-      url: setQuery(request.url, authPatch, { preserve: true }),
+      url: setQuery(request.url, authPatch, {preserve: true}),
     };
   }
 
   return patch;
 };
 
-export const generateAws = (data, request, options) => {
-  options = options || {};
+export const generateOAuth2 = (data, request, options = {}) => {
+  let patch = {};
+  if (data.useHeader && has(request, 'headers.Authorization')) {
+    return patch;
+  }
 
+  if (data.useHeader) {
+    // add to the header
+    patch = {
+      headers: {
+        Authorization: `Bearer ${data.access_token}`,
+      },
+    };
+  } else {
+    // add to the query string
+    patch = {
+      url: setQuery(request.url, {
+        access_token: data.access_token,
+      }, {preserve: true}),
+    };
+  }
+
+  return patch;
+};
+
+export const generateAws = (data, request, options = {}) => {
   let patch = {};
 
   if (!options.signAws) {
@@ -144,31 +167,29 @@ export const generateAws = (data, request, options) => {
   return patch;
 };
 
-export const generateAuthPatch = (authNode, request, options) => {
-  options = options || {};
+export const generateAuthPatch = (authNode, request, options = {}) => {
   let patch = {};
 
-  if (!authNode || AUTH_TYPES.indexOf(authNode.type) < 0) {
+  if (!authNode || !AUTH_TYPES.includes(authNode.type)) {
     return patch;
   }
 
-  const details = authNode;
-  if (isEmpty(details)) {
+  if (isEmpty(authNode)) {
     return patch;
   }
 
   switch (authNode.type) {
     case 'basic':
-      if (!has(request, 'headers.Authorization')) {
-        patch = generateBasicAuth(details.username, details.password, options);
-      }
-
+      patch = generateBasicAuth(authNode, request, options);
       break;
     case 'oauth1':
-      patch = generateOAuth1(details, request, options);
+      patch = generateOAuth1(authNode, request, options);
+      break;
+    case 'oauth2':
+      patch = generateOAuth2(authNode, request, options);
       break;
     case 'aws':
-      patch = generateAws(details, request, options);
+      patch = generateAws(authNode, request, options);
       break;
     default:
       console.log(`${authNode.type} auth not implemented`);
